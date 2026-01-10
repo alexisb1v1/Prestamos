@@ -23,7 +23,7 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
-            --build-arg NEXT_PUBLIC_API_URL=https://api.centralafbv.com/api/v1 \
+            --build-arg NEXT_PUBLIC_API_URL=/api/v1 \
             -t ghcr.io/${{ github.repository_owner }}/centralafbv-front:latest .
 
       # 4. Push de la imagen
