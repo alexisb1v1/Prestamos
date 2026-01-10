@@ -4,9 +4,6 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-
 COPY package.json package-lock.json ./
 RUN npm ci
 
@@ -15,6 +12,10 @@ RUN npm ci
 # -------------------------
 FROM node:20-alpine AS builder
 WORKDIR /app
+
+# ✅ IMPORTANTE: aquí debe ir para que lo use "npm run build"
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
