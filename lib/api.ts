@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
 interface FetchOptions extends RequestInit {
     token?: string;
@@ -37,11 +37,15 @@ export async function apiRequest<T = any>(
 
         // Check for API error responses (with statusCode field)
         if (data?.statusCode && data.statusCode >= 400) {
-            throw new Error(data.message || `Error: ${data.statusCode}`);
+            const error = new Error(data.message || `Error: ${data.statusCode}`);
+            (error as any).statusCode = data.statusCode;
+            throw error;
         }
 
         if (!response.ok) {
-            throw new Error(data?.message || `HTTP Error: ${response.status}`);
+            const error = new Error(data?.message || `HTTP Error: ${response.status}`);
+            (error as any).statusCode = response.status;
+            throw error;
         }
 
         return data;

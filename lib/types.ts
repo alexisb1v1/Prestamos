@@ -12,7 +12,13 @@ export interface User {
     username: string;
     profile: 'ADMIN' | 'OWNER' | 'COBRADOR';
     status: 'ACTIVE' | 'INACTIVE';
-    person: Person;
+    // Person (flattened)
+    idPeople?: number;
+    documentType?: string;
+    documentNumber?: string;
+    firstName?: string;
+    lastName?: string;
+    birthday?: string;
 }
 
 export interface LoginRequest {
@@ -59,4 +65,35 @@ export interface Payment {
     amount: number;
     date: string;
     cobradorId: string;
+}
+export interface CreateUserRequest {
+    username: string;
+    passwordHash: string;
+    profile: 'ADMIN' | 'OWNER' | 'COBRADOR';
+    documentType: string;
+    documentNumber: string;
+    firstName: string;
+    lastName: string;
+    birthday: string;
+}
+
+export interface CreateUserResponse {
+    success: boolean;
+    message: string;
+    userId: string;
+}
+
+export interface UpdateUserRequest {
+    profile: 'ADMIN' | 'OWNER' | 'COBRADOR';
+    status: 'ACTIVE' | 'INACTIVE';
+    documentType: string;
+    documentNumber: string;
+    firstName: string;
+    lastName: string;
+    birthday: string;
+}
+
+export interface UpdateUserResponse {
+    success: boolean;
+    message: string;
 }

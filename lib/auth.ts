@@ -1,5 +1,6 @@
+import Cookies from 'js-cookie';
 import { api } from './api';
-import { LoginRequest, LoginResponse } from './types';
+import { LoginResponse, User } from './types';
 
 /**
  * Authentication Service
@@ -24,11 +25,12 @@ export const authService = {
             throw new Error(response.message || 'Login failed');
         }
 
-        // Store JWT token and user info in localStorage
+        // Store JWT token in Cookie (accessible by Middleware)
         if (response.token) {
-            localStorage.setItem(TOKEN_KEY, response.token);
+            Cookies.set(TOKEN_KEY, response.token, { expires: 1 }); // Expires in 1 day
         }
 
+        // Store user info in localStorage (for UI display)
         if (response.user) {
             localStorage.setItem(USER_KEY, JSON.stringify(response.user));
         }
@@ -40,22 +42,21 @@ export const authService = {
      * Logout user and clear stored credentials
      */
     logout() {
-        localStorage.removeItem(TOKEN_KEY);
+        Cookies.remove(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
     },
 
     /**
      * Get stored authentication token
      */
-    getToken(): string | null {
-        if (typeof window === 'undefined') return null;
-        return localStorage.getItem(TOKEN_KEY);
+    getToken(): string | undefined {
+        return Cookies.get(TOKEN_KEY);
     },
 
     /**
      * Get stored user information
      */
-    getUser() {
+    getUser(): User | null {
         if (typeof window === 'undefined') return null;
         const userStr = localStorage.getItem(USER_KEY);
         return userStr ? JSON.parse(userStr) : null;
