@@ -13,6 +13,15 @@ export default function DashboardLayout({
     const router = useRouter();
     const pathname = usePathname();
 
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
     useEffect(() => {
         const user = authService.getUser();
         if (!user) return; // Auth check normally handled by middleware or parent, but safe to check
@@ -28,9 +37,16 @@ export default function DashboardLayout({
     return (
         <div style={{ display: 'flex', minHeight: '100vh' }}>
             <Sidebar />
-            <main style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
+            <main style={{
+                flex: 1,
+                marginLeft: 0,
+                padding: '2rem',
+                paddingTop: isMobile ? '5rem' : '2rem', // Extra padding for mobile toggle
+                transition: 'margin-left 0.3s ease-in-out',
+                width: '100%' // Ensure width is controlled
+            }}>
                 {children}
             </main>
-        </div>
+        </div >
     );
 }

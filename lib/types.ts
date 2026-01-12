@@ -40,14 +40,18 @@ export interface ErrorResponse {
 
 export interface Loan {
     id: string;
-    clientName: string;
-    amount: number;
-    interestRate: number;
-    balance: number;
-    frequency: 'daily' | 'weekly' | 'monthly';
-    status: 'active' | 'paid' | 'overdue';
     startDate: string;
-    cobradorId?: string;
+    endDate: string;
+    amount: number;
+    interest: number;
+    fee: number;
+    days: number;
+    createdAt: string;
+    status: string; // 'Activo' or others
+    address: string;
+    documentNumber: string;
+    clientName: string;
+    collectorName: string;
 }
 
 export interface Cobrador {
@@ -96,4 +100,37 @@ export interface UpdateUserRequest {
 export interface UpdateUserResponse {
     success: boolean;
     message: string;
+}
+
+export interface CreatePersonRequest {
+    documentType: string;
+    documentNumber: string;
+    firstName: string;
+    lastName: string;
+    birthday: string;
+}
+
+export interface CreatePersonResponse {
+    id: string; // The API returns just { "id": "5" }
+}
+
+// ... existing types
+
+export interface Payment {
+    id: string;
+    loanId: string;
+    amount: number;
+    date: string;
+    cobradorId: string;
+}
+
+export interface CreatePaymentRequest {
+    loanId: number; // API uses number usually
+    amount: number;
+    userId: number; // Collector ID
+}
+
+export interface CreatePaymentResponse {
+    id: string;
+    success: boolean;
 }
