@@ -7,6 +7,7 @@ import { authService } from '@/lib/auth';
 import { Loan, User } from '@/lib/types';
 import CreateLoanModal from '../../components/CreateLoanModal';
 import CreatePaymentModal from '../../components/CreatePaymentModal';
+import LoanDetailsModal from '../../components/LoanDetailsModal';
 
 export default function PrestamosPage() {
     const [loans, setLoans] = useState<Loan[]>([]);
@@ -25,6 +26,15 @@ export default function PrestamosPage() {
     // Payment Modal State
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [selectedLoanForPayment, setSelectedLoanForPayment] = useState<Loan | null>(null);
+
+    // Details Modal State
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [selectedLoanForDetails, setSelectedLoanForDetails] = useState<Loan | null>(null);
+
+    const handleOpenDetails = (loan: Loan) => {
+        setSelectedLoanForDetails(loan);
+        setIsDetailsModalOpen(true);
+    };
 
     const handleOpenPayment = (loan: Loan) => {
         setSelectedLoanForPayment(loan);
@@ -164,6 +174,10 @@ export default function PrestamosPage() {
                     {formatMoney(loan.fee || 0)}
                 </div>
                 <div>
+                    <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Días</span>
+                    <span>{loan.days}</span>
+                </div>
+                <div>
                     <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Total</span>
                     <span style={{ fontWeight: 600, color: 'var(--color-primary)' }}>
                         {formatMoney(loan.amount + loan.interest)}
@@ -178,13 +192,31 @@ export default function PrestamosPage() {
                         width: '100%',
                         fontSize: '0.9rem',
                         padding: '0.5rem',
-                        backgroundColor: '#8b5cf6', // Indigo/Violet
+                        backgroundColor: loan.paidToday ? '#94a3b8' : '#8b5cf6', // Gray if paid today, Indigo/Violet otherwise
                         color: 'white',
-                        border: 'none'
+                        border: 'none',
+                        cursor: loan.paidToday ? 'not-allowed' : 'pointer',
+                        opacity: loan.paidToday ? 0.7 : 1
                     }}
-                    onClick={() => handleOpenPayment(loan)}
+                    onClick={() => !loan.paidToday && handleOpenPayment(loan)}
+                    disabled={loan.paidToday}
                 >
-                    Registrar Pago
+                    {loan.paidToday ? 'Pagado Hoy' : 'Registrar Pago'}
+                </button>
+                <button
+                    className="btn"
+                    style={{
+                        width: '100%',
+                        fontSize: '0.9rem',
+                        padding: '0.5rem',
+                        backgroundColor: 'transparent',
+                        color: 'var(--color-primary)',
+                        border: '1px solid var(--color-primary)',
+                        marginTop: '0.5rem'
+                    }}
+                    onClick={() => handleOpenDetails(loan)}
+                >
+                    Ver Detalles
                 </button>
             </div>
 
@@ -370,6 +402,10 @@ export default function PrestamosPage() {
                                         {formatMoney(loan.fee || 0)}
                                     </div>
                                     <div>
+                                        <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Días</span>
+                                        <span>{loan.days}</span>
+                                    </div>
+                                    <div>
                                         <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Total</span>
                                         <span style={{ fontWeight: 600, color: 'var(--color-primary)' }}>
                                             {formatMoney(loan.amount + loan.interest)}
@@ -384,13 +420,31 @@ export default function PrestamosPage() {
                                             width: '100%',
                                             fontSize: '0.9rem',
                                             padding: '0.5rem',
-                                            backgroundColor: '#8b5cf6', // Indigo/Violet
+                                            backgroundColor: loan.paidToday ? '#94a3b8' : '#8b5cf6', // Gray if paid today, Indigo/Violet otherwise
                                             color: 'white',
-                                            border: 'none'
+                                            border: 'none',
+                                            cursor: loan.paidToday ? 'not-allowed' : 'pointer',
+                                            opacity: loan.paidToday ? 0.7 : 1
                                         }}
-                                        onClick={() => handleOpenPayment(loan)}
+                                        onClick={() => !loan.paidToday && handleOpenPayment(loan)}
+                                        disabled={loan.paidToday}
                                     >
-                                        Registrar Pago
+                                        {loan.paidToday ? 'Pagado Hoy' : 'Registrar Pago'}
+                                    </button>
+                                    <button
+                                        className="btn"
+                                        style={{
+                                            width: '100%',
+                                            fontSize: '0.9rem',
+                                            padding: '0.5rem',
+                                            backgroundColor: 'transparent',
+                                            color: 'var(--color-primary)',
+                                            border: '1px solid var(--color-primary)',
+                                            marginTop: '0.5rem'
+                                        }}
+                                        onClick={() => handleOpenDetails(loan)}
+                                    >
+                                        Ver Detalles
                                     </button>
                                 </div>
 
@@ -458,6 +512,9 @@ export default function PrestamosPage() {
                                                 <span style={{ color: 'var(--text-secondary)' }}>Cuota:</span>
                                                 <span>{formatMoney(loan.fee || 0)}</span>
 
+                                                <span style={{ color: 'var(--text-secondary)' }}>Días:</span>
+                                                <span>{loan.days}</span>
+
                                                 <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>Total:</span>
                                                 <span style={{ fontWeight: 700, color: 'var(--color-primary)' }}>
                                                     {formatMoney(loan.amount + loan.interest)}
@@ -484,13 +541,30 @@ export default function PrestamosPage() {
                                                 style={{
                                                     fontSize: '0.8rem',
                                                     padding: '0.25rem 0.75rem',
-                                                    backgroundColor: '#8b5cf6', // Indigo/Violet
+                                                    backgroundColor: loan.paidToday ? '#94a3b8' : '#8b5cf6', // Gray if paid today, Indigo/Violet otherwise
                                                     color: 'white',
-                                                    border: 'none'
+                                                    border: 'none',
+                                                    cursor: loan.paidToday ? 'not-allowed' : 'pointer',
+                                                    opacity: loan.paidToday ? 0.7 : 1
                                                 }}
-                                                onClick={() => handleOpenPayment(loan)}
+                                                onClick={() => !loan.paidToday && handleOpenPayment(loan)}
+                                                disabled={loan.paidToday}
                                             >
-                                                Pagar
+                                                {loan.paidToday ? 'Pagado' : 'Pagar'}
+                                            </button>
+                                            <button
+                                                className="btn"
+                                                style={{
+                                                    fontSize: '0.8rem',
+                                                    padding: '0.25rem 0.75rem',
+                                                    backgroundColor: 'transparent',
+                                                    color: 'var(--color-primary)',
+                                                    border: '1px solid var(--color-primary)',
+                                                    marginLeft: '0.5rem'
+                                                }}
+                                                onClick={() => handleOpenDetails(loan)}
+                                            >
+                                                Ver Detalles
                                             </button>
                                         </td>
                                     </tr>
@@ -500,6 +574,20 @@ export default function PrestamosPage() {
                     </table>
                 </div>
             )}
+            <CreatePaymentModal
+                isOpen={isPaymentModalOpen}
+                onClose={() => setIsPaymentModalOpen(false)}
+                onSuccess={() => {
+                    if (currentUser) loadLoans(currentUser);
+                }}
+                loan={selectedLoanForPayment}
+            />
+
+            <LoanDetailsModal
+                isOpen={isDetailsModalOpen}
+                onClose={() => setIsDetailsModalOpen(false)}
+                loan={selectedLoanForDetails}
+            />
         </div>
     );
 }

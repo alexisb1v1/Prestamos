@@ -14,10 +14,14 @@ export const loanService = {
         return api.get<Loan[]>(`/loans${queryString ? `?${queryString}` : ''}`);
     },
 
-    /**
-     * Create a new loan
-     */
     async create(loan: { idPeople: number; amount: number; userId: number; address: string }): Promise<Loan> {
         return api.post<Loan>('/loans', loan);
+    },
+
+    /**
+     * Get loan details (start/end dates and installments)
+     */
+    async getDetails(loanId: number | string): Promise<any> {
+        return api.get<any>(`/loans/${loanId}/details`);
     }
 };

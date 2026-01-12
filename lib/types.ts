@@ -52,6 +52,7 @@ export interface Loan {
     documentNumber: string;
     clientName: string;
     collectorName: string;
+    paidToday: boolean;
 }
 
 export interface Cobrador {
@@ -133,4 +134,27 @@ export interface CreatePaymentRequest {
 export interface CreatePaymentResponse {
     id: string;
     success: boolean;
+}
+
+export interface CreateInstallmentRequest {
+    loanId: string;
+    amount: number;
+    userId: number;
+}
+
+export interface CreateInstallmentResponse {
+    id: string;
+}
+
+export interface InstallmentDetail {
+    date: string;
+    amount: number;
+    status: string;
+    registeredBy: string;
+}
+
+export interface LoanDetails {
+    startDate: string;
+    endDate: string;
+    installments: InstallmentDetail[];
 }

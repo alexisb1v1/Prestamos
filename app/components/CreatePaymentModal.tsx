@@ -37,8 +37,8 @@ export default function CreatePaymentModal({ isOpen, onClose, onSuccess, loan }:
         setLoading(true);
         setError('');
         try {
-            await paymentService.create({
-                loanId: Number(loan.id),
+            await paymentService.createInstallment({
+                loanId: String(loan.id),
                 amount: Number(amount),
                 userId: Number(user.id)
             });

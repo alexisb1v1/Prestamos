@@ -1,4 +1,8 @@
+import Cookies from 'js-cookie';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+const TOKEN_KEY = 'auth_token';
+const USER_KEY = 'auth_user';
 
 interface FetchOptions extends RequestInit {
     token?: string;
@@ -12,13 +16,17 @@ export async function apiRequest<T = any>(
     endpoint: string,
     options: FetchOptions = {}
 ): Promise<T> {
-    const { token, ...fetchOptions } = options;
+    const { token: providedToken, ...fetchOptions } = options;
+
+    // Try to get token from cookies if not provided
+    const token = providedToken || Cookies.get(TOKEN_KEY);
 
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         ...(fetchOptions.headers as Record<string, string>),
     };
 
+    // Automatically add Authorization header if token exists
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
     }
@@ -35,15 +43,34 @@ export async function apiRequest<T = any>(
         // Parse response body
         const data = await response.json().catch(() => null);
 
+        // Handle 401 Unauthorized (Token expired or invalid)
+        if (response.status === 401 && endpoint !== '/users/login') {
+            console.warn('Unauthorized request. Logging out...');
+
+            // Clear credentials
+            Cookies.remove(TOKEN_KEY);
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem(USER_KEY);
+                // Force redirect to login page if on client side
+                window.location.href = '/login';
+            }
+
+            const error = new Error('Sesión expirada. Por favor, inicia sesión de nuevo.');
+            (error as any).statusCode = 401;
+            throw error;
+        }
+
         // Check for API error responses (with statusCode field)
         if (data?.statusCode && data.statusCode >= 400) {
-            const error = new Error(data.message || `Error: ${data.statusCode}`);
+            const message = Array.isArray(data.message) ? data.message.join('. ') : data.message;
+            const error = new Error(message || `Error: ${data.statusCode}`);
             (error as any).statusCode = data.statusCode;
             throw error;
         }
 
         if (!response.ok) {
-            const error = new Error(data?.message || `HTTP Error: ${response.status}`);
+            const message = Array.isArray(data?.message) ? data.message.join('. ') : data.message;
+            const error = new Error(message || `HTTP Error: ${response.status}`);
             (error as any).statusCode = response.status;
             throw error;
         }
