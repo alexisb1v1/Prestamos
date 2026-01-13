@@ -42,22 +42,34 @@ export default function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsM
 
     if (!isOpen || !loan) return null;
 
+    const parseDateTimeSafe = (dateStr: string) => {
+        if (!dateStr) return new Date();
+        return parseISO(dateStr);
+    };
+
+    const parseDateSafe = (dateStr: string) => {
+        if (!dateStr) return new Date();
+        // Only keep YYYY-MM-DD to avoid timezone shifts from time components
+        const justDate = dateStr.split('T')[0];
+        return parseISO(justDate);
+    };
+
     const formatDatePE = (dateStr: string) => {
         if (!dateStr) return '-';
-        return format(parseISO(dateStr), 'dd/MM/yyyy');
+        return format(parseDateSafe(dateStr), 'dd/MM/yyyy');
     };
 
     const formatDateTimePE = (dateStr: string) => {
         if (!dateStr) return '-';
-        return format(parseISO(dateStr), 'dd/MM/yyyy HH:mm');
+        return format(parseDateTimeSafe(dateStr), 'dd/MM/yyyy HH:mm');
     };
 
     // Calendar logic: show the entire duration from start to end
     const getCalendarRange = () => {
         const startRaw = details?.startDate || loan.startDate;
         const endRaw = details?.endDate || loan.endDate;
-        const start = startOfWeek(parseISO(startRaw), { weekStartsOn: 1 });
-        const end = endOfWeek(parseISO(endRaw), { weekStartsOn: 1 });
+        const start = startOfWeek(parseDateSafe(startRaw), { weekStartsOn: 1 });
+        const end = endOfWeek(parseDateSafe(endRaw), { weekStartsOn: 1 });
         return { start, end };
     };
 
@@ -69,8 +81,8 @@ export default function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsM
     });
 
     const getMonthLabel = () => {
-        const start = parseISO(details?.startDate || loan.startDate);
-        const end = parseISO(details?.endDate || loan.endDate);
+        const start = parseDateSafe(details?.startDate || loan.startDate);
+        const end = parseDateSafe(details?.endDate || loan.endDate);
         if (format(start, 'MMM yyyy') === format(end, 'MMM yyyy')) {
             return format(start, 'MMMM yyyy', { locale: es });
         }
@@ -78,20 +90,19 @@ export default function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsM
     };
 
     const getInstallmentForDay = (day: Date) => {
-        return details?.installments.find(inst => isSameDay(parseISO(inst.date), day));
+        return details?.installments.find(inst => isSameDay(parseDateTimeSafe(inst.date), day));
     };
 
     const isLoanDate = (day: Date) => {
-        if (!details) return false;
-        const start = parseISO(details.startDate);
-        const end = parseISO(details.endDate);
+        const start = parseDateSafe(details?.startDate || loan.startDate);
+        const end = parseDateSafe(details?.endDate || loan.endDate);
         const withinInterval = isWithinInterval(day, { start, end });
         const isSunday = getDay(day) === 0;
         return withinInterval && !isSunday;
     };
 
-    const isStartDate = (day: Date) => details && isSameDay(parseISO(details.startDate), day);
-    const isEndDate = (day: Date) => details && isSameDay(parseISO(details.endDate), day);
+    const isStartDate = (day: Date) => isSameDay(parseDateSafe(details?.startDate || loan.startDate), day);
+    const isEndDate = (day: Date) => isSameDay(parseDateSafe(details?.endDate || loan.endDate), day);
 
     return (
         <div style={{
@@ -241,7 +252,7 @@ export default function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsM
 
                                 return (
                                     <div key={day.toISOString()} style={{
-                                        minHeight: '70px',
+                                        minHeight: '85px',
                                         padding: '4px',
                                         backgroundColor: isRelevant ? '#eff6ff' : 'white',
                                         position: 'relative',
@@ -301,17 +312,14 @@ export default function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsM
                                         {installment && (
                                             <div style={{
                                                 marginTop: 'auto',
-                                                padding: '4px 2px',
+                                                padding: '6px 2px',
                                                 backgroundColor: '#ede9fe',
                                                 borderRadius: '4px',
                                                 border: '1px solid #c4b5fd',
                                                 textAlign: 'center'
                                             }}>
-                                                <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#5b21b6', lineHeight: '1' }}>
+                                                <div style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#5b21b6', lineHeight: '1.2' }}>
                                                     S/ {installment.amount}
-                                                </div>
-                                                <div style={{ fontSize: '0.55rem', color: '#7c3aed', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
-                                                    {installment.registeredBy}
                                                 </div>
                                             </div>
                                         )}

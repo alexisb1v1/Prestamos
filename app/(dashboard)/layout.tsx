@@ -41,7 +41,7 @@ export default function DashboardLayout({
                 flex: 1,
                 marginLeft: 0,
                 padding: '2rem',
-                paddingTop: isMobile ? '5rem' : '2rem', // Extra padding for mobile toggle
+                paddingTop: isMobile ? '4rem' : '2rem', // Reduced from 5rem for a more compact look
                 transition: 'margin-left 0.3s ease-in-out',
                 width: '100%' // Ensure width is controlled
             }}>

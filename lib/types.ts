@@ -52,7 +52,8 @@ export interface Loan {
     documentNumber: string;
     clientName: string;
     collectorName: string;
-    paidToday: boolean;
+    paidToday: number;
+    inIntervalPayment: number;
 }
 
 export interface Cobrador {
@@ -157,4 +158,15 @@ export interface LoanDetails {
     startDate: string;
     endDate: string;
     installments: InstallmentDetail[];
+}
+export interface DashboardLoan extends Loan {
+    remainingAmount: number;
+    paidToday: number;
+}
+
+export interface DashboardData {
+    totalLentToday: number;
+    collectedToday: number;
+    activeClients: number;
+    pendingLoans: DashboardLoan[];
 }

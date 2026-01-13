@@ -5,6 +5,7 @@ import { loanService } from '@/lib/loanService';
 import { userService } from '@/lib/userService';
 import { authService } from '@/lib/auth';
 import { Loan, User } from '@/lib/types';
+import { format, parseISO } from 'date-fns';
 import CreateLoanModal from '../../components/CreateLoanModal';
 import CreatePaymentModal from '../../components/CreatePaymentModal';
 import LoanDetailsModal from '../../components/LoanDetailsModal';
@@ -100,7 +101,12 @@ export default function PrestamosPage() {
 
     const formatDate = (dateStr: string) => {
         if (!dateStr) return '-';
-        return new Date(dateStr).toLocaleDateString('es-PE');
+        try {
+            return format(parseISO(dateStr), 'dd/MM/yyyy');
+        } catch (e) {
+            console.error('Error formatting date:', dateStr, e);
+            return dateStr;
+        }
     };
 
     const formatMoney = (amount: number) => {
@@ -152,7 +158,14 @@ export default function PrestamosPage() {
             marginBottom: '1rem',
             boxShadow: 'var(--shadow-sm)'
         }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.75rem' }}>
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'start',
+                paddingBottom: '0.75rem',
+                marginBottom: '0.75rem',
+                borderBottom: '1px solid var(--border-color)'
+            }}>
                 <div>
                     <div style={{ fontWeight: 700, fontSize: '1rem' }}>{loan.clientName}</div>
                     <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{loan.documentNumber}</div>
@@ -160,7 +173,13 @@ export default function PrestamosPage() {
                 <StatusBadge status={loan.status} />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.9rem', marginBottom: '0.75rem' }}>
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '0.5rem',
+                fontSize: '0.9rem', // Increased visibility
+                marginBottom: '0.75rem'
+            }}>
                 <div>
                     <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Monto</span>
                     {formatMoney(loan.amount)}
@@ -170,38 +189,62 @@ export default function PrestamosPage() {
                     {formatMoney(loan.interest)}
                 </div>
                 <div>
-                    <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Cuota</span>
-                    {formatMoney(loan.fee || 0)}
-                </div>
-                <div>
                     <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Días</span>
                     <span>{loan.days}</span>
                 </div>
                 <div>
+                    <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Cuota</span>
+                    {formatMoney(loan.fee || 0)}
+                </div>
+                <div style={{ gridColumn: 'span 2' }}>
                     <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Total</span>
-                    <span style={{ fontWeight: 600, color: 'var(--color-primary)' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--color-primary)', fontSize: '1rem' }}>
                         {formatMoney(loan.amount + loan.interest)}
                     </span>
                 </div>
             </div>
 
-            <div style={{ marginTop: '0.75rem', marginBottom: '0.75rem' }}>
+            <div style={{
+                fontSize: '0.85rem',
+                color: 'var(--text-secondary)',
+                paddingBottom: '1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.4rem'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+                    <span style={{ whiteSpace: 'nowrap' }}>Dirección:</span>
+                    <span style={{ textAlign: 'right', color: 'var(--text-primary)' }}>{loan.address}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Vigencia:</span>
+                    <span style={{ color: 'var(--text-primary)' }}>{formatDate(loan.startDate)} - {formatDate(loan.endDate)}</span>
+                </div>
+            </div>
+
+            <div style={{
+                paddingTop: '0.75rem',
+                borderTop: '1px solid var(--border-color)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.5rem'
+            }}>
                 <button
                     className="btn"
                     style={{
                         width: '100%',
                         fontSize: '0.9rem',
                         padding: '0.5rem',
-                        backgroundColor: loan.paidToday ? '#94a3b8' : '#8b5cf6', // Gray if paid today, Indigo/Violet otherwise
+                        backgroundColor: (!!loan.paidToday || loan.inIntervalPayment === 0) ? '#94a3b8' : '#8b5cf6',
                         color: 'white',
                         border: 'none',
-                        cursor: loan.paidToday ? 'not-allowed' : 'pointer',
-                        opacity: loan.paidToday ? 0.7 : 1
+                        cursor: (!!loan.paidToday || loan.inIntervalPayment === 0) ? 'not-allowed' : 'pointer',
+                        opacity: (!!loan.paidToday || loan.inIntervalPayment === 0) ? 0.7 : 1
                     }}
-                    onClick={() => !loan.paidToday && handleOpenPayment(loan)}
-                    disabled={loan.paidToday}
+                    onClick={() => !(!!loan.paidToday || loan.inIntervalPayment === 0) && handleOpenPayment(loan)}
+                    disabled={!!loan.paidToday || loan.inIntervalPayment === 0}
                 >
-                    {loan.paidToday ? 'Pagado Hoy' : 'Registrar Pago'}
+                    {!!loan.paidToday ? 'Pagado Hoy' : (loan.inIntervalPayment === 0 ? 'Restringido' : 'Registrar Pago')}
                 </button>
                 <button
                     className="btn"
@@ -211,124 +254,88 @@ export default function PrestamosPage() {
                         padding: '0.5rem',
                         backgroundColor: 'transparent',
                         color: 'var(--color-primary)',
-                        border: '1px solid var(--color-primary)',
-                        marginTop: '0.5rem'
+                        border: '1px solid var(--color-primary)'
                     }}
                     onClick={() => handleOpenDetails(loan)}
                 >
                     Ver Detalles
                 </button>
             </div>
-
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Dirección:</span>
-                    <span style={{ maxWidth: '60%', textAlign: 'right' }}>{loan.address}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem' }}>
-                    <span>Fechas:</span>
-                    <span>{formatDate(loan.startDate)} - {formatDate(loan.endDate)}</span>
-                </div>
-            </div>
         </div>
     );
 
     return (
-        <div>
-            {/* Sticky Header Container for Mobile */}
+        <div style={{ position: 'relative' }}>
+            {/* Sticky Header Section for Mobile */}
             <div style={{
                 position: isMobile ? 'sticky' : 'static',
-                top: isMobile ? '5rem' : 'auto',
-                zIndex: 10,
-                backgroundColor: 'var(--bg-app)', // Background to cover scrolling content
-                paddingTop: isMobile ? '1rem' : 0,
-                paddingBottom: isMobile ? '1rem' : 0,
-                margin: isMobile ? '0 -1rem' : 0, // Negative margin to expand background
-                paddingLeft: isMobile ? '1rem' : 0,
-                paddingRight: isMobile ? '1rem' : 0,
-                marginBottom: isMobile ? '1rem' : 0
+                top: isMobile ? '0' : 'auto', // Stick at top of viewport
+                zIndex: isMobile ? 30 : 'auto',
+                backgroundColor: isMobile ? 'var(--bg-app)' : 'transparent',
+                margin: isMobile ? '0 -2rem 1rem -2rem' : '0 0 2rem 0', // Removed negative margin-top
+                padding: isMobile ? '0.75rem 2rem 1rem 2rem' : '0', // More compact top padding
+                borderBottom: isMobile ? '1px solid var(--border-color)' : 'none',
+                boxShadow: isMobile ? 'var(--shadow-md)' : 'none',
+                transition: 'all 0.3s ease'
             }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobile ? '0.5rem' : '2rem' }}>
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: isMobile ? '1rem' : '2rem'
+                }}>
                     <div>
-                        <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold' }}>Préstamos</h1>
+                        <h1 style={{ fontSize: isMobile ? '1.5rem' : '1.875rem', fontWeight: 'bold' }}>Préstamos</h1>
                     </div>
                     <button
                         className="btn btn-primary"
                         onClick={() => setIsCreateModalOpen(true)}
+                        style={{ width: 'auto', whiteSpace: 'nowrap', padding: isMobile ? '0.5rem 0.75rem' : '0.5rem 1rem', fontSize: isMobile ? '0.85rem' : '1rem' }}
                     >
-                        + Nuevo Préstamo
+                        + Nuevo {isMobile ? '' : 'Préstamo'}
                     </button>
                 </div>
 
-                <CreateLoanModal
-                    isOpen={isCreateModalOpen}
-                    onClose={() => setIsCreateModalOpen(false)}
-                    onSuccess={() => {
-                        loadLoans(currentUser);
-                        // Optional: Show value notification
-                    }}
-                />
-
-                <CreatePaymentModal
-                    isOpen={isPaymentModalOpen}
-                    onClose={() => setIsPaymentModalOpen(false)}
-                    onSuccess={() => {
-                        loadLoans(currentUser);
-                        // Optional: success toast
-                    }}
-                    loan={selectedLoanForPayment}
-                />
-
-                {error && (
-                    <div style={{
-                        padding: '1rem',
-                        marginBottom: '1rem',
-                        backgroundColor: 'rgba(220, 38, 38, 0.1)',
-                        border: '1px solid var(--color-danger)',
-                        borderRadius: 'var(--radius-md)',
-                        color: 'var(--color-danger)'
-                    }}>
-                        {error}
-                    </div>
-                )}
-
-                {/* Search Card - Sticky on Mobile */}
-                <div className="card" style={{
-                    marginBottom: '2rem',
-                    position: isMobile ? 'sticky' : 'static',
-                    top: isMobile ? '5rem' : 'auto', // Adjust based on header/padding
-                    zIndex: 10,
-                    backgroundColor: 'var(--bg-card)', // Ensure background is opaque
-                    borderBottom: isMobile ? '1px solid var(--border-color)' : 'none',
-                    boxShadow: isMobile ? 'var(--shadow-md)' : 'none',
-                    borderRadius: isMobile ? 0 : 'var(--radius-md)', // Full width feel on sticky? Or keep card?
-                    // Actually, if sticky better to keep card visual but fixed.
-                    // Let's try standard sticky card.
-                    margin: isMobile ? '0 -1rem 1rem -1rem' : '0 0 2rem 0', // Negative margin to stretch on mobile?
-                    padding: isMobile ? '1rem' : '1.5rem'
+                {/* Search / Filters - Part of Sticky Header */}
+                <div className={isMobile ? "" : "card"} style={{
+                    marginBottom: isMobile ? '0' : '2rem',
+                    padding: isMobile ? '0' : '1.5rem',
+                    backgroundColor: isMobile ? 'transparent' : 'var(--bg-card)',
+                    border: isMobile ? 'none' : '1px solid var(--border-color)',
+                    boxShadow: isMobile ? 'none' : 'var(--shadow-sm)'
                 }}>
-                    <form onSubmit={handleSearch} style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'end' }}>
-                        {/* ... form content ... */}
+                    <form onSubmit={handleSearch} style={{
+                        display: 'flex',
+                        gap: '1rem',
+                        flexWrap: 'wrap',
+                        alignItems: 'center' // Changed from end to center since no labels
+                    }}>
                         <div style={{ width: isMobile ? '100%' : 'auto' }}>
-                            <label className="label" style={{ marginBottom: '0.25rem' }}>DNI Cliente</label>
                             <input
                                 type="text"
                                 className="input"
-                                placeholder="Buscar por DNI..."
+                                placeholder="DNI del Cliente..."
                                 value={documentNumber}
                                 onChange={(e) => setDocumentNumber(e.target.value)}
-                                style={{ width: isMobile ? '100%' : '200px' }}
+                                style={{
+                                    width: '100%',
+                                    maxWidth: isMobile ? 'none' : '200px',
+                                    backgroundColor: isMobile ? 'var(--bg-card)' : 'var(--bg-app)'
+                                }}
                             />
                         </div>
 
                         {(currentUser?.profile === 'ADMIN' || currentUser?.profile === 'OWNER') && (
                             <div style={{ width: isMobile ? '100%' : 'auto' }}>
-                                <label className="label" style={{ marginBottom: '0.25rem' }}>Cobrador</label>
                                 <select
                                     className="input"
                                     value={selectedCollector}
                                     onChange={(e) => setSelectedCollector(e.target.value)}
-                                    style={{ width: isMobile ? '100%' : '250px' }}
+                                    style={{
+                                        width: '100%',
+                                        maxWidth: isMobile ? 'none' : '250px',
+                                        backgroundColor: isMobile ? 'var(--bg-card)' : 'var(--bg-app)'
+                                    }}
                                 >
                                     <option value="">Todos los cobradores</option>
                                     {collectors.map(collector => (
@@ -353,7 +360,11 @@ export default function PrestamosPage() {
                                         setSelectedCollector('');
                                         loadLoans(currentUser);
                                     }}
-                                    style={{ border: '1px solid var(--border-color)', flex: isMobile ? 1 : 'initial' }}
+                                    style={{
+                                        border: '1px solid var(--border-color)',
+                                        flex: isMobile ? 1 : 'initial',
+                                        backgroundColor: 'var(--bg-card)'
+                                    }}
                                 >
                                     Limpiar
                                 </button>
@@ -362,6 +373,36 @@ export default function PrestamosPage() {
                     </form>
                 </div>
             </div>
+
+            <CreateLoanModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onSuccess={() => {
+                    loadLoans(currentUser);
+                }}
+            />
+
+            <CreatePaymentModal
+                isOpen={isPaymentModalOpen}
+                onClose={() => setIsPaymentModalOpen(false)}
+                onSuccess={() => {
+                    loadLoans(currentUser);
+                }}
+                loan={selectedLoanForPayment}
+            />
+
+            {error && (
+                <div style={{
+                    padding: '1rem',
+                    marginBottom: '1rem',
+                    backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                    border: '1px solid var(--color-danger)',
+                    borderRadius: 'var(--radius-md)',
+                    color: 'var(--color-danger)'
+                }}>
+                    {error}
+                </div>
+            )}
 
             {/* Mobile View: Cards */}
             {isMobile ? (
@@ -372,93 +413,7 @@ export default function PrestamosPage() {
                         <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>No se encontraron préstamos.</div>
                     ) : (
                         loans.map(loan => (
-                            <div key={loan.id} style={{
-                                backgroundColor: 'var(--bg-card)',
-                                padding: '1rem',
-                                borderRadius: 'var(--radius-md)',
-                                border: '1px solid var(--border-color)',
-                                marginBottom: '1rem',
-                                boxShadow: 'var(--shadow-sm)'
-                            }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.75rem' }}>
-                                    <div>
-                                        <div style={{ fontWeight: 700, fontSize: '1rem' }}>{loan.clientName}</div>
-                                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{loan.documentNumber}</div>
-                                    </div>
-                                    <StatusBadge status={loan.status} />
-                                </div>
-
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.9rem', marginBottom: '0.75rem' }}>
-                                    <div>
-                                        <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Monto</span>
-                                        {formatMoney(loan.amount)}
-                                    </div>
-                                    <div>
-                                        <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Interés</span>
-                                        {formatMoney(loan.interest)}
-                                    </div>
-                                    <div>
-                                        <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Cuota</span>
-                                        {formatMoney(loan.fee || 0)}
-                                    </div>
-                                    <div>
-                                        <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Días</span>
-                                        <span>{loan.days}</span>
-                                    </div>
-                                    <div>
-                                        <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Total</span>
-                                        <span style={{ fontWeight: 600, color: 'var(--color-primary)' }}>
-                                            {formatMoney(loan.amount + loan.interest)}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div style={{ marginTop: '0.75rem', marginBottom: '0.75rem' }}>
-                                    <button
-                                        className="btn"
-                                        style={{
-                                            width: '100%',
-                                            fontSize: '0.9rem',
-                                            padding: '0.5rem',
-                                            backgroundColor: loan.paidToday ? '#94a3b8' : '#8b5cf6', // Gray if paid today, Indigo/Violet otherwise
-                                            color: 'white',
-                                            border: 'none',
-                                            cursor: loan.paidToday ? 'not-allowed' : 'pointer',
-                                            opacity: loan.paidToday ? 0.7 : 1
-                                        }}
-                                        onClick={() => !loan.paidToday && handleOpenPayment(loan)}
-                                        disabled={loan.paidToday}
-                                    >
-                                        {loan.paidToday ? 'Pagado Hoy' : 'Registrar Pago'}
-                                    </button>
-                                    <button
-                                        className="btn"
-                                        style={{
-                                            width: '100%',
-                                            fontSize: '0.9rem',
-                                            padding: '0.5rem',
-                                            backgroundColor: 'transparent',
-                                            color: 'var(--color-primary)',
-                                            border: '1px solid var(--color-primary)',
-                                            marginTop: '0.5rem'
-                                        }}
-                                        onClick={() => handleOpenDetails(loan)}
-                                    >
-                                        Ver Detalles
-                                    </button>
-                                </div>
-
-                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <span>Dirección:</span>
-                                        <span style={{ maxWidth: '60%', textAlign: 'right' }}>{loan.address}</span>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem' }}>
-                                        <span>Fechas:</span>
-                                        <span>{formatDate(loan.startDate)} - {formatDate(loan.endDate)}</span>
-                                    </div>
-                                </div>
-                            </div>
+                            <MobileLoanCard key={loan.id} loan={loan} />
                         ))
                     )}
                 </div>
@@ -541,16 +496,16 @@ export default function PrestamosPage() {
                                                 style={{
                                                     fontSize: '0.8rem',
                                                     padding: '0.25rem 0.75rem',
-                                                    backgroundColor: loan.paidToday ? '#94a3b8' : '#8b5cf6', // Gray if paid today, Indigo/Violet otherwise
+                                                    backgroundColor: (!!loan.paidToday || loan.inIntervalPayment === 0) ? '#94a3b8' : '#8b5cf6',
                                                     color: 'white',
                                                     border: 'none',
-                                                    cursor: loan.paidToday ? 'not-allowed' : 'pointer',
-                                                    opacity: loan.paidToday ? 0.7 : 1
+                                                    cursor: (!!loan.paidToday || loan.inIntervalPayment === 0) ? 'not-allowed' : 'pointer',
+                                                    opacity: (!!loan.paidToday || loan.inIntervalPayment === 0) ? 0.7 : 1
                                                 }}
-                                                onClick={() => !loan.paidToday && handleOpenPayment(loan)}
-                                                disabled={loan.paidToday}
+                                                onClick={() => !(!!loan.paidToday || loan.inIntervalPayment === 0) && handleOpenPayment(loan)}
+                                                disabled={!!loan.paidToday || loan.inIntervalPayment === 0}
                                             >
-                                                {loan.paidToday ? 'Pagado' : 'Pagar'}
+                                                {!!loan.paidToday ? 'Pagado' : (loan.inIntervalPayment === 0 ? 'Restringido' : 'Pagar')}
                                             </button>
                                             <button
                                                 className="btn"

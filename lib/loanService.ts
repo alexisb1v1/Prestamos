@@ -23,5 +23,13 @@ export const loanService = {
      */
     async getDetails(loanId: number | string): Promise<any> {
         return api.get<any>(`/loans/${loanId}/details`);
+    },
+
+    /**
+     * Get dashboard summary data
+     */
+    async getDashboardData(userId?: string | number): Promise<any> {
+        const query = userId ? `?userId=${userId}` : '';
+        return api.get<any>(`/loans/dashboard${query}`);
     }
 };
