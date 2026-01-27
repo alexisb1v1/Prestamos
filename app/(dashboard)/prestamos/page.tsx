@@ -340,7 +340,7 @@ export default function PrestamosPage() {
                                     <option value="">Todos los cobradores</option>
                                     {collectors.map(collector => (
                                         <option key={collector.id} value={collector.id}>
-                                            {collector.firstName || collector.username}
+                                            {collector.username} ({collector.firstName} {collector.lastName})
                                         </option>
                                     ))}
                                 </select>

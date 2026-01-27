@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { userService } from '@/lib/userService';
 import { User } from '@/lib/types';
 import CreateUserModal from '@/app/components/CreateUserModal';
+import ConfirmModal from '@/app/components/ConfirmModal';
 
 export default function CobradoresPage() {
     const [users, setUsers] = useState<User[]>([]);
@@ -12,6 +13,7 @@ export default function CobradoresPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
+    const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; userId: string | null }>({ isOpen: false, userId: null });
     const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
@@ -53,17 +55,23 @@ export default function CobradoresPage() {
         setIsModalOpen(false);
     };
 
-    const handleDelete = async (userId: string) => {
-        if (window.confirm('¿Estás seguro de que deseas eliminar este usuario? Esta acción lo desactivará.')) {
-            try {
-                setLoading(true);
-                await userService.delete(userId);
-                loadUsers();
-            } catch (err) {
-                console.error('Error deleting user:', err);
-                setError('Error al eliminar el usuario.');
-                setLoading(false);
-            }
+    const handleDelete = (userId: string) => {
+        setConfirmModal({ isOpen: true, userId });
+    };
+
+    const confirmDelete = async () => {
+        if (!confirmModal.userId) return;
+
+        try {
+            setLoading(true);
+            await userService.delete(confirmModal.userId);
+            loadUsers();
+            setConfirmModal({ isOpen: false, userId: null });
+        } catch (err) {
+            console.error('Error deleting user:', err);
+            setError('Error al eliminar el usuario.');
+            setLoading(false);
+            setConfirmModal({ isOpen: false, userId: null });
         }
     };
 
@@ -370,6 +378,16 @@ export default function CobradoresPage() {
                     loadUsers();
                     setSearchTerm(''); // Optional: clear search on new user
                 }}
+            />
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+                onConfirm={confirmDelete}
+                title="Eliminar Usuario"
+                message="¿Estás seguro de que deseas eliminar este usuario? Esta acción lo desactivará."
+                confirmText="Eliminar"
+                cancelText="Cancelar"
             />
         </div>
     );

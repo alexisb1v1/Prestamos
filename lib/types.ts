@@ -142,6 +142,7 @@ export interface CreateInstallmentRequest {
     loanId: string;
     amount: number;
     userId: number;
+    paymentType?: 'EFECTIVO' | 'YAPE';
 }
 
 export interface CreateInstallmentResponse {
