@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import styles from './Sidebar.module.css';
 import { authService } from '@/lib/auth';
 import { User } from '@/lib/types';
+import { formatUserName } from '@/lib/utils';
 
 // Define recursive type for menu items
 type MenuItem = {
@@ -152,8 +153,8 @@ export default function Sidebar() {
         <nav className={styles.nav}>
           {MENU_ITEMS.filter(item => {
             if (user?.profile === 'ADMIN') return true;
-            // Non-admin users only see Dashboard and Préstamos
-            return ['Dashboard', 'Préstamos'].includes(item.label);
+            // Non-admin users see Resumen and Préstamos
+            return ['Resumen', 'Préstamos'].includes(item.label);
           }).map((item) => renderMenuItem(item))}
         </nav>
 
@@ -161,7 +162,7 @@ export default function Sidebar() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#334155' }}></div>
             <div>
-              <div style={{ fontSize: '0.875rem', fontWeight: '500' }}>{user?.firstName || user?.username || 'Usuario'}</div>
+              <div style={{ fontSize: '0.875rem', fontWeight: '500' }}>{formatUserName(user)}</div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{user?.profile || 'Perfil'}</div>
             </div>
           </div>

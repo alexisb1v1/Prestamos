@@ -19,6 +19,7 @@ export interface User {
     firstName?: string;
     lastName?: string;
     birthday?: string;
+    person?: Person;
 }
 
 export interface LoginRequest {
