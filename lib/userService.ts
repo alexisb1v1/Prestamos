@@ -37,4 +37,11 @@ export const userService = {
     async searchPerson(documentType: string, documentNumber: string): Promise<Person> {
         return api.get<Person>(`/people/search?documentType=${documentType}&documentNumber=${documentNumber}`);
     },
+
+    /**
+     * Toggle Day Closed status for a user
+     */
+    async toggleDayStatus(id: string, isDayClosed: boolean): Promise<void> {
+        return api.patch<void>(`/users/${id}/toggle-day-status`, { isDayClosed });
+    },
 };

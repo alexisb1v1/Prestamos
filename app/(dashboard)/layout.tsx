@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { authService } from '@/lib/auth';
 import Sidebar from '../components/Sidebar';
+import FabMenu from '../components/FabMenu';
 
 export default function DashboardLayout({
     children,
@@ -13,6 +14,7 @@ export default function DashboardLayout({
     const router = useRouter();
     const pathname = usePathname();
 
+    const [showShareButton, setShowShareButton] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
@@ -24,13 +26,24 @@ export default function DashboardLayout({
 
     useEffect(() => {
         const user = authService.getUser();
-        if (!user) return; // Auth check normally handled by middleware or parent, but safe to check
+        if (!user) return;
+
+        setShowShareButton(user.profile === 'COBRADOR' || user.profile === 'ADMIN');
 
         // Restricted paths for non-ADMIN users
         const restrictedPaths = ['/cobradores', '/reportes', '/configuracion'];
 
-        if (user.profile !== 'ADMIN' && restrictedPaths.some(path => pathname.startsWith(path))) {
-            router.push('/dashboard');
+        if (user.profile !== 'ADMIN') {
+            // Check if day is closed
+            if (user.isDayClosed) {
+                router.push('/system-closed');
+                return;
+            }
+
+            // Check restricted paths
+            if (restrictedPaths.some(path => pathname.startsWith(path))) {
+                router.push('/dashboard');
+            }
         }
     }, [pathname, router]);
 
@@ -41,12 +54,13 @@ export default function DashboardLayout({
                 flex: 1,
                 marginLeft: 0,
                 padding: '2rem',
-                paddingTop: isMobile ? '4rem' : '2rem', // Reduced from 5rem for a more compact look
+                paddingTop: isMobile ? '4rem' : '2rem',
                 transition: 'margin-left 0.3s ease-in-out',
-                width: '100%' // Ensure width is controlled
+                width: '100%'
             }}>
                 {children}
             </main>
+            {showShareButton && <FabMenu />}
         </div >
     );
 }

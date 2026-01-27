@@ -1,0 +1,125 @@
+.fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: auto;
+    height: 48px;
+    padding: 0 1.5rem;
+    border-radius: 999px;
+    background-color: #0f172a;
+    /* Darker, more formal for "Closing" */
+    color: white;
+    border: none;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    z-index: 50;
+    /* Above most things, but below modals (1000) */
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.fab:hover {
+    background-color: #2563eb;
+    transform: scale(1.05);
+}
+
+.fab:active {
+    transform: scale(0.95);
+}
+
+.fab:disabled {
+    background-color: #94a3b8;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* The invisible container for image generation */
+.captureContainer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    transform: translateX(-200%);
+    /* Move off-screen */
+    z-index: -1;
+    width: 400px;
+    /* Fixed width for consistent image */
+    background-color: #f8fafc;
+    padding: 2rem;
+    font-family: 'Inter', sans-serif;
+}
+
+.card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+}
+
+.header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 0.5rem;
+}
+
+.date {
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.statRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.statRow:last-child {
+    border-bottom: none;
+}
+
+.statLabel {
+    color: #64748b;
+    font-weight: 500;
+    font-size: 1rem;
+}
+
+.statValue {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: #0f172a;
+}
+
+.totalLent {
+    color: #3b82f6;
+}
+
+.collected {
+    color: #22c55e;
+}
+
+.clients {
+    color: #8b5cf6;
+}
+
+.footer {
+    margin-top: 2rem;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    border-top: 1px dashed #e2e8f0;
+    padding-top: 1rem;
+}

@@ -23,6 +23,15 @@ export default function DashboardPage() {
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [selectedLoanForPayment, setSelectedLoanForPayment] = useState<Loan | null>(null);
 
+    // Event Listener for updates (from FabMenu)
+    useEffect(() => {
+        const handleUpdate = () => {
+            loadDashboard(selectedUserId); // Reload with current filter
+        };
+        window.addEventListener('dashboard-update', handleUpdate);
+        return () => window.removeEventListener('dashboard-update', handleUpdate);
+    }, [selectedUserId]); // Dependency on selectedUserId is key
+
     const handleOpenPayment = (loan: Loan) => {
         setSelectedLoanForPayment(loan);
         setIsPaymentModalOpen(true);
@@ -90,6 +99,7 @@ export default function DashboardPage() {
     if (error) return <div style={{ padding: '2rem', color: 'red', textAlign: 'center' }}>{error}</div>;
 
     const isAdmin = currentUser?.profile === 'ADMIN' || currentUser?.profile === 'OWNER';
+    // const isCobrador = currentUser?.profile === 'COBRADOR'; // checking removed as button is removed
 
     return (
         <div>
@@ -143,6 +153,25 @@ export default function DashboardPage() {
                         <div className="card" style={{ padding: isMobile ? '0.75rem' : '1.5rem' }}>
                             <h3 className="label" style={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}>Cobrado Hoy</h3>
                             <p style={{ fontSize: isMobile ? '1.25rem' : '2rem', fontWeight: 'bold', color: 'var(--text-primary)', margin: '0.25rem 0' }}>{formatMoney(data.collectedToday)}</p>
+                            {data.detailCollectedToday && (
+                                <div style={{
+                                    marginTop: '0.75rem',
+                                    paddingTop: '0.75rem',
+                                    borderTop: '1px solid var(--border-color)',
+                                    display: 'grid',
+                                    gridTemplateColumns: '1fr 1fr',
+                                    gap: '0.5rem'
+                                }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>Yape</span>
+                                        <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#6366f1' }}>{formatMoney(data.detailCollectedToday.yape)}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', borderLeft: '1px solid var(--border-color)' }}>
+                                        <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>Efectivo</span>
+                                        <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#22c55e' }}>{formatMoney(data.detailCollectedToday.efectivo)}</span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="card" style={{ padding: isMobile ? '0.75rem' : '1.5rem' }}>
@@ -151,13 +180,26 @@ export default function DashboardPage() {
                         </div>
 
                         <div className="card" style={{ padding: isMobile ? '0.75rem' : '1.5rem' }}>
+                            <h3 className="label" style={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}>Gastos Hoy</h3>
+                            <p style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold', color: '#ef4444', margin: '0.25rem 0' }}>{formatMoney(data.totalExpensesToday || 0)}</p>
+                        </div>
+                        <div className="card" style={{ padding: isMobile ? '0.75rem' : '1.5rem' }}>
                             <h3 className="label" style={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}>Meta Diaria</h3>
                             <p style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold', color: 'var(--color-success)', margin: '0.25rem 0' }}>S/ 5,000</p>
                         </div>
                     </div>
 
                     <div style={{ marginTop: '2rem' }}>
-                        <h2 style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>Ruta de Cobro (Hoy)</h2>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '1rem',
+                            flexWrap: 'wrap',
+                            gap: '0.5rem'
+                        }}>
+                            <h2 style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 'bold', margin: 0 }}>Ruta de Cobro (Hoy)</h2>
+                        </div>
 
                         {data.pendingLoans.length === 0 ? (
                             <div className="card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>

@@ -8,6 +8,8 @@ import { authService } from '@/lib/auth';
 import { Person, User, CreatePersonRequest } from '@/lib/types';
 import { startOfDay } from 'date-fns';
 
+import styles from './CreateLoanModal.module.css';
+
 interface CreateLoanModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -84,10 +86,6 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess }: CreateLo
             }
         } catch (err) {
             console.error(err);
-            // If error usually implies not found in many APIs, but here we explicitly handle Search returning null/object
-            // Assuming search throws if not found? Or returns null?
-            // Based on previous code, search might assume success. Let's assume if fails, person not found.
-            // Actually, safe to just show register form if search fails or returns nothing.
             setPerson(null);
             setIsRegisteringPerson(true);
             setNewPerson(prev => ({ ...prev, documentType: docType, documentNumber: docNumber }));
@@ -101,11 +99,7 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess }: CreateLo
         setError('');
         try {
             const response = await personService.create(newPerson);
-            // Response is { id: "5" }
             if (response && response.id) {
-                // Successfully created. We can create a "Person" object to proceed
-                // Ideally, we might want to reload the person or just construct it.
-                // We need the ID for the loan.
                 const createdPerson: Person = {
                     id: response.id,
                     ...newPerson
@@ -128,7 +122,6 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess }: CreateLo
         setLoading(true);
         setError('');
         try {
-            // Payload: idPeople, amount, userId, address
             await loanService.create({
                 idPeople: Number(person.id),
                 amount: Number(amount),
@@ -144,7 +137,6 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess }: CreateLo
         }
     };
 
-    // Calculations
     const calculateLoan = () => {
         const amt = Number(amount) || 0;
         const interest = amt * interestRate;
@@ -158,31 +150,15 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess }: CreateLo
     if (!isOpen) return null;
 
     return (
-        <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '1rem'
+        <div className={styles.overlay} onClick={(e) => {
+            if (e.target === e.currentTarget) onClose();
         }}>
-            <div className="card" style={{
-                width: '100%',
-                maxWidth: '500px',
-                maxHeight: '90vh',
-                overflowY: 'auto',
-                position: 'relative'
-            }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
+            <div className={styles.modal}>
+                <div className={styles.header}>
+                    <h2 className={styles.title}>
                         {step === 1 ? 'Identificar Cliente' : 'Datos del Préstamo'}
                     </h2>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
+                    <button className={styles.closeButton} onClick={onClose}>&times;</button>
                 </div>
 
                 {error && (

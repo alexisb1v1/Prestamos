@@ -19,6 +19,7 @@ type MenuItem = {
 const MENU_ITEMS: MenuItem[] = [
   { label: 'Resumen', href: '/dashboard', icon: '🏠' },
   { label: 'Préstamos', href: '/prestamos', icon: '💰' },
+  { label: 'Gastos', href: '/gastos', icon: '💸' },
   {
     label: 'Configuración',
     icon: '⚙️',
@@ -153,8 +154,8 @@ export default function Sidebar() {
         <nav className={styles.nav}>
           {MENU_ITEMS.filter(item => {
             if (user?.profile === 'ADMIN') return true;
-            // Non-admin users see Resumen and Préstamos
-            return ['Resumen', 'Préstamos'].includes(item.label);
+            // Non-admin users see Resumen, Préstamos, and Gastos
+            return ['Resumen', 'Préstamos', 'Gastos'].includes(item.label);
           }).map((item) => renderMenuItem(item))}
         </nav>
 

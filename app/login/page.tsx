@@ -19,8 +19,13 @@ export default function LoginPage() {
         try {
             const response = await authService.login(username, password);
 
-            // Redirect to dashboard on success
-            router.push('/dashboard');
+            // Check for System Closed status
+            if (response.user.isDayClosed && response.user.profile !== 'ADMIN') {
+                router.push('/system-closed');
+            } else {
+                // Redirect to dashboard on success
+                router.push('/dashboard');
+            }
         } catch (err: any) {
             setError(err.message || 'Error al iniciar sesión. Verifica tus credenciales.');
         } finally {

@@ -12,6 +12,7 @@ export interface User {
     username: string;
     profile: 'ADMIN' | 'OWNER' | 'COBRADOR';
     status: 'ACTIVE' | 'INACTIVE';
+    isDayClosed?: boolean;
     // Person (flattened)
     idPeople?: number;
     documentType?: string;
@@ -171,4 +172,15 @@ export interface DashboardData {
     collectedToday: number;
     activeClients: number;
     pendingLoans: DashboardLoan[];
+    detailCollectedToday: {
+        yape: number;
+        efectivo: number;
+    };
+    totalExpensesToday: number;
+}
+
+export interface CreateExpenseRequest {
+    description: string;
+    amount: number;
+    userId: string;
 }
