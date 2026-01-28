@@ -190,6 +190,7 @@ export interface Expense {
     description: string;
     amount: number;
     date: string;
+    expenseDate: string; // Full date with time from API
     userId: string;
     user?: User;
 }

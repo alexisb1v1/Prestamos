@@ -196,10 +196,16 @@ export default function PrestamosPage() {
                     <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Cuota</span>
                     {formatMoney(loan.fee || 0)}
                 </div>
-                <div style={{ gridColumn: 'span 2' }}>
+                <div>
                     <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Total</span>
-                    <span style={{ fontWeight: 600, color: 'var(--color-primary)', fontSize: '1rem' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--color-primary)', fontSize: '0.9rem' }}>
                         {formatMoney(loan.amount + loan.interest)}
+                    </span>
+                </div>
+                <div>
+                    <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Restante</span>
+                    <span style={{ fontWeight: 700, color: '#f59e0b', fontSize: '0.95rem' }}>
+                        {formatMoney((loan as any).remainingAmount || 0)}
                     </span>
                 </div>
             </div>
@@ -473,6 +479,11 @@ export default function PrestamosPage() {
                                                 <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>Total:</span>
                                                 <span style={{ fontWeight: 700, color: 'var(--color-primary)' }}>
                                                     {formatMoney(loan.amount + loan.interest)}
+                                                </span>
+
+                                                <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Restante:</span>
+                                                <span style={{ fontWeight: 700, color: '#f59e0b' }}>
+                                                    {formatMoney((loan as any).remainingAmount || 0)}
                                                 </span>
                                             </div>
                                         </td>

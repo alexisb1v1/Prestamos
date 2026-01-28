@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { loanService } from '@/lib/loanService';
 import { Loan, LoanDetails, InstallmentDetail } from '@/lib/types';
-import { format, parseISO, eachDayOfInterval, isSameDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addMonths, subMonths, isWithinInterval, getDay } from 'date-fns';
+import { format, parseISO, eachDayOfInterval, isSameDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addMonths, subMonths, isWithinInterval, getDay, addDays, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 interface LoanDetailsModalProps {
@@ -12,20 +12,44 @@ interface LoanDetailsModalProps {
     loan: Loan | null;
 }
 
-export default function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
+// ========== GLOBAL CACHE FOR CALENDAR DAYS ==========
+// Pre-calculate a large date range once and reuse it
+let cachedDays: Date[] | null = null;
+let cacheStartDate: Date | null = null;
+let cacheEndDate: Date | null = null;
+
+function getOrCreateCachedDays(requestedStart: Date, requestedEnd: Date): Date[] {
+    const now = new Date();
+    const cacheRangeStart = startOfWeek(subMonths(now, 2), { weekStartsOn: 1 });
+    const cacheRangeEnd = endOfWeek(addMonths(now, 2), { weekStartsOn: 1 });
+
+    // Check if we need to regenerate cache
+    const needsRegeneration =
+        !cachedDays ||
+        !cacheStartDate ||
+        !cacheEndDate ||
+        requestedStart < cacheStartDate ||
+        requestedEnd > cacheEndDate;
+
+    if (needsRegeneration) {
+        cacheStartDate = cacheRangeStart;
+        cacheEndDate = cacheRangeEnd;
+        cachedDays = eachDayOfInterval({ start: cacheStartDate, end: cacheEndDate });
+    }
+
+    // Filter cached days to the requested range
+    return cachedDays!.filter(day => day >= requestedStart && day <= requestedEnd);
+}
+// ====================================================
+
+function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
     const [details, setDetails] = useState<LoanDetails | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [activeTab, setActiveTab] = useState<'calendar' | 'list'>('calendar');
 
-    useEffect(() => {
-        if (isOpen && loan) {
-            loadDetails();
-            setActiveTab('calendar');
-        }
-    }, [isOpen, loan]);
-
-    const loadDetails = async () => {
+    // Move loadDetails function definition BEFORE useEffect to avoid dependency issues
+    const loadDetails = useCallback(async () => {
         if (!loan) return;
         setLoading(true);
         setError('');
@@ -38,71 +62,84 @@ export default function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsM
         } finally {
             setLoading(false);
         }
-    };
+    }, [loan]);
 
-    if (!isOpen || !loan) return null;
+    useEffect(() => {
+        if (isOpen && loan) {
+            loadDetails();
+            setActiveTab('calendar');
+        }
+    }, [isOpen, loan, loadDetails]);
 
-    const parseDateTimeSafe = (dateStr: string) => {
+    // Memoize utility functions with stable references
+    const parseDateTimeSafe = useCallback((dateStr: string) => {
         if (!dateStr) return new Date();
         return parseISO(dateStr);
-    };
+    }, []);
 
-    const parseDateSafe = (dateStr: string) => {
+    const parseDateSafe = useCallback((dateStr: string) => {
         if (!dateStr) return new Date();
-        // Only keep YYYY-MM-DD to avoid timezone shifts from time components
         const justDate = dateStr.split('T')[0];
         return parseISO(justDate);
-    };
+    }, []);
 
-    const formatDatePE = (dateStr: string) => {
+    const formatDatePE = useCallback((dateStr: string) => {
         if (!dateStr) return '-';
         return format(parseDateSafe(dateStr), 'dd/MM/yyyy');
-    };
+    }, [parseDateSafe]);
 
-    const formatDateTimePE = (dateStr: string) => {
+    const formatDateTimePE = useCallback((dateStr: string) => {
         if (!dateStr) return '-';
         return format(parseDateTimeSafe(dateStr), 'dd/MM/yyyy HH:mm');
-    };
+    }, [parseDateTimeSafe]);
 
-    // Calendar logic: show the entire duration from start to end
-    const getCalendarRange = () => {
-        const startRaw = details?.startDate || loan.startDate;
-        const endRaw = details?.endDate || loan.endDate;
-        const start = startOfWeek(parseDateSafe(startRaw), { weekStartsOn: 1 });
-        const end = endOfWeek(parseDateSafe(endRaw), { weekStartsOn: 1 });
-        return { start, end };
-    };
+    // Only recalculate when actual date strings change
+    const startDateStr = details?.startDate || loan?.startDate || '';
+    const endDateStr = details?.endDate || loan?.endDate || '';
 
-    const { start: calendarStart, end: calendarEnd } = getCalendarRange();
-
-    const days = eachDayOfInterval({
-        start: calendarStart,
-        end: calendarEnd,
-    });
-
-    const getMonthLabel = () => {
-        const start = parseDateSafe(details?.startDate || loan.startDate);
-        const end = parseDateSafe(details?.endDate || loan.endDate);
-        if (format(start, 'MMM yyyy') === format(end, 'MMM yyyy')) {
-            return format(start, 'MMMM yyyy', { locale: es });
+    const parsedDates = useMemo(() => {
+        if (!startDateStr || !endDateStr) {
+            return { start: new Date(), end: new Date() };
         }
-        return `${format(start, 'MMMM', { locale: es })} - ${format(end, 'MMMM yyyy', { locale: es })}`;
-    };
+        return {
+            start: parseDateSafe(startDateStr),
+            end: parseDateSafe(endDateStr)
+        };
+    }, [startDateStr, endDateStr, parseDateSafe]);
 
-    const getInstallmentForDay = (day: Date) => {
-        return details?.installments.find(inst => isSameDay(parseDateTimeSafe(inst.date), day));
-    };
+    const calendarRange = useMemo(() => {
+        const start = startOfWeek(parsedDates.start, { weekStartsOn: 1 });
+        const end = endOfWeek(parsedDates.end, { weekStartsOn: 1 });
+        return { start, end };
+    }, [parsedDates.start, parsedDates.end]);
 
-    const isLoanDate = (day: Date) => {
-        const start = parseDateSafe(details?.startDate || loan.startDate);
-        const end = parseDateSafe(details?.endDate || loan.endDate);
-        const withinInterval = isWithinInterval(day, { start, end });
+    // Use cached days instead of recalculating every time
+    const days = useMemo(() => {
+        return getOrCreateCachedDays(calendarRange.start, calendarRange.end);
+    }, [calendarRange.start, calendarRange.end]);
+
+    const monthLabel = useMemo(() => {
+        if (format(parsedDates.start, 'MMM yyyy') === format(parsedDates.end, 'MMM yyyy')) {
+            return format(parsedDates.start, 'MMMM yyyy', { locale: es });
+        }
+        return `${format(parsedDates.start, 'MMMM', { locale: es })} - ${format(parsedDates.end, 'MMMM yyyy', { locale: es })}`;
+    }, [parsedDates.start, parsedDates.end]);
+
+    const getInstallmentForDay = useCallback((day: Date) => {
+        return details?.installments?.find(inst => isSameDay(parseDateTimeSafe(inst.date), day));
+    }, [details?.installments, parseDateTimeSafe]);
+
+    const isLoanDate = useCallback((day: Date) => {
+        const withinInterval = isWithinInterval(day, { start: parsedDates.start, end: parsedDates.end });
         const isSunday = getDay(day) === 0;
         return withinInterval && !isSunday;
-    };
+    }, [parsedDates.start, parsedDates.end]);
 
-    const isStartDate = (day: Date) => isSameDay(parseDateSafe(details?.startDate || loan.startDate), day);
-    const isEndDate = (day: Date) => isSameDay(parseDateSafe(details?.endDate || loan.endDate), day);
+    const isStartDate = useCallback((day: Date) => isSameDay(parsedDates.start, day), [parsedDates.start]);
+    const isEndDate = useCallback((day: Date) => isSameDay(parsedDates.end, day), [parsedDates.end]);
+
+    // Conditional return AFTER all hooks
+    if (!isOpen || !loan) return null;
 
     return (
         <div style={{
@@ -207,7 +244,7 @@ export default function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsM
                         {/* Calendar Header - Show range description */}
                         <div style={{ textAlign: 'center', padding: '0.25rem 0.5rem', marginBottom: '0.25rem' }}>
                             <span style={{ fontWeight: 'bold', textTransform: 'capitalize', fontSize: '1.1rem' }}>
-                                {getMonthLabel()}
+                                {monthLabel}
                             </span>
                         </div>
 
@@ -388,3 +425,6 @@ export default function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsM
         </div>
     );
 }
+
+// Export with React.memo to prevent unnecessary re-renders
+export default memo(LoanDetailsModal);

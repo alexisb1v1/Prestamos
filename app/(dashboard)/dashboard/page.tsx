@@ -243,6 +243,10 @@ export default function DashboardPage() {
                                                 <span>Cuota:</span>
                                                 <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatMoney(loan.fee)}</span>
                                             </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <span>Restante:</span>
+                                                <span style={{ color: '#f59e0b', fontWeight: 700 }}>{formatMoney((loan as any).remainingAmount || 0)}</span>
+                                            </div>
                                             {loan.paidToday > 0 && (
                                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                                     <span>Ya pagó:</span>
@@ -275,6 +279,7 @@ export default function DashboardPage() {
                                             <th style={{ padding: '1rem' }}>Cliente</th>
                                             <th style={{ padding: '1rem' }}>Dirección</th>
                                             <th style={{ padding: '1rem' }}>Cuota</th>
+                                            <th style={{ padding: '1rem' }}>Restante</th>
                                             <th style={{ padding: '1rem' }}>Pagado</th>
                                             <th style={{ padding: '1rem' }}>Estado</th>
                                             <th style={{ padding: '1rem' }}>Acción</th>
@@ -289,6 +294,11 @@ export default function DashboardPage() {
                                                 </td>
                                                 <td style={{ padding: '1rem' }}>{loan.address}</td>
                                                 <td style={{ padding: '1rem' }}>{formatMoney(loan.fee)}</td>
+                                                <td style={{ padding: '1rem' }}>
+                                                    <span style={{ fontWeight: 700, color: '#f59e0b' }}>
+                                                        {formatMoney((loan as any).remainingAmount || 0)}
+                                                    </span>
+                                                </td>
                                                 <td style={{ padding: '1rem' }}>{formatMoney(loan.paidToday || 0)}</td>
                                                 <td style={{ padding: '1rem' }}>
                                                     <span style={{

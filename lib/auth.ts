@@ -1,6 +1,7 @@
 import Cookies from 'js-cookie';
 import { api } from './api';
 import { LoginResponse, User } from './types';
+import { userCache } from './userCache';
 
 /**
  * Authentication Service
@@ -44,6 +45,8 @@ export const authService = {
     logout() {
         Cookies.remove(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
+        // Clear user cache to prevent stale data
+        userCache.clear();
     },
 
     /**

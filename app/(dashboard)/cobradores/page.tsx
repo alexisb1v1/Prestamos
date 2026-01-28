@@ -252,28 +252,77 @@ export default function CobradoresPage() {
                                         <span style={{ fontWeight: '500' }}>{user.documentNumber}</span>
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', padding: '0.5rem 0' }}>
+                                    {/* Lock/Unlock */}
                                     <button
-                                        className="btn"
-                                        style={{ flex: 1, padding: '0.6rem', fontSize: '0.9rem' }}
-                                        onClick={() => handleEdit(user)}
-                                    >
-                                        ✏️ Editar
-                                    </button>
-                                    <button
-                                        className="btn"
-                                        style={{ flex: 1, padding: '0.6rem', fontSize: '0.9rem', color: user.isDayClosed ? '#ef4444' : '#22c55e', borderColor: user.isDayClosed ? '#ef4444' : '#22c55e' }}
                                         onClick={() => handleToggleDayStatus(user)}
-                                        title={user.isDayClosed ? "Día Cerrado (Click para abrir)" : "Día Abierto (Click para cerrar)"}
+                                        title={user.isDayClosed ? "Cerrado" : "Abierto"}
+                                        style={{
+                                            padding: '0.75rem',
+                                            border: 'none',
+                                            backgroundColor: 'transparent',
+                                            cursor: 'pointer',
+                                            borderRadius: '0.5rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: user.isDayClosed ? '#ef4444' : '#22c55e',
+                                            flex: 1
+                                        }}
                                     >
-                                        {user.isDayClosed ? '🔒 Cerrado' : '🔓 Abierto'}
+                                        {user.isDayClosed ? (
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="22" height="22">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                                            </svg>
+                                        ) : (
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="22" height="22">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 119 0v3.75M3.75 21.75h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                                            </svg>
+                                        )}
                                     </button>
+
+                                    {/* Edit */}
                                     <button
-                                        className="btn"
-                                        style={{ flex: 1, padding: '0.6rem', fontSize: '0.9rem', color: 'var(--color-danger)', borderColor: 'var(--color-danger)' }}
-                                        onClick={() => handleDelete(user.id)}
+                                        onClick={() => handleEdit(user)}
+                                        title="Editar"
+                                        style={{
+                                            padding: '0.75rem',
+                                            border: 'none',
+                                            backgroundColor: 'transparent',
+                                            cursor: 'pointer',
+                                            borderRadius: '0.5rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: '#64748b',
+                                            flex: 1
+                                        }}
                                     >
-                                        🗑️ Eliminar
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="22" height="22">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                                        </svg>
+                                    </button>
+
+                                    {/* Delete */}
+                                    <button
+                                        onClick={() => handleDelete(user.id)}
+                                        title="Eliminar"
+                                        style={{
+                                            padding: '0.75rem',
+                                            border: 'none',
+                                            backgroundColor: 'transparent',
+                                            cursor: 'pointer',
+                                            borderRadius: '0.5rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: '#64748b',
+                                            flex: 1
+                                        }}
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="22" height="22">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                        </svg>
                                     </button>
                                 </div>
                             </div>
@@ -369,22 +418,31 @@ export default function CobradoresPage() {
                                         </td>
                                         <td style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>
                                             <div style={{ display: 'flex', gap: '0.25rem' }}>
-                                                {/* Toggle Day Status */}
+                                                {/* Toggle Day Status - Lock/Unlock */}
                                                 <button
-                                                    className={`btn-icon ${user.isDayClosed ? 'danger' : 'success'}`}
                                                     onClick={() => handleToggleDayStatus(user)}
-                                                    title={user.isDayClosed ? "Día Cerrado (Click para abrir)" : "Día Abierto (Click para cerrar)"}
+                                                    title={user.isDayClosed ? "Cerrado" : "Abierto"}
                                                     style={{
-                                                        color: user.isDayClosed ? 'var(--color-danger)' : 'var(--color-success)',
-                                                        backgroundColor: user.isDayClosed ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)'
+                                                        padding: '0.5rem',
+                                                        border: 'none',
+                                                        backgroundColor: 'transparent',
+                                                        cursor: 'pointer',
+                                                        borderRadius: '0.375rem',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        transition: 'all 0.2s',
+                                                        color: user.isDayClosed ? '#ef4444' : '#22c55e'
                                                     }}
+                                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = user.isDayClosed ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)'}
+                                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                                 >
                                                     {user.isDayClosed ? (
-                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="18" height="18">
                                                             <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                                                         </svg>
                                                     ) : (
-                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="18" height="18">
                                                             <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 119 0v3.75M3.75 21.75h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                                                         </svg>
                                                     )}
@@ -392,22 +450,60 @@ export default function CobradoresPage() {
 
                                                 {/* Edit */}
                                                 <button
-                                                    className="btn-icon primary"
                                                     onClick={() => handleEdit(user)}
-                                                    title="Editar usuario"
+                                                    title="Editar"
+                                                    style={{
+                                                        padding: '0.5rem',
+                                                        border: 'none',
+                                                        backgroundColor: 'transparent',
+                                                        cursor: 'pointer',
+                                                        borderRadius: '0.375rem',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        transition: 'all 0.2s',
+                                                        color: '#64748b'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.backgroundColor = 'rgba(100, 116, 139, 0.1)';
+                                                        e.currentTarget.style.color = '#475569';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                                        e.currentTarget.style.color = '#64748b';
+                                                    }}
                                                 >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="18" height="18">
                                                         <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
                                                     </svg>
                                                 </button>
 
                                                 {/* Delete */}
                                                 <button
-                                                    className="btn-icon danger"
                                                     onClick={() => handleDelete(user.id)}
-                                                    title="Eliminar usuario"
+                                                    title="Eliminar"
+                                                    style={{
+                                                        padding: '0.5rem',
+                                                        border: 'none',
+                                                        backgroundColor: 'transparent',
+                                                        cursor: 'pointer',
+                                                        borderRadius: '0.375rem',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        transition: 'all 0.2s',
+                                                        color: '#64748b'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                                                        e.currentTarget.style.color = '#ef4444';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                                        e.currentTarget.style.color = '#64748b';
+                                                    }}
                                                 >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="18" height="18">
                                                         <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
                                                     </svg>
                                                 </button>
