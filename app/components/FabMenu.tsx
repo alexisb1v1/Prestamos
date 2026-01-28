@@ -87,7 +87,7 @@ export default function FabMenu() {
                 scale: 2,
                 backgroundColor: '#f8fafc',
                 logging: false
-            });
+            } as any);
 
             const filename = `cierre-${format(new Date(), 'yyyy-MM-dd')}-${currentUser.username}.png`;
 
