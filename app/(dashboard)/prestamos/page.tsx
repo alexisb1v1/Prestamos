@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { loanService } from '@/lib/loanService';
 import { userService } from '@/lib/userService';
 import { authService } from '@/lib/auth';
@@ -9,11 +9,16 @@ import { format, parseISO } from 'date-fns';
 import CreateLoanModal from '../../components/CreateLoanModal';
 import CreatePaymentModal from '../../components/CreatePaymentModal';
 import LoanDetailsModal from '../../components/LoanDetailsModal';
+import LoanShareGenerator, { LoanShareGeneratorRef } from '../../components/LoanShareGenerator';
+import { getLoanStatus } from '@/lib/loanUtils';
 
 export default function PrestamosPage() {
     const [loans, setLoans] = useState<Loan[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+
+    // Optimization: Calculate today once per render
+    const today = new Date();
 
     // Filters
     const [documentNumber, setDocumentNumber] = useState('');
@@ -31,6 +36,7 @@ export default function PrestamosPage() {
     // Details Modal State
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [selectedLoanForDetails, setSelectedLoanForDetails] = useState<Loan | null>(null);
+    const shareRef = useRef<LoanShareGeneratorRef>(null);
 
     const handleOpenDetails = (loan: Loan) => {
         setSelectedLoanForDetails(loan);
@@ -123,31 +129,7 @@ export default function PrestamosPage() {
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    const getStatusColor = (status: string) => {
-        const s = status.toLowerCase();
-        if (s === 'activo') return '#22c55e'; // Green
-        if (['retraso', 'mora'].includes(s)) return '#eab308'; // Yellow
-        if (['vencido', 'incumplido'].includes(s)) return '#ef4444'; // Red
-        return '#3b82f6'; // Blue default
-    };
 
-    const StatusBadge = ({ status }: { status: string }) => {
-        const color = getStatusColor(status);
-        return (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <div style={{
-                    width: '12px',
-                    height: '12px',
-                    borderRadius: '50%',
-                    backgroundColor: color,
-                    boxShadow: `0 0 0 2px ${color}40`
-                }} />
-                <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                    {status}
-                </span>
-            </div>
-        );
-    };
 
     const MobileLoanCard = ({ loan }: { loan: Loan }) => (
         <div style={{
@@ -170,7 +152,9 @@ export default function PrestamosPage() {
                     <div style={{ fontWeight: 700, fontSize: '1rem' }}>{loan.clientName}</div>
                     <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{loan.documentNumber}</div>
                 </div>
-                <StatusBadge status={loan.status} />
+                <span style={{ fontSize: '1.25rem', lineHeight: 1 }} title={getLoanStatus(loan, today).label}>
+                    {getLoanStatus(loan, today).icon}
+                </span>
             </div>
 
             <div style={{
@@ -232,39 +216,82 @@ export default function PrestamosPage() {
                 paddingTop: '0.75rem',
                 borderTop: '1px solid var(--border-color)',
                 display: 'flex',
-                flexDirection: 'column',
-                gap: '0.5rem'
+                gap: '1rem',
+                justifyContent: 'center'
             }}>
                 <button
-                    className="btn"
-                    style={{
-                        width: '100%',
-                        fontSize: '0.9rem',
-                        padding: '0.5rem',
-                        backgroundColor: (!!loan.paidToday || loan.inIntervalPayment === 0) ? '#94a3b8' : '#8b5cf6',
-                        color: 'white',
-                        border: 'none',
-                        cursor: (!!loan.paidToday || loan.inIntervalPayment === 0) ? 'not-allowed' : 'pointer',
-                        opacity: (!!loan.paidToday || loan.inIntervalPayment === 0) ? 0.7 : 1
-                    }}
                     onClick={() => !(!!loan.paidToday || loan.inIntervalPayment === 0) && handleOpenPayment(loan)}
                     disabled={!!loan.paidToday || loan.inIntervalPayment === 0}
-                >
-                    {!!loan.paidToday ? 'Pagado Hoy' : (loan.inIntervalPayment === 0 ? 'Restringido' : 'Registrar Pago')}
-                </button>
-                <button
-                    className="btn"
+                    title={!!loan.paidToday ? 'Pagado' : (loan.inIntervalPayment === 0 ? 'Restringido' : 'Registrar Pago')}
                     style={{
-                        width: '100%',
-                        fontSize: '0.9rem',
-                        padding: '0.5rem',
+                        padding: '0.6rem',
+                        border: 'none',
                         backgroundColor: 'transparent',
-                        color: 'var(--color-primary)',
-                        border: '1px solid var(--color-primary)'
+                        cursor: (!!loan.paidToday || loan.inIntervalPayment === 0) ? 'not-allowed' : 'pointer',
+                        borderRadius: '0.5rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: (!!loan.paidToday || loan.inIntervalPayment === 0) ? '#94a3b8' : '#22c55e',
+                        opacity: (!!loan.paidToday || loan.inIntervalPayment === 0) ? 0.5 : 1,
+                        flex: 1
                     }}
-                    onClick={() => handleOpenDetails(loan)}
                 >
-                    Ver Detalles
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="24" height="24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                        </svg>
+                        <span style={{ fontSize: '0.75rem' }}>Pagar</span>
+                    </div>
+                </button>
+
+                <button
+                    onClick={() => handleOpenDetails(loan)}
+                    title="Ver Detalles"
+                    style={{
+                        padding: '0.6rem',
+                        border: 'none',
+                        backgroundColor: 'transparent',
+                        cursor: 'pointer',
+                        borderRadius: '0.5rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#64748b',
+                        flex: 1
+                    }}
+                >
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="24" height="24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span style={{ fontSize: '0.75rem' }}>Detalles</span>
+                    </div>
+                </button>
+
+                <button
+                    onClick={() => shareRef.current?.shareLoan(loan)}
+                    title="Compartir Ficha"
+                    style={{
+                        padding: '0.6rem',
+                        border: 'none',
+                        backgroundColor: 'transparent',
+                        cursor: 'pointer',
+                        borderRadius: '0.5rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#64748b',
+                        flex: 1
+                    }}
+                >
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="24" height="24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+                        </svg>
+                        <span style={{ fontSize: '0.75rem' }}>Compartir</span>
+                    </div>
                 </button>
             </div>
         </div>
@@ -380,6 +407,31 @@ export default function PrestamosPage() {
                 </div>
             </div>
 
+            {/* Status Legend */}
+            <div style={{
+                display: 'flex',
+                gap: '1rem',
+                fontSize: '0.8rem',
+                color: 'var(--text-secondary)',
+                marginBottom: '1rem',
+                flexWrap: 'wrap',
+                backgroundColor: 'var(--bg-card)',
+                padding: '0.5rem 1rem',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--border-color)',
+                width: 'fit-content'
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <span>🟢</span> <span>Al día / Reciente</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <span>🟡</span> <span>Mora Leve (≤ 50%)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <span>🔴</span> <span>Mora Grave (&gt; 50%)</span>
+                </div>
+            </div>
+
             <CreateLoanModal
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
@@ -463,28 +515,38 @@ export default function PrestamosPage() {
                                             </div>
                                         </td>
                                         <td style={{ padding: '1rem' }}>
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '0.5rem 1rem', fontSize: '0.85rem' }}>
-                                                <span style={{ color: 'var(--text-secondary)' }}>Monto:</span>
-                                                <span style={{ fontWeight: 500 }}>{formatMoney(loan.amount)}</span>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', fontSize: '0.85rem' }}>
+                                                {/* First row */}
+                                                <div>
+                                                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', display: 'block' }}>Monto:</span>
+                                                    <span style={{ fontWeight: 500 }}>{formatMoney(loan.amount)}</span>
+                                                </div>
+                                                <div>
+                                                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', display: 'block' }}>Interés:</span>
+                                                    <span>{formatMoney(loan.interest)}</span>
+                                                </div>
+                                                <div>
+                                                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', display: 'block', fontWeight: 500 }}>Total:</span>
+                                                    <span style={{ fontWeight: 700, color: 'var(--color-primary)' }}>
+                                                        {formatMoney(loan.amount + loan.interest)}
+                                                    </span>
+                                                </div>
 
-                                                <span style={{ color: 'var(--text-secondary)' }}>Interés:</span>
-                                                <span>{formatMoney(loan.interest)}</span>
-
-                                                <span style={{ color: 'var(--text-secondary)' }}>Cuota:</span>
-                                                <span>{formatMoney(loan.fee || 0)}</span>
-
-                                                <span style={{ color: 'var(--text-secondary)' }}>Días:</span>
-                                                <span>{loan.days}</span>
-
-                                                <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>Total:</span>
-                                                <span style={{ fontWeight: 700, color: 'var(--color-primary)' }}>
-                                                    {formatMoney(loan.amount + loan.interest)}
-                                                </span>
-
-                                                <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Restante:</span>
-                                                <span style={{ fontWeight: 700, color: '#f59e0b' }}>
-                                                    {formatMoney((loan as any).remainingAmount || 0)}
-                                                </span>
+                                                {/* Second row */}
+                                                <div>
+                                                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', display: 'block' }}>Cuota:</span>
+                                                    <span>{formatMoney(loan.fee || 0)}</span>
+                                                </div>
+                                                <div>
+                                                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', display: 'block' }}>Días:</span>
+                                                    <span>{loan.days}</span>
+                                                </div>
+                                                <div>
+                                                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', display: 'block', fontWeight: 600 }}>Restante:</span>
+                                                    <span style={{ fontWeight: 700, color: '#f59e0b' }}>
+                                                        {formatMoney((loan as any).remainingAmount || 0)}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </td>
                                         <td style={{ padding: '1rem', fontSize: '0.85rem' }}>
@@ -495,43 +557,107 @@ export default function PrestamosPage() {
                                                 <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Fin:</span> {formatDate(loan.endDate)}
                                             </div>
                                         </td>
-                                        <td style={{ padding: '1rem' }}>
-                                            <StatusBadge status={loan.status} />
+                                        <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                            <span style={{ fontSize: '1.25rem', lineHeight: 1 }} title={getLoanStatus(loan, today).label}>
+                                                {getLoanStatus(loan, today).icon}
+                                            </span>
                                         </td>
                                         <td style={{ padding: '1rem' }}>
                                             <div style={{ fontSize: '0.85rem' }}>{loan.collectorName}</div>
                                         </td>
-                                        <td style={{ padding: '1rem' }}>
-                                            <button
-                                                className="btn"
-                                                style={{
-                                                    fontSize: '0.8rem',
-                                                    padding: '0.25rem 0.75rem',
-                                                    backgroundColor: (!!loan.paidToday || loan.inIntervalPayment === 0) ? '#94a3b8' : '#8b5cf6',
-                                                    color: 'white',
-                                                    border: 'none',
-                                                    cursor: (!!loan.paidToday || loan.inIntervalPayment === 0) ? 'not-allowed' : 'pointer',
-                                                    opacity: (!!loan.paidToday || loan.inIntervalPayment === 0) ? 0.7 : 1
-                                                }}
-                                                onClick={() => !(!!loan.paidToday || loan.inIntervalPayment === 0) && handleOpenPayment(loan)}
-                                                disabled={!!loan.paidToday || loan.inIntervalPayment === 0}
-                                            >
-                                                {!!loan.paidToday ? 'Pagado' : (loan.inIntervalPayment === 0 ? 'Restringido' : 'Pagar')}
-                                            </button>
-                                            <button
-                                                className="btn"
-                                                style={{
-                                                    fontSize: '0.8rem',
-                                                    padding: '0.25rem 0.75rem',
-                                                    backgroundColor: 'transparent',
-                                                    color: 'var(--color-primary)',
-                                                    border: '1px solid var(--color-primary)',
-                                                    marginLeft: '0.5rem'
-                                                }}
-                                                onClick={() => handleOpenDetails(loan)}
-                                            >
-                                                Ver Detalles
-                                            </button>
+                                        <td style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>
+                                            <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center' }}>
+                                                {/* Payment Action */}
+                                                <button
+                                                    onClick={() => !(!!loan.paidToday || loan.inIntervalPayment === 0) && handleOpenPayment(loan)}
+                                                    disabled={!!loan.paidToday || loan.inIntervalPayment === 0}
+                                                    title={!!loan.paidToday ? 'Pagado' : (loan.inIntervalPayment === 0 ? 'Restringido' : 'Registrar Pago')}
+                                                    style={{
+                                                        padding: '0.35rem',
+                                                        border: 'none',
+                                                        backgroundColor: 'transparent',
+                                                        cursor: (!!loan.paidToday || loan.inIntervalPayment === 0) ? 'not-allowed' : 'pointer',
+                                                        borderRadius: '0.375rem',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        transition: 'all 0.2s',
+                                                        color: (!!loan.paidToday || loan.inIntervalPayment === 0) ? '#94a3b8' : '#22c55e',
+                                                        opacity: (!!loan.paidToday || loan.inIntervalPayment === 0) ? 0.5 : 1
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        if (!(!!loan.paidToday || loan.inIntervalPayment === 0)) {
+                                                            e.currentTarget.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
+                                                        }
+                                                    }}
+                                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                                                    </svg>
+                                                </button>
+
+                                                {/* Details Action */}
+                                                <button
+                                                    onClick={() => handleOpenDetails(loan)}
+                                                    title="Ver Detalles"
+                                                    style={{
+                                                        padding: '0.35rem',
+                                                        border: 'none',
+                                                        backgroundColor: 'transparent',
+                                                        cursor: 'pointer',
+                                                        borderRadius: '0.375rem',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        transition: 'all 0.2s',
+                                                        color: '#64748b'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+                                                        e.currentTarget.style.color = '#2563eb';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                                        e.currentTarget.style.color = '#64748b';
+                                                    }}
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    </svg>
+                                                </button>
+
+                                                {/* Share Action */}
+                                                <button
+                                                    onClick={() => shareRef.current?.shareLoan(loan)}
+                                                    title="Compartir Ficha"
+                                                    style={{
+                                                        padding: '0.35rem',
+                                                        border: 'none',
+                                                        backgroundColor: 'transparent',
+                                                        cursor: 'pointer',
+                                                        borderRadius: '0.375rem',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        transition: 'all 0.2s',
+                                                        color: '#64748b'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.backgroundColor = 'rgba(100, 116, 139, 0.1)';
+                                                        e.currentTarget.style.color = '#475569';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                                        e.currentTarget.style.color = '#64748b';
+                                                    }}
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+                                                    </svg>
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
@@ -554,6 +680,7 @@ export default function PrestamosPage() {
                 onClose={() => setIsDetailsModalOpen(false)}
                 loan={selectedLoanForDetails}
             />
+            <LoanShareGenerator ref={shareRef} />
         </div>
     );
 }

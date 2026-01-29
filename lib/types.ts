@@ -56,6 +56,7 @@ export interface Loan {
     collectorName: string;
     paidToday: number;
     inIntervalPayment: number;
+    remainingAmount?: number;
 }
 
 export interface Cobrador {

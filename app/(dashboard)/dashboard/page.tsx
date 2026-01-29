@@ -1,17 +1,36 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { loanService } from '@/lib/loanService';
 import { userService } from '@/lib/userService';
 import { authService } from '@/lib/auth';
 import { DashboardData, Loan, User } from '@/lib/types';
+import { getLoanStatus } from '@/lib/loanUtils';
 import CreatePaymentModal from '../../components/CreatePaymentModal';
+import LoanDetailsModal from '../../components/LoanDetailsModal';
+import LoanShareGenerator, { LoanShareGeneratorRef } from '../../components/LoanShareGenerator';
 
 export default function DashboardPage() {
     const [data, setData] = useState<DashboardData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [isMobile, setIsMobile] = useState(false);
+
+    // Share Generator Ref
+    const shareRef = useRef<LoanShareGeneratorRef>(null);
+
+    // Optimization: Calculate today once per render to pass to helpers
+    const today = new Date();
+
+    const formatDate = (dateString: string) => {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        // Usar métodos UTC para evitar problemas de zona horaria
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const year = date.getUTCFullYear();
+        return `${day}/${month}/${year}`;
+    };
 
     // Auth & Filtering state
     const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -22,6 +41,15 @@ export default function DashboardPage() {
     // Payment Modal State
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [selectedLoanForPayment, setSelectedLoanForPayment] = useState<Loan | null>(null);
+
+    // Details Modal State
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [selectedLoanForDetails, setSelectedLoanForDetails] = useState<Loan | null>(null);
+
+    const handleOpenDetails = (loan: Loan) => {
+        setSelectedLoanForDetails(loan);
+        setIsDetailsModalOpen(true);
+    };
 
     // Event Listener for updates (from FabMenu)
     useEffect(() => {
@@ -201,6 +229,31 @@ export default function DashboardPage() {
                             <h2 style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 'bold', margin: 0 }}>Ruta de Cobro (Hoy)</h2>
                         </div>
 
+                        {/* Status Legend */}
+                        <div style={{
+                            display: 'flex',
+                            gap: '1rem',
+                            fontSize: '0.8rem',
+                            color: 'var(--text-secondary)',
+                            marginBottom: '1rem',
+                            flexWrap: 'wrap',
+                            backgroundColor: 'var(--bg-card)',
+                            padding: '0.5rem 1rem',
+                            borderRadius: 'var(--radius-sm)',
+                            border: '1px solid var(--border-color)',
+                            width: 'fit-content'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                <span>🟢</span> <span>Al día / Reciente</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                <span>🟡</span> <span>Mora Leve (≤ 50%)</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                <span>🔴</span> <span>Mora Grave (&gt; 50%)</span>
+                            </div>
+                        </div>
+
                         {data.pendingLoans.length === 0 ? (
                             <div className="card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                                 No hay préstamos pendientes para cobrar hoy.
@@ -212,25 +265,61 @@ export default function DashboardPage() {
                                         <div style={{
                                             display: 'flex',
                                             justifyContent: 'space-between',
-                                            alignItems: 'center',
+                                            alignItems: 'start',
                                             paddingBottom: '0.75rem',
                                             marginBottom: '0.75rem',
                                             borderBottom: '1px solid var(--border-color)'
                                         }}>
-                                            <div style={{ fontWeight: 700, fontSize: '1rem' }}>{loan.clientName}</div>
-                                            <span style={{
-                                                color: loan.paidToday > 0 ? 'var(--color-success)' : 'var(--color-warning)',
-                                                fontSize: '0.75rem',
-                                                fontWeight: 600
-                                            }}>
-                                                {loan.paidToday > 0 ? 'Pagado' : 'Pendiente'}
+                                            <div>
+                                                <div style={{ fontWeight: 700, fontSize: '1rem' }}>{loan.clientName}</div>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{loan.documentNumber}</div>
+                                            </div>
+                                            <span style={{ fontSize: '1.25rem', lineHeight: 1 }} title={getLoanStatus(loan, today).label}>
+                                                {getLoanStatus(loan, today).icon}
                                             </span>
+                                        </div>
+
+                                        <div style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: 'repeat(3, 1fr)',
+                                            gap: '0.5rem',
+                                            fontSize: '0.9rem',
+                                            marginBottom: '0.75rem'
+                                        }}>
+                                            <div>
+                                                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Monto</span>
+                                                {formatMoney(loan.amount)}
+                                            </div>
+                                            <div>
+                                                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Interés</span>
+                                                {formatMoney(loan.interest)}
+                                            </div>
+                                            <div>
+                                                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Días</span>
+                                                <span>{loan.days}</span>
+                                            </div>
+                                            <div>
+                                                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Cuota</span>
+                                                {formatMoney(loan.fee)}
+                                            </div>
+                                            <div>
+                                                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Total</span>
+                                                <span style={{ fontWeight: 600, color: 'var(--color-primary)', fontSize: '0.9rem' }}>
+                                                    {formatMoney(loan.amount + loan.interest)}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Restante</span>
+                                                <span style={{ fontWeight: 700, color: '#f59e0b', fontSize: '0.95rem' }}>
+                                                    {formatMoney((loan as any).remainingAmount || 0)}
+                                                </span>
+                                            </div>
                                         </div>
 
                                         <div style={{
                                             fontSize: '0.85rem',
                                             color: 'var(--text-secondary)',
-                                            marginBottom: '1rem',
+                                            paddingBottom: '1rem',
                                             display: 'flex',
                                             flexDirection: 'column',
                                             gap: '0.4rem'
@@ -240,35 +329,92 @@ export default function DashboardPage() {
                                                 <span style={{ textAlign: 'right', color: 'var(--text-primary)' }}>{loan.address}</span>
                                             </div>
                                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                <span>Cuota:</span>
-                                                <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatMoney(loan.fee)}</span>
+                                                <span>Vigencia:</span>
+                                                <span style={{ color: 'var(--text-primary)' }}>{formatDate(loan.startDate)} - {formatDate(loan.endDate)}</span>
                                             </div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                <span>Restante:</span>
-                                                <span style={{ color: '#f59e0b', fontWeight: 700 }}>{formatMoney((loan as any).remainingAmount || 0)}</span>
-                                            </div>
-                                            {loan.paidToday > 0 && (
-                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                    <span>Ya pagó:</span>
-                                                    <span style={{ color: 'var(--color-success)', fontWeight: 600 }}>{formatMoney(loan.paidToday)}</span>
-                                                </div>
-                                            )}
                                         </div>
 
-                                        <button
-                                            className="btn btn-primary"
-                                            style={{
-                                                width: '100%',
-                                                padding: '0.6rem',
-                                                backgroundColor: (!!loan.paidToday || loan.inIntervalPayment === 0) ? '#94a3b8' : 'var(--color-primary)',
-                                                cursor: (!!loan.paidToday || loan.inIntervalPayment === 0) ? 'not-allowed' : 'pointer'
-                                            }}
-                                            disabled={!!loan.paidToday || loan.inIntervalPayment === 0}
-                                            onClick={() => handleOpenPayment(loan)}
-                                        >
-                                            {!!loan.paidToday ? 'Completado' : (loan.inIntervalPayment === 0 ? 'Restringido' : 'Cobrar')}
-                                        </button>
+                                        <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', justifyContent: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
+                                            {/* Payment Action */}
+                                            <button
+                                                onClick={() => !(!!loan.paidToday || loan.inIntervalPayment === 0) && handleOpenPayment(loan)}
+                                                disabled={!!loan.paidToday || loan.inIntervalPayment === 0}
+                                                title={!!loan.paidToday ? 'Pagado' : (loan.inIntervalPayment === 0 ? 'Restringido' : 'Registrar Pago')}
+                                                style={{
+                                                    padding: '0.6rem',
+                                                    border: 'none',
+                                                    backgroundColor: 'transparent',
+                                                    cursor: (!!loan.paidToday || loan.inIntervalPayment === 0) ? 'not-allowed' : 'pointer',
+                                                    borderRadius: '0.5rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: (!!loan.paidToday || loan.inIntervalPayment === 0) ? '#94a3b8' : '#22c55e',
+                                                    opacity: (!!loan.paidToday || loan.inIntervalPayment === 0) ? 0.5 : 1,
+                                                    flex: 1
+                                                }}
+                                            >
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="24" height="24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                                                    </svg>
+                                                    <span style={{ fontSize: '0.75rem' }}>Pagar</span>
+                                                </div>
+                                            </button>
+
+                                            {/* Details Action */}
+                                            <button
+                                                onClick={() => handleOpenDetails(loan)}
+                                                title="Ver Detalles"
+                                                style={{
+                                                    padding: '0.6rem',
+                                                    border: 'none',
+                                                    backgroundColor: 'transparent',
+                                                    cursor: 'pointer',
+                                                    borderRadius: '0.5rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: '#64748b',
+                                                    flex: 1
+                                                }}
+                                            >
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="24" height="24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    </svg>
+                                                    <span style={{ fontSize: '0.75rem' }}>Detalles</span>
+                                                </div>
+                                            </button>
+
+                                            {/* Share Action */}
+                                            <button
+                                                onClick={() => shareRef.current?.shareLoan(loan)}
+                                                title="Compartir Ficha"
+                                                style={{
+                                                    padding: '0.6rem',
+                                                    border: 'none',
+                                                    backgroundColor: 'transparent',
+                                                    cursor: 'pointer',
+                                                    borderRadius: '0.5rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: '#64748b',
+                                                    flex: 1
+                                                }}
+                                            >
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="24" height="24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+                                                    </svg>
+                                                    <span style={{ fontSize: '0.75rem' }}>Compartir</span>
+                                                </div>
+                                            </button>
+                                        </div>
                                     </div>
+
                                 ))}
                             </div>
                         ) : (
@@ -278,8 +424,7 @@ export default function DashboardPage() {
                                         <tr>
                                             <th style={{ padding: '1rem' }}>Cliente</th>
                                             <th style={{ padding: '1rem' }}>Dirección</th>
-                                            <th style={{ padding: '1rem' }}>Cuota</th>
-                                            <th style={{ padding: '1rem' }}>Restante</th>
+                                            <th style={{ padding: '1rem' }}>Detalle del Préstamo</th>
                                             <th style={{ padding: '1rem' }}>Pagado</th>
                                             <th style={{ padding: '1rem' }}>Estado</th>
                                             <th style={{ padding: '1rem' }}>Acción</th>
@@ -293,34 +438,144 @@ export default function DashboardPage() {
                                                     <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{loan.documentNumber}</div>
                                                 </td>
                                                 <td style={{ padding: '1rem' }}>{loan.address}</td>
-                                                <td style={{ padding: '1rem' }}>{formatMoney(loan.fee)}</td>
                                                 <td style={{ padding: '1rem' }}>
-                                                    <span style={{ fontWeight: 700, color: '#f59e0b' }}>
-                                                        {formatMoney((loan as any).remainingAmount || 0)}
+                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', fontSize: '0.85rem' }}>
+                                                        {/* First row */}
+                                                        <div>
+                                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', display: 'block' }}>Monto:</span>
+                                                            <span style={{ fontWeight: 500 }}>{formatMoney(loan.amount)}</span>
+                                                        </div>
+                                                        <div>
+                                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', display: 'block' }}>Interés:</span>
+                                                            <span>{formatMoney(loan.interest)}</span>
+                                                        </div>
+                                                        <div>
+                                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', display: 'block', fontWeight: 500 }}>Total:</span>
+                                                            <span style={{ fontWeight: 700, color: 'var(--color-primary)' }}>
+                                                                {formatMoney(loan.amount + loan.interest)}
+                                                            </span>
+                                                        </div>
+
+                                                        {/* Second row */}
+                                                        <div>
+                                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', display: 'block' }}>Cuota:</span>
+                                                            <span>{formatMoney(loan.fee)}</span>
+                                                        </div>
+                                                        <div>
+                                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', display: 'block' }}>Días:</span>
+                                                            <span>{loan.days}</span>
+                                                        </div>
+                                                        <div>
+                                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', display: 'block', fontWeight: 600 }}>Restante:</span>
+                                                            <span style={{ fontWeight: 700, color: 'var(--color-danger)' }}>
+                                                                {formatMoney((loan as any).remainingAmount || 0)}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '1rem' }}>
+                                                    <span style={{ fontWeight: 700, color: 'var(--color-success)' }}>
+                                                        {formatMoney((loan.amount + loan.interest) - ((loan as any).remainingAmount || 0))}
                                                     </span>
                                                 </td>
-                                                <td style={{ padding: '1rem' }}>{formatMoney(loan.paidToday || 0)}</td>
-                                                <td style={{ padding: '1rem' }}>
-                                                    <span style={{
-                                                        color: loan.paidToday > 0 ? 'var(--color-success)' : 'var(--color-warning)',
-                                                        fontWeight: 600
-                                                    }}>
-                                                        {loan.paidToday >= loan.fee ? 'Completado' : (loan.paidToday > 0 ? 'Parcial' : 'Pendiente')}
+                                                <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                                    <span style={{ fontSize: '1.25rem', lineHeight: 1 }} title={getLoanStatus(loan, today).label}>
+                                                        {getLoanStatus(loan, today).icon}
                                                     </span>
                                                 </td>
                                                 <td style={{ padding: '1rem' }}>
-                                                    <button
-                                                        className="btn btn-primary"
-                                                        style={{
-                                                            fontSize: '0.875rem',
-                                                            padding: '0.25rem 0.75rem',
-                                                            backgroundColor: (!!loan.paidToday || loan.inIntervalPayment === 0) ? '#94a3b8' : 'var(--color-primary)'
-                                                        }}
-                                                        disabled={!!loan.paidToday || loan.inIntervalPayment === 0}
-                                                        onClick={() => handleOpenPayment(loan)}
-                                                    >
-                                                        {!!loan.paidToday ? 'Listo' : 'Cobrar'}
-                                                    </button>
+                                                    <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center' }}>
+                                                        {/* Payment Action */}
+                                                        <button
+                                                            onClick={() => !(!!loan.paidToday || loan.inIntervalPayment === 0) && handleOpenPayment(loan)}
+                                                            disabled={!!loan.paidToday || loan.inIntervalPayment === 0}
+                                                            title={!!loan.paidToday ? 'Pagado' : (loan.inIntervalPayment === 0 ? 'Restringido' : 'Registrar Pago')}
+                                                            style={{
+                                                                padding: '0.35rem',
+                                                                border: 'none',
+                                                                backgroundColor: 'transparent',
+                                                                cursor: (!!loan.paidToday || loan.inIntervalPayment === 0) ? 'not-allowed' : 'pointer',
+                                                                borderRadius: '0.375rem',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                transition: 'all 0.2s',
+                                                                color: (!!loan.paidToday || loan.inIntervalPayment === 0) ? '#94a3b8' : '#22c55e',
+                                                                opacity: (!!loan.paidToday || loan.inIntervalPayment === 0) ? 0.5 : 1
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                if (!(!!loan.paidToday || loan.inIntervalPayment === 0)) {
+                                                                    e.currentTarget.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
+                                                                }
+                                                            }}
+                                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                                                            </svg>
+                                                        </button>
+
+                                                        {/* Details Action */}
+                                                        <button
+                                                            onClick={() => handleOpenDetails(loan)}
+                                                            title="Ver Detalles"
+                                                            style={{
+                                                                padding: '0.35rem',
+                                                                border: 'none',
+                                                                backgroundColor: 'transparent',
+                                                                cursor: 'pointer',
+                                                                borderRadius: '0.375rem',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                transition: 'all 0.2s',
+                                                                color: '#64748b'
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+                                                                e.currentTarget.style.color = '#2563eb';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.backgroundColor = 'transparent';
+                                                                e.currentTarget.style.color = '#64748b';
+                                                            }}
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            </svg>
+                                                        </button>
+
+                                                        {/* Share Action */}
+                                                        <button
+                                                            onClick={() => shareRef.current?.shareLoan(loan)}
+                                                            title="Compartir Ficha"
+                                                            style={{
+                                                                padding: '0.35rem',
+                                                                border: 'none',
+                                                                backgroundColor: 'transparent',
+                                                                cursor: 'pointer',
+                                                                borderRadius: '0.375rem',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                transition: 'all 0.2s',
+                                                                color: '#64748b'
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.backgroundColor = 'rgba(100, 116, 139, 0.1)';
+                                                                e.currentTarget.style.color = '#475569';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.backgroundColor = 'transparent';
+                                                                e.currentTarget.style.color = '#64748b';
+                                                            }}
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
@@ -341,6 +596,17 @@ export default function DashboardPage() {
                 }}
                 loan={selectedLoanForPayment}
             />
-        </div>
+
+            {
+                selectedLoanForDetails && (
+                    <LoanDetailsModal
+                        isOpen={isDetailsModalOpen}
+                        onClose={() => setIsDetailsModalOpen(false)}
+                        loan={selectedLoanForDetails}
+                    />
+                )
+            }
+            <LoanShareGenerator ref={shareRef} />
+        </div >
     );
 }

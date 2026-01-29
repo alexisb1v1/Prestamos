@@ -258,7 +258,7 @@ export default function CobradoresPage() {
                                         onClick={() => handleToggleDayStatus(user)}
                                         title={user.isDayClosed ? "Cerrado" : "Abierto"}
                                         style={{
-                                            padding: '0.75rem',
+                                            padding: '0.6rem',
                                             border: 'none',
                                             backgroundColor: 'transparent',
                                             cursor: 'pointer',
@@ -286,7 +286,7 @@ export default function CobradoresPage() {
                                         onClick={() => handleEdit(user)}
                                         title="Editar"
                                         style={{
-                                            padding: '0.75rem',
+                                            padding: '0.6rem',
                                             border: 'none',
                                             backgroundColor: 'transparent',
                                             cursor: 'pointer',
@@ -308,7 +308,7 @@ export default function CobradoresPage() {
                                         onClick={() => handleDelete(user.id)}
                                         title="Eliminar"
                                         style={{
-                                            padding: '0.75rem',
+                                            padding: '0.6rem',
                                             border: 'none',
                                             backgroundColor: 'transparent',
                                             cursor: 'pointer',
@@ -423,7 +423,7 @@ export default function CobradoresPage() {
                                                     onClick={() => handleToggleDayStatus(user)}
                                                     title={user.isDayClosed ? "Cerrado" : "Abierto"}
                                                     style={{
-                                                        padding: '0.5rem',
+                                                        padding: '0.35rem',
                                                         border: 'none',
                                                         backgroundColor: 'transparent',
                                                         cursor: 'pointer',
@@ -453,7 +453,7 @@ export default function CobradoresPage() {
                                                     onClick={() => handleEdit(user)}
                                                     title="Editar"
                                                     style={{
-                                                        padding: '0.5rem',
+                                                        padding: '0.35rem',
                                                         border: 'none',
                                                         backgroundColor: 'transparent',
                                                         cursor: 'pointer',
@@ -483,7 +483,7 @@ export default function CobradoresPage() {
                                                     onClick={() => handleDelete(user.id)}
                                                     title="Eliminar"
                                                     style={{
-                                                        padding: '0.5rem',
+                                                        padding: '0.35rem',
                                                         border: 'none',
                                                         backgroundColor: 'transparent',
                                                         cursor: 'pointer',

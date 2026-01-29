@@ -52,7 +52,7 @@ export default function DashboardLayout({
             <Sidebar />
             <main style={{
                 flex: 1,
-                marginLeft: 0,
+                marginLeft: isMobile ? 0 : 'var(--sidebar-width)',
                 padding: '2rem',
                 paddingTop: isMobile ? '4rem' : '2rem',
                 transition: 'margin-left 0.3s ease-in-out',
