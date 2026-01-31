@@ -82,7 +82,12 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, {}>((_, ref) => {
                                     link.download = fileName;
                                     link.click();
                                 }
-                                // Cleanup
+
+                                // Cleanup: Remove any temporary canvases created by html2canvas
+                                const tempCanvases = document.querySelectorAll('canvas[style*="position"][style*="absolute"]');
+                                tempCanvases.forEach(c => c.remove());
+
+                                // Reset state
                                 setAuditData(null);
                                 setGenerating(false);
                             }, 'image/png');
@@ -114,13 +119,22 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, {}>((_, ref) => {
     const days = getCachedDays(calendarStart, calendarEnd);
 
     return (
-        <div style={{ position: 'fixed', top: 0, left: 0, zIndex: -100, opacity: 0, pointerEvents: 'none' }}>
+        <div style={{
+            position: 'fixed',
+            top: '-9999px',  // Moved far off-screen
+            left: '-9999px',
+            zIndex: -9999,   // Very low z-index
+            opacity: 0,
+            pointerEvents: 'none',
+            visibility: 'hidden'  // Additional safety
+        }}>
             <div id="global-loan-share-card" style={{
                 width: '450px',
                 backgroundColor: 'white',
                 padding: '20px',
                 fontFamily: 'system-ui, -apple-system, sans-serif',
-                color: '#1e293b'
+                color: '#1e293b',
+                pointerEvents: 'none'  // Explicitly disable on this element too
             }}>
                 <div style={{ textAlign: 'center', marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '1rem' }}>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0, color: '#4f46e5' }}>Ficha de Préstamo</h1>

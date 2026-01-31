@@ -51,6 +51,7 @@ export default function DashboardPage() {
         setIsDetailsModalOpen(true);
     };
 
+
     // Event Listener for updates (from FabMenu)
     useEffect(() => {
         const handleUpdate = () => {
@@ -65,6 +66,7 @@ export default function DashboardPage() {
         setIsPaymentModalOpen(true);
     };
 
+
     const loadDashboard = async (userIdFilter?: string | number) => {
         try {
             setLoading(true);
@@ -77,6 +79,7 @@ export default function DashboardPage() {
             setLoading(false);
         }
     };
+
 
     const loadCollectors = async () => {
         try {
@@ -244,13 +247,13 @@ export default function DashboardPage() {
                             width: 'fit-content'
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                <span>🟢</span> <span>Al día / Reciente</span>
+                                <span>🟢</span> <span>Al día (0-1 días)</span>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                <span>🟡</span> <span>Mora Leve (≤ 50%)</span>
+                                <span>🟡</span> <span>Mora Leve (2-5 días)</span>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                <span>🔴</span> <span>Mora Grave (&gt; 50%)</span>
+                                <span>🔴</span> <span>Mora Grave (6+ días)</span>
                             </div>
                         </div>
 
@@ -423,7 +426,7 @@ export default function DashboardPage() {
                                     <thead style={{ backgroundColor: 'var(--bg-app)', textAlign: 'left' }}>
                                         <tr>
                                             <th style={{ padding: '1rem' }}>Cliente</th>
-                                            <th style={{ padding: '1rem' }}>Dirección</th>
+                                            <th style={{ padding: '1rem' }}>Vigencia</th>
                                             <th style={{ padding: '1rem' }}>Detalle del Préstamo</th>
                                             <th style={{ padding: '1rem' }}>Pagado</th>
                                             <th style={{ padding: '1rem' }}>Estado</th>
@@ -436,8 +439,18 @@ export default function DashboardPage() {
                                                 <td style={{ padding: '1rem' }}>
                                                     <div style={{ fontWeight: 600 }}>{loan.clientName}</div>
                                                     <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{loan.documentNumber}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>{loan.address}</div>
                                                 </td>
-                                                <td style={{ padding: '1rem' }}>{loan.address}</td>
+                                                <td style={{ padding: '1rem' }}>
+                                                    <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--color-primary)' }}>
+                                                        <div style={{ marginBottom: '0.25rem' }}>
+                                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Inicio:</span> {formatDate(loan.startDate)}
+                                                        </div>
+                                                        <div>
+                                                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Fin:</span> {formatDate(loan.endDate)}
+                                                        </div>
+                                                    </div>
+                                                </td>
                                                 <td style={{ padding: '1rem' }}>
                                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', fontSize: '0.85rem' }}>
                                                         {/* First row */}

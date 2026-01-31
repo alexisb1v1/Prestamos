@@ -55,13 +55,15 @@
     opacity: 0;
     transform: translateY(10px) scale(0.9);
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+    /* Don't block clicks when hidden */
 }
 
 .menuItem.visible {
     opacity: 1;
     transform: translateY(0) scale(1);
-    /* pointer-events handled by specific rule above or auto here if visible */
     pointer-events: auto;
+    /* Only capture clicks when visible */
 }
 
 .menuFab {
@@ -93,6 +95,8 @@
     font-weight: 500;
     white-space: nowrap;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+    /* Prevent blocking clicks on other elements */
 }
 
 .actionLoan {
@@ -131,7 +135,7 @@
 
 .title {
     font-size: 1.5rem;
-    fontWeight: 800;
+    font-weight: 800;
     color: #0f172a;
     margin-bottom: 0.5rem;
 }

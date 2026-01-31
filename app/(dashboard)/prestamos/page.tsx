@@ -422,13 +422,13 @@ export default function PrestamosPage() {
                 width: 'fit-content'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <span>🟢</span> <span>Al día / Reciente</span>
+                    <span>🟢</span> <span>Al día (0-1 días)</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <span>🟡</span> <span>Mora Leve (≤ 50%)</span>
+                    <span>🟡</span> <span>Mora Leve (2-5 días)</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <span>🔴</span> <span>Mora Grave (&gt; 50%)</span>
+                    <span>🔴</span> <span>Mora Grave (6+ días)</span>
                 </div>
             </div>
 
