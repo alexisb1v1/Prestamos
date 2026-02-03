@@ -3,6 +3,7 @@
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/lib/auth';
+import { getLandingRoute } from '@/lib/utils';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -18,14 +19,7 @@ export default function LoginPage() {
 
         try {
             const response = await authService.login(username, password);
-
-            // Check for System Closed status
-            if (response.user.isDayClosed && response.user.profile === 'COBRADOR') {
-                router.push('/system-closed');
-            } else {
-                // Redirect to dashboard on success
-                router.push('/dashboard');
-            }
+            router.push(getLandingRoute(response));
         } catch (err: any) {
             setError(err.message || 'Error al iniciar sesión. Verifica tus credenciales.');
         } finally {

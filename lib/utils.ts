@@ -1,4 +1,4 @@
-import { User } from './types';
+import { LoginResponse, User } from './types';
 
 /**
  * Format user name for display:
@@ -30,4 +30,28 @@ export function formatUserName(user: User | null): string {
 
     // Fallback to flattened fields or username
     return user.firstName || user.username;
+}
+
+
+export function getLandingRoute(response: LoginResponse): string {
+    const { user } = response;
+    const { companyStatus, profile, isDayClosed } = user;
+
+    const isSuspended = companyStatus === 'SUSPENDED' || companyStatus === 'SUSPENDIDO';
+    console.log('companyStatus:', companyStatus);
+    console.log('susopedido:', isSuspended);
+    console.log('Perfil:', profile);
+    console.log('Dia cerrado:', user.isDayClosed);
+
+    if (profile === 'OWNER') return '/dashboard';
+
+    if (isSuspended) {
+        if (profile === 'ADMIN') return '/payment-required';
+        if (profile === 'COBRADOR') return '/system-closed';
+        return '/system-closed'; // regla para otros perfiles
+    }
+
+    if (profile === 'COBRADOR' && user.isDayClosed) return '/system-closed';
+
+    return '/dashboard';
 }

@@ -14,6 +14,7 @@ export interface User {
     status: 'ACTIVE' | 'INACTIVE';
     isDayClosed?: boolean;
     idCompany?: string;
+    companyStatus?: string;
     // Person (flattened)
     idPeople?: number;
     documentType?: string;
@@ -34,6 +35,7 @@ export interface LoginResponse {
     message: string;
     token: string;
     user: User;
+    companyStatus?: string;
 }
 
 export interface ErrorResponse {

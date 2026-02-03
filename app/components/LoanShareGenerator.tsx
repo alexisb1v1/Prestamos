@@ -2,6 +2,7 @@
 
 import { useState, useImperativeHandle, forwardRef, useRef, useEffect } from 'react';
 import { loanService } from '@/lib/loanService';
+import { formatDateUTC } from '@/lib/loanUtils';
 import { Loan, LoanDetails } from '@/lib/types';
 import { format, parseISO, eachDayOfInterval, isSameDay, startOfWeek, endOfWeek, isWithinInterval, getDay, subMonths, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -20,14 +21,7 @@ function getCachedDays(start: Date, end: Date) {
     return cachedDays.filter(day => day >= start && day <= end);
 }
 
-// Helper para formatear fechas UTC sin desfase de zona horaria
-function formatDateUTC(dateString: string): string {
-    const date = new Date(dateString);
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const year = date.getUTCFullYear();
-    return `${day}/${month}/${year}`;
-}
+
 
 // Helper para parsear fechas ISO como UTC sin conversión de zona horaria
 function parseISOasUTC(dateString: string): Date {

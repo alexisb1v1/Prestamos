@@ -62,8 +62,11 @@ export async function apiRequest<T = any>(
 
         // Check for API error responses (with statusCode field)
         if (data?.statusCode && data.statusCode >= 400) {
-            const message = Array.isArray(data.message) ? data.message.join('. ') : data.message;
-            const error = new Error(message || `Error: ${data.statusCode}`);
+            const message = Array.isArray(data.message)
+                ? data.message.join('. ')
+                : (data.message || data.error || `Error desconocido (${data.statusCode})`);
+
+            const error = new Error(message);
             (error as any).statusCode = data.statusCode;
             throw error;
         }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { loanService } from '@/lib/loanService';
+import { formatDateUTC } from '@/lib/loanUtils';
 import { Loan, LoanDetails, InstallmentDetail } from '@/lib/types';
 import { format, parseISO, eachDayOfInterval, isSameDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addMonths, subMonths, isWithinInterval, getDay, addDays, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -87,10 +88,10 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
         return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
     }, []);
 
-    const formatDatePE = useCallback((dateStr: string) => {
-        if (!dateStr) return '-';
-        return format(parseDateSafe(dateStr), 'dd/MM/yyyy');
-    }, [parseDateSafe]);
+    // const formatDatePE = useCallback((dateStr: string) => {
+    //     if (!dateStr) return '-';
+    //     return format(parseDateSafe(dateStr), 'dd/MM/yyyy');
+    // }, [parseDateSafe]);
 
     const formatDateTimePE = useCallback((dateStr: string) => {
         if (!dateStr) return '-';
@@ -269,7 +270,7 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
                         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
                             <div style={{ color: 'var(--text-secondary)' }}>ID Préstamo: #{loan.id}</div>
                             <div style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>
-                                {formatDatePE(details?.startDate || loan.startDate)} - {formatDatePE(details?.endDate || loan.endDate)}
+                                {formatDateUTC(details?.startDate || loan.startDate)} - {formatDateUTC(details?.endDate || loan.endDate)}
                             </div>
                         </div>
                         <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
@@ -576,7 +577,7 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
                     </div>
                     <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
                         <span style={{ color: '#64748b' }}>Vigencia: </span>
-                        {formatDatePE(details?.startDate || loan.startDate)} al {formatDatePE(details?.endDate || loan.endDate)}
+                        {formatDateUTC(details?.startDate || loan.startDate)} al {formatDateUTC(details?.endDate || loan.endDate)}
                     </div>
                 </div>
 

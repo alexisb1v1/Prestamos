@@ -21,9 +21,12 @@ export const authService = {
             passwordHash: password, // API expects passwordHash field
         });
 
+        console.log('Login API Response Full:', JSON.stringify(response, null, 2));
+
         // Check if login was successful
         if (!response.success) {
-            throw new Error(response.message || 'Login failed');
+            console.error('Login failed response:', response);
+            throw new Error(response.message || 'Error al iniciar sesión');
         }
 
         // Store JWT token in Cookie (accessible by Middleware)

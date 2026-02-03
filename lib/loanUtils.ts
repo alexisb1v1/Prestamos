@@ -1,6 +1,17 @@
 import { differenceInDays, startOfDay, subDays, parseISO } from 'date-fns';
 import { Loan } from './types';
 
+export const formatDateUTC = (dateString: string) => {
+    if (!dateString) return '-';
+    // Create Date object
+    const date = new Date(dateString);
+    // Use UTC methods to ignore browser timezone
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const year = date.getUTCFullYear();
+    return `${day}/${month}/${year}`;
+};
+
 export const getLoanStatus = (loan: Loan, referenceDate?: Date) => {
     // If referenceDate provided, use it (assumed to be startOfDay or current time).
     // Normalize to startOfDay to ensure consistent comparison.

@@ -6,12 +6,11 @@ import { userService } from '@/lib/userService';
 import { companyService } from '@/lib/companyService';
 import { authService } from '@/lib/auth';
 import { Loan, User, Company } from '@/lib/types';
-import { format, parseISO } from 'date-fns';
+import { getLoanStatus, formatDateUTC } from '@/lib/loanUtils';
 import CreateLoanModal from '../../components/CreateLoanModal';
 import CreatePaymentModal from '../../components/CreatePaymentModal';
 import LoanDetailsModal from '../../components/LoanDetailsModal';
 import LoanShareGenerator, { LoanShareGeneratorRef } from '../../components/LoanShareGenerator';
-import { getLoanStatus } from '@/lib/loanUtils';
 
 export default function PrestamosPage() {
     const [loans, setLoans] = useState<Loan[]>([]);
@@ -152,15 +151,15 @@ export default function PrestamosPage() {
         loadLoans(); // Will use current state and currentUser ref
     };
 
-    const formatDate = (dateStr: string) => {
-        if (!dateStr) return '-';
-        try {
-            return format(parseISO(dateStr), 'dd/MM/yyyy');
-        } catch (e) {
-            console.error('Error formatting date:', dateStr, e);
-            return dateStr;
-        }
-    };
+    //     const formatDate = (dateStr: string) => {
+    //         if (!dateStr) return '-';
+    //         try {
+    //             return format(parseISO(dateStr), 'dd/MM/yyyy');
+    //         } catch (e) {
+    //             console.error('Error formatting date:', dateStr, e);
+    //             return dateStr;
+    //         }
+    //     };
 
     const formatMoney = (amount: number) => {
         return `S/ ${Number(amount).toFixed(2)}`;
@@ -234,7 +233,7 @@ export default function PrestamosPage() {
                 </div>
                 <div>
                     <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Restante</span>
-                    <span style={{ fontWeight: 700, color: '#f59e0b', fontSize: '0.95rem' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--color-danger)', fontSize: '0.95rem' }}>
                         {formatMoney((loan as any).remainingAmount || 0)}
                     </span>
                 </div>
@@ -252,9 +251,13 @@ export default function PrestamosPage() {
                     <span style={{ whiteSpace: 'nowrap' }}>Dirección:</span>
                     <span style={{ textAlign: 'right', color: 'var(--text-primary)' }}>{loan.address}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <span>Vigencia:</span>
-                    <span style={{ color: 'var(--text-primary)' }}>{formatDate(loan.startDate)} - {formatDate(loan.endDate)}</span>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--color-primary)', textAlign: 'right' }}>
+                        <div style={{ fontWeight: 600, marginBottom: '0.1rem' }}>
+                            {formatDateUTC(loan.startDate)} - {formatDateUTC(loan.endDate)}
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -297,7 +300,7 @@ export default function PrestamosPage() {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#64748b',
+                        color: '#f59e0b',
                         flex: 1
                     }}
                 >
@@ -322,7 +325,7 @@ export default function PrestamosPage() {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#64748b',
+                        color: '#3b82f6',
                         flex: 1
                     }}
                 >
@@ -542,11 +545,11 @@ export default function PrestamosPage() {
                 /* Desktop View: Table */
                 <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
-                        <thead style={{ backgroundColor: 'var(--bg-app)', textAlign: 'left', color: 'var(--text-secondary)' }}>
+                        <thead style={{ backgroundColor: 'var(--bg-app)', textAlign: 'left' }}>
                             <tr>
                                 <th style={{ padding: '1rem' }}>Cliente</th>
+                                <th style={{ padding: '1rem' }}>Vigencia</th>
                                 <th style={{ padding: '1rem' }}>Detalle del Préstamo</th>
-                                <th style={{ padding: '1rem' }}>Fechas</th>
                                 <th style={{ padding: '1rem' }}>Estado</th>
                                 <th style={{ padding: '1rem' }}>Cobrador</th>
                                 <th style={{ padding: '1rem' }}>Acción</th>
@@ -577,6 +580,17 @@ export default function PrestamosPage() {
                                                 {loan.address}
                                             </div>
                                         </td>
+                                        <td style={{ padding: '1rem', fontSize: '0.85rem' }}>
+                                            <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--color-primary)' }}>
+                                                <div style={{ marginBottom: '0.25rem' }}>
+                                                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Inicio:</span> {formatDateUTC(loan.startDate)}
+                                                </div>
+                                                <div>
+                                                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Fin:</span> {formatDateUTC(loan.endDate)}
+                                                </div>
+                                            </div>
+
+                                        </td>
                                         <td style={{ padding: '1rem' }}>
                                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', fontSize: '0.85rem' }}>
                                                 {/* First row */}
@@ -606,18 +620,10 @@ export default function PrestamosPage() {
                                                 </div>
                                                 <div>
                                                     <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', display: 'block', fontWeight: 600 }}>Restante:</span>
-                                                    <span style={{ fontWeight: 700, color: '#f59e0b' }}>
+                                                    <span style={{ fontWeight: 700, color: 'var(--color-danger)' }}>
                                                         {formatMoney((loan as any).remainingAmount || 0)}
                                                     </span>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '1rem', fontSize: '0.85rem' }}>
-                                            <div style={{ marginBottom: '0.25rem' }}>
-                                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Inicio:</span> {formatDate(loan.startDate)}
-                                            </div>
-                                            <div>
-                                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Fin:</span> {formatDate(loan.endDate)}
                                             </div>
                                         </td>
                                         <td style={{ padding: '1rem', textAlign: 'center' }}>
@@ -674,15 +680,15 @@ export default function PrestamosPage() {
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
                                                         transition: 'all 0.2s',
-                                                        color: '#64748b'
+                                                        color: '#f59e0b'
                                                     }}
                                                     onMouseEnter={(e) => {
-                                                        e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
-                                                        e.currentTarget.style.color = '#2563eb';
+                                                        e.currentTarget.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
+                                                        e.currentTarget.style.color = '#d97706';
                                                     }}
                                                     onMouseLeave={(e) => {
                                                         e.currentTarget.style.backgroundColor = 'transparent';
-                                                        e.currentTarget.style.color = '#64748b';
+                                                        e.currentTarget.style.color = '#f59e0b';
                                                     }}
                                                 >
                                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
@@ -705,15 +711,15 @@ export default function PrestamosPage() {
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
                                                         transition: 'all 0.2s',
-                                                        color: '#64748b'
+                                                        color: '#3b82f6'
                                                     }}
                                                     onMouseEnter={(e) => {
-                                                        e.currentTarget.style.backgroundColor = 'rgba(100, 116, 139, 0.1)';
-                                                        e.currentTarget.style.color = '#475569';
+                                                        e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+                                                        e.currentTarget.style.color = '#2563eb';
                                                     }}
                                                     onMouseLeave={(e) => {
                                                         e.currentTarget.style.backgroundColor = 'transparent';
-                                                        e.currentTarget.style.color = '#64748b';
+                                                        e.currentTarget.style.color = '#3b82f6';
                                                     }}
                                                 >
                                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">

@@ -6,7 +6,7 @@ import { userService } from '@/lib/userService';
 import { companyService } from '@/lib/companyService';
 import { authService } from '@/lib/auth';
 import { DashboardData, Loan, User, Company } from '@/lib/types';
-import { getLoanStatus } from '@/lib/loanUtils';
+import { getLoanStatus, formatDateUTC } from '@/lib/loanUtils';
 import CreatePaymentModal from '../../components/CreatePaymentModal';
 import LoanDetailsModal from '../../components/LoanDetailsModal';
 import LoanShareGenerator, { LoanShareGeneratorRef } from '../../components/LoanShareGenerator';
@@ -60,16 +60,6 @@ export default function DashboardPage() {
             coordinateGetter: sortableKeyboardCoordinates,
         })
     );
-
-    const formatDate = (dateString: string) => {
-        if (!dateString) return '-';
-        const date = new Date(dateString);
-        // Usar métodos UTC para evitar problemas de zona horaria
-        const day = String(date.getUTCDate()).padStart(2, '0');
-        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-        const year = date.getUTCFullYear();
-        return `${day}/${month}/${year}`;
-    };
 
     // Auth & Filtering state
     const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -340,10 +330,10 @@ export default function DashboardPage() {
                 <td style={{ padding: '1rem' }}>
                     <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--color-primary)' }}>
                         <div style={{ marginBottom: '0.25rem' }}>
-                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Inicio:</span> {formatDate(loan.startDate)}
+                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Inicio:</span> {formatDateUTC(loan.startDate)}
                         </div>
                         <div>
-                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Fin:</span> {formatDate(loan.endDate)}
+                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Fin:</span> {formatDateUTC(loan.endDate)}
                         </div>
                     </div>
                 </td>
@@ -432,15 +422,15 @@ export default function DashboardPage() {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 transition: 'all 0.2s',
-                                color: '#64748b'
+                                color: '#f59e0b'
                             }}
                             onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
-                                e.currentTarget.style.color = '#2563eb';
+                                e.currentTarget.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
+                                e.currentTarget.style.color = '#d97706';
                             }}
                             onMouseLeave={(e) => {
                                 e.currentTarget.style.backgroundColor = 'transparent';
-                                e.currentTarget.style.color = '#64748b';
+                                e.currentTarget.style.color = '#f59e0b';
                             }}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
@@ -461,15 +451,15 @@ export default function DashboardPage() {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 transition: 'all 0.2s',
-                                color: '#64748b'
+                                color: '#3b82f6'
                             }}
                             onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = 'rgba(100, 116, 139, 0.1)';
-                                e.currentTarget.style.color = '#475569';
+                                e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+                                e.currentTarget.style.color = '#2563eb';
                             }}
                             onMouseLeave={(e) => {
                                 e.currentTarget.style.backgroundColor = 'transparent';
-                                e.currentTarget.style.color = '#64748b';
+                                e.currentTarget.style.color = '#3b82f6';
                             }}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
@@ -586,7 +576,7 @@ export default function DashboardPage() {
                         </div>
                         <div>
                             <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Restante</span>
-                            <span style={{ fontWeight: 700, color: '#f59e0b', fontSize: '0.95rem' }}>
+                            <span style={{ fontWeight: 700, color: 'var(--color-danger)', fontSize: '0.95rem' }}>
                                 {formatMoney((loan as any).remainingAmount || 0)}
                             </span>
                         </div>
@@ -604,9 +594,13 @@ export default function DashboardPage() {
                             <span style={{ whiteSpace: 'nowrap' }}>Dirección:</span>
                             <span style={{ textAlign: 'right', color: 'var(--text-primary)' }}>{loan.address}</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <span>Vigencia:</span>
-                            <span style={{ color: 'var(--text-primary)' }}>{formatDate(loan.startDate)} - {formatDate(loan.endDate)}</span>
+                            <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--color-primary)', textAlign: 'right' }}>
+                                <div style={{ fontWeight: 600, marginBottom: '0.1rem' }}>
+                                    {formatDateUTC(loan.startDate)} - {formatDateUTC(loan.endDate)}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -648,7 +642,7 @@ export default function DashboardPage() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                color: '#64748b',
+                                color: '#f59e0b',
                                 flex: 1
                             }}
                         >
@@ -672,7 +666,7 @@ export default function DashboardPage() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                color: '#64748b',
+                                color: '#3b82f6',
                                 flex: 1
                             }}
                         >
