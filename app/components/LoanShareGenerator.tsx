@@ -81,12 +81,13 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, {}>((_, ref) => {
                     const originalContainerStyle = container.getAttribute('style') || '';
 
                     // Make container visible
-                    container.style.position = 'fixed';
-                    container.style.top = '0';
-                    container.style.left = '0';
+                    // Make container visible but keep it off-screen
+                    container.style.position = 'fixed'; // Keep fixed to avoid scroll issues
+                    container.style.top = '-9999px';    // Keep it off-screen vertical
+                    container.style.left = '-9999px';   // Keep it off-screen horizontal
                     container.style.zIndex = '-9999';
-                    container.style.opacity = '1';
-                    container.style.visibility = 'visible';
+                    container.style.opacity = '1';      // Needed for capture
+                    container.style.visibility = 'visible'; // Needed for capture
 
                     // Wait for rendering visibility
                     await new Promise(resolve => setTimeout(resolve, 200));
