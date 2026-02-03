@@ -11,6 +11,7 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: 'Prestamos App',
   },
+  manifest: '/manifest.json',
   formatDetection: {
     telephone: false,
   },
