@@ -6,7 +6,7 @@ const STORAGE_KEY_PREFIX = 'collection_route_order_';
 const MAX_AGE_DAYS = 30;
 
 interface OrderData {
-    order: number[];
+    order: (string | number)[];
     lastUpdated: number;
 }
 
@@ -20,7 +20,7 @@ function getStorageKey(userId: string | number): string {
 /**
  * Save the order of loan IDs for a specific user/filter
  */
-export function saveCollectionOrder(userId: string | number, loanIds: number[]): void {
+export function saveCollectionOrder(userId: string | number, loanIds: (string | number)[]): void {
     try {
         const key = getStorageKey(userId);
         const data: OrderData = {
@@ -36,7 +36,7 @@ export function saveCollectionOrder(userId: string | number, loanIds: number[]):
 /**
  * Get the saved order of loan IDs for a specific user/filter
  */
-export function getCollectionOrder(userId: string | number): number[] | null {
+export function getCollectionOrder(userId: string | number): (string | number)[] | null {
     try {
         const key = getStorageKey(userId);
         const stored = localStorage.getItem(key);
@@ -107,9 +107,9 @@ export function cleanupOldOrders(): void {
  * New loans (not in saved order) will be appended at the end
  * Loans that no longer exist will be removed from the order
  */
-export function applySavedOrder<T extends { id: number }>(
+export function applySavedOrder<T extends { id: string | number }>(
     loans: T[],
-    savedOrder: number[] | null
+    savedOrder: (string | number)[] | null
 ): T[] {
     if (!savedOrder || savedOrder.length === 0) {
         return loans;
@@ -120,7 +120,7 @@ export function applySavedOrder<T extends { id: number }>(
 
     // Build ordered list based on saved order
     const orderedLoans: T[] = [];
-    const processedIds = new Set<number>();
+    const processedIds = new Set<string | number>();
 
     // First, add loans in the saved order
     savedOrder.forEach(id => {

@@ -118,7 +118,7 @@ export default function DashboardPage() {
 
             // Apply saved order
             const savedOrder = getCollectionOrder(userIdFilter || 'all');
-            const ordered = applySavedOrder(result.pendingLoans, savedOrder);
+            const ordered = applySavedOrder<Loan>(result.pendingLoans, savedOrder);
             setOrderedLoans(ordered);
         } catch (err) {
             console.error('Error loading dashboard:', err);
