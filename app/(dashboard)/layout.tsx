@@ -33,7 +33,7 @@ export default function DashboardLayout({
         // Restricted paths for non-ADMIN users
         const restrictedPaths = ['/cobradores', '/reportes', '/configuracion'];
 
-        if (user.profile !== 'ADMIN') {
+        if (user.profile !== 'ADMIN' && user.profile !== 'OWNER') {
             // Check if day is closed
             if (user.isDayClosed) {
                 router.push('/system-closed');

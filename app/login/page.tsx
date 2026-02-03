@@ -20,7 +20,7 @@ export default function LoginPage() {
             const response = await authService.login(username, password);
 
             // Check for System Closed status
-            if (response.user.isDayClosed && response.user.profile !== 'ADMIN') {
+            if (response.user.isDayClosed && response.user.profile === 'COBRADOR') {
                 router.push('/system-closed');
             } else {
                 // Redirect to dashboard on success

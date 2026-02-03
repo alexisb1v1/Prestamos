@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { userService } from '@/lib/userService';
-import { CreateUserRequest, User, UpdateUserRequest } from '@/lib/types';
+import { companyService } from '@/lib/companyService';
+import { authService } from '@/lib/auth';
+import { CreateUserRequest, User, UpdateUserRequest, Company } from '@/lib/types';
+import styles from './CreateUserModal.module.css';
 
 interface CreateUserModalProps {
     isOpen: boolean;
@@ -29,23 +32,46 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit
     };
 
     const [formData, setFormData] = useState(initialFormState);
+    const [companies, setCompanies] = useState<Company[]>([]);
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
 
     const [searchingPerson, setSearchingPerson] = useState(false);
 
     // Reset logic when modal opens or userToEdit changes
     useEffect(() => {
         if (isOpen) {
+            const user = authService.getUser();
+            setCurrentUser(user);
+
+            const fetchCompanies = async () => {
+                if (user?.profile === 'OWNER') {
+                    try {
+                        const data = await companyService.getAll();
+                        setCompanies(data);
+                        // If creating new user and no company selected, select first one?
+                        // Or maybe we don't force it yet? 
+                        // But if we are OWNER, we likely want to assign to one of our companies.
+                        // Actually, backend might default to owner's company if not sent?
+                        // But getting granular control is better.
+                    } catch (e) {
+                        console.error("Error fetching companies", e);
+                    }
+                }
+            };
+            fetchCompanies();
+
             if (userToEdit) {
                 setFormData({
                     username: userToEdit.username,
                     passwordHash: '', // Password not editable directly here, or handled separately
-                    profile: userToEdit.profile,
+                    profile: userToEdit.profile as any, // Cast to avoid TS error if profile is OWNER (legacy)
                     documentType: userToEdit.documentType || 'DNI',
                     documentNumber: userToEdit.documentNumber || '',
                     firstName: userToEdit.firstName || '',
                     lastName: userToEdit.lastName || '',
                     birthday: userToEdit.birthday ? new Date(userToEdit.birthday).toISOString().split('T')[0] : '',
-                    status: userToEdit.status
+                    status: userToEdit.status,
+                    idCompany: userToEdit.idCompany
                 });
             } else {
                 setFormData(initialFormState);
@@ -76,7 +102,7 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit
                         ...prev,
                         firstName: person.firstName,
                         lastName: person.lastName,
-                        birthday: person.birthday
+                        birthday: '' // Hide birthday, send null later
                     }));
                 } else {
                     // This block might not be reached if API throws 404, but in case it returns null/200 OK without data:
@@ -110,6 +136,38 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit
         return () => clearTimeout(timer);
     }, [formData.documentNumber, formData.documentType, isOpen]);
 
+    // Auto-generate username
+    useEffect(() => {
+        if (!isOpen || userToEdit) return; // Only for new users
+
+        // Determine effective companyId: 
+        // 1. From form data (if OWNER selected one)
+        // 2. From current user session (if ADMIN/COBRADOR)
+        // 3. Fallback to empty
+        const effectiveCompanyId = formData.idCompany || currentUser?.idCompany || '';
+
+        if (effectiveCompanyId) {
+            let newUsername = '';
+
+            if (formData.profile === 'ADMIN' && formData.firstName && formData.lastName) {
+                // Format: idCompany:firstLetterName+firstLastName (e.g., 34-mramirez)
+                const firstLetter = formData.firstName.charAt(0).toLowerCase();
+                const firstLastName = formData.lastName.split(' ')[0].toLowerCase();
+                newUsername = `${effectiveCompanyId}:${firstLetter}${firstLastName}`;
+            } else if (formData.profile === 'COBRADOR' && formData.documentNumber) {
+                // Format: idCompany:documentNumber (e.g., 34:12345678)
+                newUsername = `${effectiveCompanyId}:${formData.documentNumber}`;
+            }
+
+            if (newUsername) {
+                setFormData(prev => ({
+                    ...prev,
+                    username: newUsername
+                }));
+            }
+        }
+    }, [formData.idCompany, currentUser?.idCompany, formData.documentNumber, formData.firstName, formData.lastName, formData.profile, isOpen, userToEdit]);
+
     if (!isOpen) return null;
 
 
@@ -127,10 +185,11 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit
                     documentNumber: formData.documentNumber,
                     firstName: formData.firstName,
                     lastName: formData.lastName,
-                    birthday: formData.birthday
+                    birthday: formData.birthday,
+                    idCompany: formData.idCompany
                 });
             } else {
-                await userService.create(formData);
+                await userService.create({ ...formData, birthday: null });
             }
             onSuccess();
             onClose();
@@ -144,17 +203,8 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit
     };
 
     return (
-        <div style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 100,
-            backdropFilter: 'blur(4px)'
-        }}>
-            <div className="card glass" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', margin: '1rem' }}>
+        <div className={styles.overlay}>
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                     <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
                         {userToEdit ? 'Editar Usuario' : 'Nuevo Usuario'}
@@ -252,17 +302,7 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit
                         </div>
                     </div>
 
-                    <div>
-                        <label className="label">Fecha de Nacimiento</label>
-                        <input
-                            type="date"
-                            className="input"
-                            name="birthday"
-                            value={formData.birthday}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
+
 
                     <hr style={{ borderColor: 'var(--border-color)', margin: '0.5rem 0' }} />
 
@@ -274,13 +314,34 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit
                                 name="profile"
                                 value={formData.profile}
                                 onChange={handleChange}
+                                disabled={!!userToEdit} // Read-only in edit mode
                             >
                                 <option value="COBRADOR">Cobrador</option>
                                 <option value="ADMIN">Administrador</option>
-                                <option value="OWNER">Dueño</option>
                             </select>
                         </div>
                     </div>
+
+                    {/* Company Selector for OWNER */}
+                    {currentUser?.profile === 'OWNER' && (
+                        <div>
+                            <label className="label">Empresa</label>
+                            <select
+                                className="input"
+                                name="idCompany"
+                                value={formData.idCompany || ''}
+                                onChange={handleChange}
+                                disabled={!!userToEdit} // Read-only in edit mode
+                            >
+                                <option value="">Seleccione una empresa...</option>
+                                {companies.map(c => (
+                                    <option key={c.id} value={c.id}>
+                                        {c.companyName}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     {/* Credentials - Only for Create */}
                     {!userToEdit && (
@@ -292,8 +353,10 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit
                                     className="input"
                                     name="username"
                                     value={formData.username}
-                                    onChange={handleChange}
-                                    required
+                                    readOnly // Read only as requested
+                                    disabled // Visually disabled to indicate auto-generated
+                                    title="Usuario autogenerado (Empresa-DNI)"
+                                    style={{ backgroundColor: '#f1f5f9', cursor: 'not-allowed' }}
                                 />
                             </div>
                             <div>

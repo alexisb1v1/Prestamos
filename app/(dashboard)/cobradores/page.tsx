@@ -2,12 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { userService } from '@/lib/userService';
-import { User } from '@/lib/types';
+import { authService } from '@/lib/auth';
+import { companyService } from '@/lib/companyService';
+import { User, Company } from '@/lib/types';
 import CreateUserModal from '@/app/components/CreateUserModal';
 import ConfirmModal from '@/app/components/ConfirmModal';
 
 export default function CobradoresPage() {
     const [users, setUsers] = useState<User[]>([]);
+    const [companies, setCompanies] = useState<Company[]>([]);
+    const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
@@ -28,13 +33,42 @@ export default function CobradoresPage() {
     }, []);
 
     useEffect(() => {
-        loadUsers();
+        const init = async () => {
+            const user = authService.getUser();
+            setCurrentUser(user);
+
+            let companyIdToUse = user?.idCompany;
+
+            if (user?.profile === 'OWNER') {
+                const companiesData = await companyService.getAll();
+                setCompanies(companiesData);
+                if (companiesData.length > 0) {
+                    // Set default company
+                    setSelectedCompanyId(""); // Default to all
+                    companyIdToUse = "";
+                }
+            } else {
+                setSelectedCompanyId(user?.idCompany || '');
+            }
+
+            loadUsers(companyIdToUse);
+        };
+        init();
     }, []);
 
-    const loadUsers = async () => {
+    const handleCompanyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const val = e.target.value;
+        setSelectedCompanyId(val);
+        loadUsers(val);
+    };
+
+    const loadUsers = async (companyId?: string) => {
+        const compId = companyId !== undefined ? companyId : selectedCompanyId;
         try {
             setLoading(true);
-            const data = await userService.getAll(searchTerm);
+            // forceRefresh: true ensures we always get fresh data from API
+            // This is critical for the users list page to show updates immediately
+            const data = await userService.getAll(searchTerm, true, compId);
             setUsers(data);
         } catch (err) {
             console.error('Error loading users:', err);
@@ -138,8 +172,27 @@ export default function CobradoresPage() {
                     <form onSubmit={handleSearch} style={{
                         display: 'flex',
                         flexDirection: isMobile ? 'column' : 'row',
-                        gap: '1rem'
+                        gap: '1rem',
+                        alignItems: isMobile ? 'stretch' : 'center'
                     }}>
+                        {currentUser?.profile === 'OWNER' && (
+                            <select
+                                className="input"
+                                value={selectedCompanyId}
+                                onChange={handleCompanyChange}
+                                style={{
+                                    maxWidth: isMobile ? 'none' : '200px',
+                                    backgroundColor: isMobile ? 'var(--bg-card)' : 'var(--bg-app)'
+                                }}
+                            >
+                                <option value="">Todas las empresas</option>
+                                {companies.map(c => (
+                                    <option key={c.id} value={c.id}>
+                                        {c.companyName}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
                         <input
                             type="text"
                             className="input"

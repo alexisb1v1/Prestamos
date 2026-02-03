@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useImperativeHandle, forwardRef, useRef } from 'react';
+import { useState, useImperativeHandle, forwardRef, useRef, useEffect } from 'react';
 import { loanService } from '@/lib/loanService';
 import { Loan, LoanDetails } from '@/lib/types';
 import { format, parseISO, eachDayOfInterval, isSameDay, startOfWeek, endOfWeek, isWithinInterval, getDay, subMonths, addMonths } from 'date-fns';
@@ -43,61 +43,19 @@ export interface LoanShareGeneratorRef {
 const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, {}>((_, ref) => {
     const [auditData, setAuditData] = useState<{ loan: Loan, details: LoanDetails } | null>(null);
     const [generating, setGenerating] = useState(false);
+    const [readyToCapture, setReadyToCapture] = useState(false);
 
     useImperativeHandle(ref, () => ({
         shareLoan: async (loan: Loan) => {
+            console.log('ShareLoan called for:', loan.clientName);
             if (generating) return;
+
             try {
                 setGenerating(true);
                 // 1. Fetch Details
                 const details = await loanService.getDetails(loan.id);
                 setAuditData({ loan, details });
-
-                // 2. Wait for Render
-                setTimeout(async () => {
-                    const element = document.getElementById('global-loan-share-card');
-                    if (element) {
-                        try {
-                            const canvas = await html2canvas(element, {
-                                scale: 2,
-                                backgroundColor: '#ffffff',
-                                logging: false,
-                                useCORS: true
-                            } as any);
-
-                            canvas.toBlob(async (blob) => {
-                                if (!blob) return;
-                                const fileName = `Ficha_${loan.clientName.replace(/\s+/g, '_')}_${format(new Date(), 'yyyyMMdd')}.png`;
-                                const file = new File([blob], fileName, { type: 'image/png' });
-
-                                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                                    await navigator.share({
-                                        files: [file],
-                                        title: 'Ficha de Préstamo',
-                                        text: `Detalles del préstamo de ${loan.clientName}`
-                                    });
-                                } else {
-                                    const link = document.createElement('a');
-                                    link.href = canvas.toDataURL('image/png');
-                                    link.download = fileName;
-                                    link.click();
-                                }
-
-                                // Cleanup: Remove any temporary canvases created by html2canvas
-                                const tempCanvases = document.querySelectorAll('canvas[style*="position"][style*="absolute"]');
-                                tempCanvases.forEach(c => c.remove());
-
-                                // Reset state
-                                setAuditData(null);
-                                setGenerating(false);
-                            }, 'image/png');
-                        } catch (e) {
-                            console.error(e);
-                            setGenerating(false);
-                            setAuditData(null);
-                        }
-                    }
-                }, 500); // 500ms delay to ensure DOM is ready
+                setReadyToCapture(true); // Signal that data is ready for render & capture
             } catch (err) {
                 console.error("Error fetching details for share", err);
                 setGenerating(false);
@@ -105,6 +63,98 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, {}>((_, ref) => {
             }
         }
     }));
+
+    // Effect to trigger capture once data is rendered
+    useEffect(() => {
+        if (!readyToCapture || !auditData) return;
+
+        const captureImage = async () => {
+            // Wait a tick for the DOM to update with new data
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            const container = document.getElementById('loan-share-container');
+            const element = document.getElementById('global-loan-share-card');
+
+            if (container && element) {
+                try {
+                    // Save original styles
+                    const originalContainerStyle = container.getAttribute('style') || '';
+
+                    // Make container visible
+                    container.style.position = 'fixed';
+                    container.style.top = '0';
+                    container.style.left = '0';
+                    container.style.zIndex = '-9999';
+                    container.style.opacity = '1';
+                    container.style.visibility = 'visible';
+
+                    // Wait for rendering visibility
+                    await new Promise(resolve => setTimeout(resolve, 200));
+
+                    const canvas = await html2canvas(element, {
+                        scale: 2,
+                        backgroundColor: '#ffffff',
+                        logging: false,
+                        useCORS: true,
+                        allowTaint: true
+                    } as any);
+
+                    // Restore original styles
+                    container.setAttribute('style', originalContainerStyle);
+
+                    canvas.toBlob(async (blob) => {
+                        if (!blob) {
+                            console.error('Failed to create blob');
+                            return;
+                        }
+
+                        const { loan } = auditData;
+                        const fileName = `Ficha_${loan.clientName.replace(/\s+/g, '_')}_${format(new Date(), 'yyyyMMdd')}.png`;
+                        const file = new File([blob], fileName, { type: 'image/png' });
+
+                        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                            try {
+                                await navigator.share({
+                                    files: [file],
+                                    title: 'Ficha de Préstamo',
+                                    text: `Detalles del préstamo de ${loan.clientName}`
+                                });
+                            } catch (e) {
+                                console.log('Share cancelled');
+                            }
+                        } else {
+                            const link = document.createElement('a');
+                            link.href = canvas.toDataURL('image/png');
+                            link.download = fileName;
+                            link.click();
+                        }
+
+                        // Cleanup
+                        const tempCanvases = document.querySelectorAll('canvas[style*="position"][style*="absolute"]');
+                        tempCanvases.forEach(c => c.remove());
+
+                        // Reset
+                        setReadyToCapture(false);
+                        setGenerating(false);
+                        setAuditData(null);
+                    }, 'image/png');
+
+                } catch (e) {
+                    console.error('Error capturing:', e);
+                    setReadyToCapture(false);
+                    setGenerating(false);
+                    setAuditData(null);
+                }
+            } else {
+                console.error('Elements not found for capture');
+                setReadyToCapture(false);
+                setGenerating(false);
+                setAuditData(null);
+            }
+        };
+
+        captureImage();
+    }, [readyToCapture, auditData]);
 
     if (!auditData) return null;
 
@@ -119,7 +169,7 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, {}>((_, ref) => {
     const days = getCachedDays(calendarStart, calendarEnd);
 
     return (
-        <div style={{
+        <div id="loan-share-container" style={{
             position: 'fixed',
             top: '-9999px',  // Moved far off-screen
             left: '-9999px',
@@ -145,7 +195,7 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, {}>((_, ref) => {
                     <h3 style={{ fontSize: '1rem', fontWeight: 'bold', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.25rem', marginBottom: '0.5rem' }}>Datos del Cliente</h3>
                     <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '0.5rem 1rem', fontSize: '0.9rem' }}>
                         <div style={{ color: '#64748b' }}>Nombre:</div>
-                        <div style={{ fontWeight: 600 }}>{loan.clientName}</div>
+                        <div style={{ fontWeight: 600, textTransform: 'capitalize' }}>{loan.clientName.toLowerCase()}</div>
                         <div style={{ color: '#64748b' }}>Dirección:</div>
                         <div>{loan.address}</div>
                     </div>
@@ -185,9 +235,24 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, {}>((_, ref) => {
                             const isRelevant = isWithinInterval(day, { start: startDate, end: endDate }) && getDay(day) !== 0;
                             const isStart = isSameDay(startDate, day);
                             const isEnd = isSameDay(endDate, day);
+                            const isToday = isSameDay(new Date(), day);
 
-                            let bg = isRelevant ? '#f8fafc' : '#ffffff';
-                            if (installment) bg = '#ede9fe';
+                            // Check for overdue unpaid
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            const isOverdueUnpaid = isRelevant && day < today && !installment;
+
+                            // Determine background color
+                            let bg = 'white';
+                            if (installment) {
+                                bg = '#63c581ff'; // Green for paid
+                            } else if (isOverdueUnpaid) {
+                                bg = '#fed7aa'; // Orange for overdue unpaid
+                            } else if (isToday && isRelevant) {
+                                bg = '#b7d5fdff'; // Darker blue for today
+                            } else if (isRelevant) {
+                                bg = '#e0f0ff'; // Lighter blue for loan period
+                            }
 
                             return (
                                 <div key={dateStr} style={{
@@ -198,7 +263,8 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, {}>((_, ref) => {
                                     flexDirection: 'column',
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
-                                    fontSize: '0.7rem'
+                                    fontSize: '0.7rem',
+                                    border: isToday && isRelevant && !installment ? '1px solid #3b82f6' : 'none'
                                 }}>
                                     <div style={{
                                         fontWeight: isStart || isEnd ? 'bold' : 'normal',
@@ -206,12 +272,37 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, {}>((_, ref) => {
                                     }}>{format(day, 'd')}</div>
 
                                     {installment && (
-                                        <div style={{ color: '#5b21b6', fontWeight: 'bold', fontSize: '0.65rem' }}>{installment.amount}</div>
+                                        <div style={{ color: '#ffffffff', fontWeight: 'bold', fontSize: '0.65rem' }}>{installment.amount}</div>
                                     )}
                                 </div>
                             );
                         })}
                     </div>
+
+                    {/* Legend */}
+                    <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.75rem', fontSize: '0.7rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <div style={{ width: '10px', height: '10px', backgroundColor: '#63c581ff', border: '1px solid #1c9641ff', borderRadius: '2px' }}></div>
+                            <span>Pagado</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <div style={{ width: '10px', height: '10px', backgroundColor: '#fed7aa', border: '1px solid #fb923c', borderRadius: '2px' }}></div>
+                            <span>Vencido</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <div style={{ width: '10px', height: '10px', backgroundColor: '#e0f0ff', border: '1px solid #bfdbfe', borderRadius: '2px' }}></div>
+                            <span>Préstamo</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <div style={{ width: '10px', height: '10px', backgroundColor: '#b7d5fdff', border: '1px solid #3b82f6', borderRadius: '2px' }}></div>
+                            <span>Hoy</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.65rem', color: '#94a3b8', borderTop: '1px solid #e2e8f0', paddingTop: '0.5rem' }}>
+                    <p style={{ margin: 0 }}>Cuentas Claras - Sistema de Control de Préstamos</p>
                 </div>
             </div>
         </div>

@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { loanService } from '@/lib/loanService';
 import { userService } from '@/lib/userService';
+import { companyService } from '@/lib/companyService';
 import { authService } from '@/lib/auth';
-import { Loan, User } from '@/lib/types';
+import { Loan, User, Company } from '@/lib/types';
 import { format, parseISO } from 'date-fns';
 import CreateLoanModal from '../../components/CreateLoanModal';
 import CreatePaymentModal from '../../components/CreatePaymentModal';
@@ -25,6 +26,10 @@ export default function PrestamosPage() {
     const [selectedCollector, setSelectedCollector] = useState('');
     const [collectors, setCollectors] = useState<User[]>([]);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+    // Multi-tenancy state
+    const [companies, setCompanies] = useState<Company[]>([]);
+    const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
 
     // Modal state
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -49,25 +54,55 @@ export default function PrestamosPage() {
     };
 
     useEffect(() => {
-        // Init user and data
-        const user = authService.getUser();
-        setCurrentUser(user);
+        const init = async () => {
+            // Init user and data
+            const user = authService.getUser();
+            setCurrentUser(user);
 
-        // If cobrador, we don't need to load collectors, but we need to set initial fetch correctly? 
-        // Actually loadLoans depends on state, but state isn't set yet.
-        // Let's call loadCollector only if Admin
-        if (user?.profile === 'ADMIN' || user?.profile === 'OWNER') {
-            loadCollectors();
-        }
+            let companyIdToUse = user?.idCompany;
 
-        // We can't call loadLoans here directly because we might need to wait for currentUser to be set 
-        // if we rely on state. However, 'user' var is available.
-        // Let's pass user to loadLoans to be safe or separate effect.
-        loadLoans(user);
+            if (user?.profile === 'OWNER') {
+                const companiesData = await companyService.getAll();
+                setCompanies(companiesData);
+                if (companiesData.length > 0) {
+                    // Set default company
+                    setSelectedCompanyId(""); // Default to all
+                    companyIdToUse = "";
+                }
+            } else {
+                setSelectedCompanyId(user?.idCompany || '');
+            }
+
+            // If cobrador, we don't need to load collectors, but we need to set initial fetch correctly? 
+            // Actually loadLoans depends on state, but state isn't set yet.
+            // Let's call loadCollector only if Admin
+            if (user?.profile === 'ADMIN' || user?.profile === 'OWNER') {
+                // Pass filtered company if Owner
+                const filterCompany = user.profile === 'OWNER' ? companyIdToUse : user.idCompany;
+                loadCollectors(filterCompany);
+            }
+
+            // We can't call loadLoans here directly because we might need to wait for currentUser to be set 
+            // if we rely on state. However, 'user' var is available.
+            // Let's pass user to loadLoans to be safe or separate effect.
+            loadLoans(user, companyIdToUse);
+        };
+        init();
     }, []);
 
-    const loadLoans = async (userContext?: User | null) => {
+    // Helper to reload everything when company changes (Owner only)
+    const handleCompanyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const val = e.target.value;
+        setSelectedCompanyId(val);
+        // Refresh data
+        loadLoans(currentUser, val);
+        loadCollectors(val);
+    };
+
+    const loadLoans = async (userContext?: User | null, companyId?: string) => {
         const user = userContext || currentUser;
+        const compId = companyId !== undefined ? companyId : selectedCompanyId; // Use passed or state
+
         try {
             setLoading(true);
 
@@ -78,7 +113,15 @@ export default function PrestamosPage() {
                 userIdFilter = user.id;
             }
 
-            const data = await loanService.getAll(userIdFilter, documentNumber);
+            // For Owner/Admin logic regarding companyId:
+            // Admin: always send their idCompany (handled by caller or state if initialized)
+            // Owner: send selected company
+            // But loanService expects companyId param.
+
+            // If user is NOT owner, companyId should be their own.
+            // But we set selectedCompanyId in init for everyone.
+
+            const data = await loanService.getAll(userIdFilter, documentNumber, compId);
             setLoans(data);
         } catch (err) {
             console.error('Error loading loans:', err);
@@ -88,15 +131,19 @@ export default function PrestamosPage() {
         }
     };
 
-    const loadCollectors = async () => {
+    const loadCollectors = async (companyId?: string) => {
         try {
-            const allUsers = await userService.getAll();
+            // Filter collectors by company if ID is present
+            // userService.getAll now supports idCompany filter.
+            const allUsers = await userService.getAll(undefined, false, companyId);
             const activeCollectors = allUsers.filter(u =>
                 u.profile === 'COBRADOR' && u.status === 'ACTIVE'
             );
             setCollectors(activeCollectors);
         } catch (err) {
             console.error('Error loading collectors:', err);
+            // Fallback empty?
+            setCollectors([]);
         }
     };
 
@@ -134,10 +181,9 @@ export default function PrestamosPage() {
     const MobileLoanCard = ({ loan }: { loan: Loan }) => (
         <div style={{
             backgroundColor: 'var(--bg-card)',
-            padding: '1rem',
+            padding: '1rem 1rem 0.25rem 1rem',
             borderRadius: 'var(--radius-md)',
             border: '1px solid var(--border-color)',
-            marginBottom: '1rem',
             boxShadow: 'var(--shadow-sm)'
         }}>
             <div style={{
@@ -149,7 +195,7 @@ export default function PrestamosPage() {
                 borderBottom: '1px solid var(--border-color)'
             }}>
                 <div>
-                    <div style={{ fontWeight: 700, fontSize: '1rem' }}>{loan.clientName}</div>
+                    <div style={{ fontWeight: 700, fontSize: '1rem', textTransform: 'capitalize' }}>{loan.clientName.toLowerCase()}</div>
                     <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{loan.documentNumber}</div>
                 </div>
                 <span style={{ fontSize: '1.25rem', lineHeight: 1 }} title={getLoanStatus(loan, today).label}>
@@ -212,13 +258,7 @@ export default function PrestamosPage() {
                 </div>
             </div>
 
-            <div style={{
-                paddingTop: '0.75rem',
-                borderTop: '1px solid var(--border-color)',
-                display: 'flex',
-                gap: '1rem',
-                justifyContent: 'center'
-            }}>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', justifyContent: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '0.25rem' }}>
                 <button
                     onClick={() => !(!!loan.paidToday || loan.inIntervalPayment === 0) && handleOpenPayment(loan)}
                     disabled={!!loan.paidToday || loan.inIntervalPayment === 0}
@@ -359,25 +399,48 @@ export default function PrestamosPage() {
                         </div>
 
                         {(currentUser?.profile === 'ADMIN' || currentUser?.profile === 'OWNER') && (
-                            <div style={{ width: isMobile ? '100%' : 'auto' }}>
-                                <select
-                                    className="input"
-                                    value={selectedCollector}
-                                    onChange={(e) => setSelectedCollector(e.target.value)}
-                                    style={{
-                                        width: '100%',
-                                        maxWidth: isMobile ? 'none' : '250px',
-                                        backgroundColor: isMobile ? 'var(--bg-card)' : 'var(--bg-app)'
-                                    }}
-                                >
-                                    <option value="">Todos los cobradores</option>
-                                    {collectors.map(collector => (
-                                        <option key={collector.id} value={collector.id}>
-                                            {collector.username} ({collector.firstName} {collector.lastName})
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                            <>
+                                {currentUser?.profile === 'OWNER' && (
+                                    <div style={{ width: isMobile ? '100%' : 'auto' }}>
+                                        <select
+                                            className="input"
+                                            value={selectedCompanyId}
+                                            onChange={handleCompanyChange}
+                                            style={{
+                                                width: '100%',
+                                                maxWidth: isMobile ? 'none' : '200px',
+                                                backgroundColor: isMobile ? 'var(--bg-card)' : 'var(--bg-app)'
+                                            }}
+                                        >
+                                            <option value="">Todas las empresas</option>
+                                            {companies.map(c => (
+                                                <option key={c.id} value={c.id}>
+                                                    {c.companyName}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
+                                <div style={{ width: isMobile ? '100%' : 'auto' }}>
+                                    <select
+                                        className="input"
+                                        value={selectedCollector}
+                                        onChange={(e) => setSelectedCollector(e.target.value)}
+                                        style={{
+                                            width: '100%',
+                                            maxWidth: isMobile ? 'none' : '250px',
+                                            backgroundColor: isMobile ? 'var(--bg-card)' : 'var(--bg-app)'
+                                        }}
+                                    >
+                                        <option value="">Todos los cobradores</option>
+                                        {collectors.map(collector => (
+                                            <option key={collector.id} value={collector.id}>
+                                                {collector.username} ({collector.firstName} {collector.lastName})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </>
                         )}
 
                         <div style={{ display: 'flex', gap: '0.5rem', width: isMobile ? '100%' : 'auto' }}>
@@ -506,7 +569,7 @@ export default function PrestamosPage() {
                                 loans.map((loan) => (
                                     <tr key={loan.id} style={{ borderTop: '1px solid var(--border-color)', fontSize: '0.9rem' }}>
                                         <td style={{ padding: '1rem' }}>
-                                            <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>{loan.clientName}</div>
+                                            <div style={{ fontWeight: 600, fontSize: '0.95rem', textTransform: 'capitalize' }}>{loan.clientName.toLowerCase()}</div>
                                             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
                                                 {loan.documentNumber}
                                             </div>

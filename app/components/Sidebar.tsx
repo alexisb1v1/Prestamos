@@ -25,8 +25,8 @@ const MENU_ITEMS: MenuItem[] = [
     icon: '⚙️',
     children: [
       { label: 'Usuarios', href: '/cobradores', icon: '👥' },
-      { label: 'Reportes', href: '/reportes', icon: '📊' },
-      { label: 'Configuración', href: '/configuracion', icon: '⚙️' }
+      // { label: 'Reportes', href: '/reportes', icon: '📊' },
+      // { label: 'Configuración', href: '/configuracion', icon: '⚙️' }
     ]
   },
 ];
@@ -153,7 +153,7 @@ export default function Sidebar() {
 
         <nav className={styles.nav}>
           {MENU_ITEMS.filter(item => {
-            if (user?.profile === 'ADMIN') return true;
+            if (user?.profile === 'ADMIN' || user?.profile === 'OWNER') return true;
             // Non-admin users see Resumen, Préstamos, and Gastos
             return ['Resumen', 'Préstamos', 'Gastos'].includes(item.label);
           }).map((item) => renderMenuItem(item))}

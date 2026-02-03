@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { expenseService } from '@/lib/expenseService';
 import { userService } from '@/lib/userService';
+import { companyService } from '@/lib/companyService';
 import { authService } from '@/lib/auth';
-import { Expense, User } from '@/lib/types';
+import { Expense, User, Company } from '@/lib/types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -19,6 +20,10 @@ export default function ExpensesPage() {
     const [collectors, setCollectors] = useState<User[]>([]);
     const [selectedCollector, setSelectedCollector] = useState('');
 
+    // Multi-tenancy state
+    const [companies, setCompanies] = useState<Company[]>([]);
+    const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
+
     // Mobile detection
     const [isMobile, setIsMobile] = useState(false);
 
@@ -30,24 +35,43 @@ export default function ExpensesPage() {
     }, []);
 
     useEffect(() => {
-        const user = authService.getUser();
-        if (user) {
-            setCurrentUser(user);
-            setIsAdmin(user.profile === 'ADMIN' || user.profile === 'OWNER');
+        const init = async () => {
+            const user = authService.getUser();
+            if (user) {
+                setCurrentUser(user);
+                setIsAdmin(user.profile === 'ADMIN' || user.profile === 'OWNER');
 
-            // Load collectors only if ADMIN
-            if (user.profile === 'ADMIN' || user.profile === 'OWNER') {
-                loadCollectors();
+                let companyIdToUse = user.idCompany;
+
+                if (user.profile === 'OWNER') {
+                    const companiesData = await companyService.getAll();
+                    setCompanies(companiesData);
+                    if (companiesData.length > 0) {
+                        // Set default to "All Companies"
+                        setSelectedCompanyId("");
+                        companyIdToUse = "";
+                    }
+                } else {
+                    setSelectedCompanyId(user.idCompany || '');
+                }
+
+                // Load collectors only if ADMIN/OWNER
+                if (user.profile === 'ADMIN' || user.profile === 'OWNER') {
+                    // Pass filtered company if Owner
+                    const filterCompany = user.profile === 'OWNER' ? companyIdToUse : user.idCompany;
+                    loadCollectors(filterCompany);
+                }
+
+                loadExpenses(user, companyIdToUse);
             }
-
-            loadExpenses(user);
-        }
+        };
+        init();
     }, []); // Initial load
 
     // Removed the useEffect that reloads expenses on date/selectedCollector change
     // because now we have a manual search button.
 
-    const loadExpenses = async (userContext?: User | null) => {
+    const loadExpenses = async (userContext?: User | null, companyId?: string) => {
         const user = userContext || currentUser;
         try {
             setLoading(true);
@@ -59,7 +83,14 @@ export default function ExpensesPage() {
                 userIdParam = String(user.id);
             }
 
-            const data = await expenseService.getAll(date, userIdParam);
+            // Determine Company ID
+            // If companyId argument is passed (from init), use it.
+            // Otherwise use state (if OWNER) or user's company (if ADMIN/COBRADOR)
+            const companyIdFilter = companyId !== undefined ? companyId :
+                (user?.profile === 'OWNER' ? selectedCompanyId : user?.idCompany);
+
+
+            const data = await expenseService.getAll(date, userIdParam, companyIdFilter);
             setExpenses(data);
         } catch (error) {
             console.error('Error loading expenses:', error);
@@ -68,9 +99,10 @@ export default function ExpensesPage() {
         }
     };
 
-    const loadCollectors = async () => {
+    const loadCollectors = async (companyIdFilter?: string) => {
         try {
-            const allUsers = await userService.getAll();
+            // Use userService with company filter
+            const allUsers = await userService.getAll(undefined, false, companyIdFilter);
             const activeCollectors = allUsers.filter(u =>
                 u.profile === 'COBRADOR' && u.status === 'ACTIVE'
             );
@@ -144,6 +176,36 @@ export default function ExpensesPage() {
                                 }}
                             />
                         </div>
+
+                        {/* Company Selector - OWNER only */}
+                        {currentUser?.profile === 'OWNER' && (
+                            <div style={{ width: isMobile ? '100%' : 'auto' }}>
+                                <select
+                                    className="input"
+                                    value={selectedCompanyId}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setSelectedCompanyId(val);
+                                        // Reload collectors when company changes
+                                        loadCollectors(val);
+                                        // Reload expenses immediately
+                                        loadExpenses(currentUser, val);
+                                    }}
+                                    style={{
+                                        width: '100%',
+                                        maxWidth: isMobile ? 'none' : '200px',
+                                        backgroundColor: isMobile ? 'var(--bg-card)' : 'var(--bg-app)'
+                                    }}
+                                >
+                                    <option value="">Todas las empresas</option>
+                                    {companies.map(c => (
+                                        <option key={c.id} value={c.id}>
+                                            {c.companyName}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
 
                         {/* User selector - Only show for ADMIN */}
                         {(currentUser?.profile === 'ADMIN' || currentUser?.profile === 'OWNER') && (

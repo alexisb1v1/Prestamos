@@ -141,25 +141,63 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
 
     const isStartDate = useCallback((day: Date) => isSameDay(parsedDates.start, day), [parsedDates.start]);
     const isEndDate = useCallback((day: Date) => isSameDay(parsedDates.end, day), [parsedDates.end]);
+    const isToday = useCallback((day: Date) => isSameDay(new Date(), day), []);
 
     // Conditional return AFTER all hooks
     if (!isOpen || !loan) return null;
 
     const handleShare = async () => {
         const element = document.getElementById('loan-share-card');
-        if (!element) return;
+        if (!element) {
+            console.error('Share card element not found');
+            return;
+        }
+
+        console.log('Element found:', element);
+        console.log('Element dimensions:', {
+            width: element.offsetWidth,
+            height: element.offsetHeight,
+            scrollWidth: element.scrollWidth,
+            scrollHeight: element.scrollHeight
+        });
 
         try {
-            // Wait a moment for rendering if needed, though hidden element should be ready
+            // Temporarily make element visible for html2canvas
+            const originalStyle = element.style.cssText;
+            element.style.cssText = 'position: fixed; left: 0; top: 0; z-index: 9999; opacity: 1;';
+
+            console.log('Element made visible, new dimensions:', {
+                width: element.offsetWidth,
+                height: element.offsetHeight
+            });
+
+            // Small delay to ensure rendering
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            console.log('About to call html2canvas...');
             const canvas = await html2canvas(element, {
-                scale: 2, // Higher resolution
+                scale: 2,
                 backgroundColor: '#ffffff',
-                logging: false,
-                useCORS: true
+                logging: true,
+                useCORS: true,
+                allowTaint: true
             } as any);
 
+            console.log('Canvas created:', {
+                width: canvas.width,
+                height: canvas.height
+            });
+
+            // Restore original style
+            element.style.cssText = originalStyle;
+
             canvas.toBlob(async (blob) => {
-                if (!blob) return;
+                if (!blob) {
+                    console.error('Failed to create blob from canvas');
+                    return;
+                }
+
+                console.log('Blob created:', blob.size, 'bytes');
                 const fileName = `Ficha_${loan.clientName.replace(/\s+/g, '_')}_${format(new Date(), 'yyyyMMdd')}.png`;
                 const file = new File([blob], fileName, { type: 'image/png' });
 
@@ -227,7 +265,7 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
                         border: '1px solid var(--border-color)',
                         fontSize: '0.9rem'
                     }}>
-                        <div style={{ fontWeight: 'bold' }}>Cliente: {loan.clientName}</div>
+                        <div style={{ fontWeight: 'bold', textTransform: 'capitalize' }}>Cliente: {loan.clientName.toLowerCase()}</div>
                         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
                             <div style={{ color: 'var(--text-secondary)' }}>ID Préstamo: #{loan.id}</div>
                             <div style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>
@@ -333,17 +371,35 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
                                     const isRelevant = isLoanDate(day);
                                     const isStart = isStartDate(day);
                                     const isEnd = isEndDate(day);
+                                    const isTodayDate = isToday(day);
 
                                     // Month indicator if day is 1st of month
                                     const isFirstOfMonth = format(day, 'd') === '1';
+
+                                    // Check if it's an overdue unpaid day (before today, no payment, within loan period)
+                                    const today = new Date();
+                                    today.setHours(0, 0, 0, 0);
+                                    const isOverdueUnpaid = isRelevant && day < today && !installment;
+
+                                    // Determine background color
+                                    let bgColor = 'white';
+                                    if (installment) {
+                                        bgColor = '#63c581ff'; // Green for paid
+                                    } else if (isOverdueUnpaid) {
+                                        bgColor = '#fed7aa'; // Orange/yellow for overdue unpaid
+                                    } else if (isTodayDate && isRelevant) {
+                                        bgColor = '#b7d5fdff'; // Darker blue for today
+                                    } else if (isRelevant) {
+                                        bgColor = '#e0f0ff'; // Lighter blue for loan period
+                                    }
 
                                     return (
                                         <div key={day.toISOString()} style={{
                                             minHeight: '85px',
                                             padding: '4px',
-                                            backgroundColor: isRelevant ? '#eff6ff' : 'white',
+                                            backgroundColor: bgColor,
                                             position: 'relative',
-                                            border: isRelevant ? '1px solid #bfdbfe' : 'none',
+                                            border: isTodayDate && isRelevant ? '2px solid #3b82f6' : (isRelevant ? '1px solid #bfdbfe' : 'none'),
                                             display: 'flex',
                                             flexDirection: 'column'
                                         }}>
@@ -372,27 +428,29 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
 
                                             {isStart && (
                                                 <div style={{
-                                                    fontSize: '0.55rem',
-                                                    backgroundColor: '#dcfce7',
-                                                    color: '#166534',
-                                                    padding: '1px 2px',
-                                                    borderRadius: '2px',
+                                                    fontSize: '0.65rem',
+                                                    backgroundColor: '#8b5cf6',
+                                                    color: 'white',
+                                                    padding: '3px 4px',
+                                                    borderRadius: '3px',
                                                     marginBottom: '2px',
                                                     textAlign: 'center',
-                                                    fontWeight: 'bold'
+                                                    fontWeight: 'bold',
+                                                    boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
                                                 }}>INICIO</div>
                                             )}
 
                                             {isEnd && (
                                                 <div style={{
-                                                    fontSize: '0.55rem',
-                                                    backgroundColor: '#fee2e2',
-                                                    color: '#991b1b',
-                                                    padding: '1px 2px',
-                                                    borderRadius: '2px',
+                                                    fontSize: '0.65rem',
+                                                    backgroundColor: '#ef4444',
+                                                    color: 'white',
+                                                    padding: '3px 4px',
+                                                    borderRadius: '3px',
                                                     marginBottom: '2px',
                                                     textAlign: 'center',
-                                                    fontWeight: 'bold'
+                                                    fontWeight: 'bold',
+                                                    boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
                                                 }}>FIN</div>
                                             )}
 
@@ -400,12 +458,12 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
                                                 <div style={{
                                                     marginTop: 'auto',
                                                     padding: '6px 2px',
-                                                    backgroundColor: '#ede9fe',
+                                                    backgroundColor: '#63c581ff',
                                                     borderRadius: '4px',
-                                                    border: '1px solid #c4b5fd',
+                                                    border: '1px solid #1c9641ff',
                                                     textAlign: 'center'
                                                 }}>
-                                                    <div style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#5b21b6', lineHeight: '1.2' }}>
+                                                    <div style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#ffffffff', lineHeight: '1.2' }}>
                                                         S/ {installment.amount}
                                                     </div>
                                                 </div>
@@ -415,14 +473,22 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
                                 })}
                             </div>
 
-                            <div style={{ marginTop: '0.5rem', display: 'flex', gap: '1rem', fontSize: '0.8rem' }}>
+                            <div style={{ marginTop: '0.5rem', display: 'flex', gap: '1rem', fontSize: '0.8rem', flexWrap: 'wrap' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                    <div style={{ width: '12px', height: '12px', backgroundColor: '#ede9fe', border: '1px solid #c4b5fd', borderRadius: '2px' }}></div>
+                                    <div style={{ width: '12px', height: '12px', backgroundColor: '#63c581ff', border: '1px solid #1c9641ff', borderRadius: '2px' }}></div>
                                     <span>Pago Registrado</span>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                    <div style={{ width: '12px', height: '12px', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '2px' }}></div>
+                                    <div style={{ width: '12px', height: '12px', backgroundColor: '#fed7aa', border: '1px solid #fb923c', borderRadius: '2px' }}></div>
+                                    <span>Sin Pago (Vencido)</span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <div style={{ width: '12px', height: '12px', backgroundColor: '#e0f0ff', border: '1px solid #bfdbfe', borderRadius: '2px' }}></div>
                                     <span>Periodo de Préstamo</span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <div style={{ width: '12px', height: '12px', backgroundColor: '#b7d5fdff', border: '2px solid #3b82f6', borderRadius: '2px' }}></div>
+                                    <span>Hoy</span>
                                 </div>
                             </div>
                         </>
@@ -494,7 +560,7 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
                     <h3 style={{ fontSize: '1rem', fontWeight: 'bold', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.25rem', marginBottom: '0.5rem' }}>Datos del Cliente</h3>
                     <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '0.5rem 1rem', fontSize: '0.9rem' }}>
                         <div style={{ color: '#64748b' }}>Nombre:</div>
-                        <div style={{ fontWeight: 600 }}>{loan.clientName}</div>
+                        <div style={{ fontWeight: 600, textTransform: 'capitalize' }}>{loan.clientName.toLowerCase()}</div>
                         <div style={{ color: '#64748b' }}>Dirección:</div>
                         <div>{loan.address}</div>
                     </div>
@@ -526,18 +592,32 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
                         borderRadius: '0.5rem',
                         overflow: 'hidden'
                     }}>
-                        {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map(d => (
-                            <div key={'h' + d} style={{ backgroundColor: '#f1f5f9', padding: '4px', textAlign: 'center', fontSize: '0.7rem', fontWeight: 'bold' }}>{d}</div>
+                        {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, idx) => (
+                            <div key={'h' + idx} style={{ backgroundColor: '#f1f5f9', padding: '4px', textAlign: 'center', fontSize: '0.7rem', fontWeight: 'bold' }}>{d}</div>
                         ))}
                         {days.map(day => {
                             const installment = getInstallmentForDay(day);
                             const isRelevant = isLoanDate(day);
                             const isStart = isStartDate(day);
                             const isEnd = isEndDate(day);
+                            const isTodayDate = isToday(day);
+
+                            // Check for overdue unpaid
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            const isOverdueUnpaid = isRelevant && day < today && !installment;
 
                             // Simple visual representation
-                            let bg = isRelevant ? '#f8fafc' : '#ffffff';
-                            if (installment) bg = '#ede9fe';
+                            let bg = 'white';
+                            if (installment) {
+                                bg = '#63c581ff'; // Green for paid
+                            } else if (isOverdueUnpaid) {
+                                bg = '#fed7aa'; // Orange for overdue unpaid
+                            } else if (isTodayDate && isRelevant) {
+                                bg = '#b7d5fdff'; // Darker blue for today
+                            } else if (isRelevant) {
+                                bg = '#e0f0ff'; // Lighter blue for loan period
+                            }
 
                             return (
                                 <div key={'img' + day.toISOString()} style={{
@@ -548,7 +628,8 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
                                     flexDirection: 'column',
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
-                                    fontSize: '0.7rem'
+                                    fontSize: '0.7rem',
+                                    border: isTodayDate && isRelevant && !installment ? '1px solid #3b82f6' : 'none'
                                 }}>
                                     <div style={{
                                         fontWeight: isStart || isEnd ? 'bold' : 'normal',
@@ -556,7 +637,7 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
                                     }}>{format(day, 'd')}</div>
 
                                     {installment && (
-                                        <div style={{ color: '#5b21b6', fontWeight: 'bold', fontSize: '0.65rem' }}>{installment.amount}</div>
+                                        <div style={{ color: '#ffffffff', fontWeight: 'bold', fontSize: '0.65rem' }}>{installment.amount}</div>
                                     )}
                                 </div>
                             );

@@ -13,6 +13,7 @@ export interface User {
     profile: 'ADMIN' | 'OWNER' | 'COBRADOR';
     status: 'ACTIVE' | 'INACTIVE';
     isDayClosed?: boolean;
+    idCompany?: string;
     // Person (flattened)
     idPeople?: number;
     documentType?: string;
@@ -75,15 +76,25 @@ export interface Payment {
     date: string;
     cobradorId: string;
 }
+export interface Company {
+    id: string;
+    companyName: string;
+    ruc?: string;
+    address?: string;
+    phone?: string;
+    status: string;
+}
+
 export interface CreateUserRequest {
     username: string;
     passwordHash: string;
-    profile: 'ADMIN' | 'OWNER' | 'COBRADOR';
+    profile: 'ADMIN' | 'COBRADOR';
     documentType: string;
     documentNumber: string;
     firstName: string;
     lastName: string;
-    birthday: string;
+    birthday?: string | null;
+    idCompany?: string; // Optional because only Owner sends it explicitely, others might be handled differently or required based on logic
 }
 
 export interface CreateUserResponse {
@@ -93,13 +104,14 @@ export interface CreateUserResponse {
 }
 
 export interface UpdateUserRequest {
-    profile: 'ADMIN' | 'OWNER' | 'COBRADOR';
+    profile: 'ADMIN' | 'COBRADOR';
     status: 'ACTIVE' | 'INACTIVE';
     documentType: string;
     documentNumber: string;
     firstName: string;
     lastName: string;
-    birthday: string;
+    birthday?: string | null;
+    idCompany?: string;
 }
 
 export interface UpdateUserResponse {
