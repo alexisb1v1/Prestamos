@@ -192,6 +192,7 @@ export interface DashboardData {
         efectivo: number;
     };
     totalExpensesToday: number;
+    thermometer?: number;
 }
 
 export interface CreateExpenseRequest {

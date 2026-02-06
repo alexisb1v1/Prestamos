@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/lib/auth';
 import { getLandingRoute } from '@/lib/utils';
@@ -9,8 +9,18 @@ export default function LoginPage() {
     const router = useRouter();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [rememberUser, setRememberUser] = useState(false); // Estado para el checkbox
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+
+    // Cargar usuario guardado al iniciar
+    useEffect(() => {
+        const savedUsername = localStorage.getItem('remembered_username');
+        if (savedUsername) {
+            setUsername(savedUsername);
+            setRememberUser(true);
+        }
+    }, []);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -19,6 +29,14 @@ export default function LoginPage() {
 
         try {
             const response = await authService.login(username, password);
+
+            // Lógica para guardar/olvidar usuario
+            if (rememberUser) {
+                localStorage.setItem('remembered_username', username);
+            } else {
+                localStorage.removeItem('remembered_username');
+            }
+
             router.push(getLandingRoute(response));
         } catch (err: any) {
             setError(err.message || 'Error al iniciar sesión. Verifica tus credenciales.');
@@ -85,7 +103,11 @@ export default function LoginPage() {
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
                         <label style={{ display: 'flex', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>
-                            <input type="checkbox" /> Recuerdame
+                            <input
+                                type="checkbox"
+                                checked={rememberUser}
+                                onChange={(e) => setRememberUser(e.target.checked)}
+                            /> Recuérdame
                         </label>
                         <a href="#" style={{ color: 'var(--color-primary)' }}>¿Olvidaste tu contraseña?</a>
                     </div>

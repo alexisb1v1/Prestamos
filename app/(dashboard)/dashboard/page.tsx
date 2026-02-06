@@ -141,17 +141,6 @@ export default function DashboardPage() {
     const loadCollectors = async () => {
         try {
             setLoadingCollectors(true);
-            // Pass selectedCompanyId to filter collectors by company if needed, but currently userService.getAll doesn't support company filter for basic list or assuming it's handled.
-            // Actually we updated userService.getAll to accept idCompany.
-            // If current user is owner, they might want to see collectors for the selected company.
-            // If current user is admin, they see their company's collectors.
-            // But here we are fetching ALL users to filter for collectors.
-            // Let's rely on userService logic: if I pass idCompany, it filters.
-
-            // NOTE: We need to pass selectedCompanyId ONLY if we are OWNER and have selected one. 
-            // If ADMIN, idCompany is in session, userService might not need it passed explicitly if we rely on backend, 
-            // BUT we updated userService to use idCompany param.
-            // Let's check authService.getUser() again.
 
             const currentUser = authService.getUser();
             let companyFilter = undefined;
@@ -215,17 +204,6 @@ export default function DashboardPage() {
                 }
 
                 if (user.profile === 'ADMIN' || user.profile === 'OWNER') {
-                    // Load collectors (will use state selectedCompanyId, but state updates are async...)
-                    // Better to pass ID directly if possible or wait for next render.
-                    // But for simplicity, we call loadDashboard with the ID we just determined.
-
-                    // Note: loadCollectors depends on state selectedCompanyId. 
-                    // To avoid race conditions, we might want to wait or pass params.
-                    // But since we are inside init async, state updates won't be reflected immediately in `selectedCompanyId` variable read.
-                    // However, we can call loadDashboard(selectedUserId, companyIdToUse);
-
-                    // However, we can call loadDashboard(selectedUserId, companyIdToUse);
-
                     loadDashboard('', companyIdToUse);
                     loadCollectors();
                 } else {
@@ -792,9 +770,86 @@ export default function DashboardPage() {
                             <h3 className="label" style={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}>Gastos Hoy</h3>
                             <p style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold', color: '#ef4444', margin: '0.25rem 0' }}>{formatMoney(data.totalExpensesToday || 0)}</p>
                         </div>
-                        <div className="card" style={{ padding: isMobile ? '0.75rem' : '1.5rem' }}>
-                            <h3 className="label" style={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}>Meta Diaria</h3>
-                            <p style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold', color: 'var(--color-success)', margin: '0.25rem 0' }}>S/ 5,000</p>
+                        <div className="card" style={{ padding: isMobile ? '0.75rem' : '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                            <h3 className="label" style={{ fontSize: isMobile ? '0.75rem' : '0.875rem', alignSelf: 'flex-start', marginBottom: '0.25rem' }}>Termometro</h3>
+                            {data.thermometer !== undefined ? (
+                                <div style={{
+                                    position: 'relative',
+                                    width: isMobile ? '140px' : '180px', // Reducido en móvil
+                                    height: isMobile ? '85px' : '110px',  // Reducido en móvil
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'flex-end',
+                                    marginTop: '0.5rem'
+                                }}>
+
+                                    {/* Text Info (Moved to Top) */}
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '0',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        zIndex: 10
+                                    }}>
+                                        <div style={{
+                                            fontSize: isMobile ? '1.25rem' : '1.75rem', // Fuente más pequeña en móvil
+                                            fontWeight: '800',
+                                            lineHeight: 1,
+                                            color: 'var(--text-primary)'
+                                        }}>
+                                            {Number(data.thermometer).toFixed(0)}%
+                                        </div>
+                                        <div style={{
+                                            fontSize: isMobile ? '0.6rem' : '0.75rem',
+                                            fontWeight: '700',
+                                            textTransform: 'uppercase',
+                                            padding: '2px 8px',
+                                            borderRadius: '12px',
+                                            marginTop: '2px',
+                                            backgroundColor: data.thermometer < 80 ? '#fef2f2' : (data.thermometer < 100 ? '#fefce8' : '#f0fdf4'),
+                                            color: data.thermometer < 80 ? '#ef4444' : (data.thermometer < 100 ? '#ca8a04' : '#16a34a')
+                                        }}>
+                                            {data.thermometer < 80 ? 'Bajo' : (data.thermometer < 100 ? 'Regular' : 'Excelente')}
+                                        </div>
+                                    </div>
+
+                                    {/* Gauge SVG */}
+                                    <svg viewBox="0 0 120 75" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+                                        {/* Background Track */}
+                                        <path
+                                            d="M 20 65 A 40 40 0 1 1 100 65"
+                                            fill="none"
+                                            stroke="#f1f5f9"
+                                            strokeWidth="12"
+                                            strokeLinecap="round"
+                                        />
+
+                                        {/* Dynamic Color Path */}
+                                        <path
+                                            d="M 20 65 A 40 40 0 1 1 100 65"
+                                            fill="none"
+                                            stroke={data.thermometer < 80 ? '#ef4444' : (data.thermometer < 100 ? '#eab308' : '#22c55e')}
+                                            strokeWidth="12"
+                                            strokeLinecap="round"
+                                            strokeDasharray={`${(Math.min(data.thermometer, 100) / 100) * 126}, 200`}
+                                        />
+
+                                        {/* Aguja Indicadora */}
+                                        <g style={{
+                                            transformOrigin: '60px 65px',
+                                            transform: `rotate(${(Math.min(data.thermometer, 100) / 100) * 180 - 90}deg)`,
+                                            transition: 'transform 0.8s ease-out'
+                                        }}>
+                                            <polygon points="60,65 56,35 64,35" fill="#1e293b" />
+                                            <circle cx="60" cy="65" r="4" fill="#1e293b" />
+                                        </g>
+                                    </svg>
+                                </div>
+                            ) : (
+                                <p style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold', color: 'var(--color-success)', margin: '0.25rem 0' }}>S/ 5,000</p>
+                            )}
                         </div>
                     </div>
 
@@ -892,7 +947,8 @@ export default function DashboardPage() {
                         )}
                     </div>
                 </>
-            )}
+            )
+            }
 
             {/* Modals */}
             <CreatePaymentModal

@@ -151,16 +151,6 @@ export default function PrestamosPage() {
         loadLoans(); // Will use current state and currentUser ref
     };
 
-    //     const formatDate = (dateStr: string) => {
-    //         if (!dateStr) return '-';
-    //         try {
-    //             return format(parseISO(dateStr), 'dd/MM/yyyy');
-    //         } catch (e) {
-    //             console.error('Error formatting date:', dateStr, e);
-    //             return dateStr;
-    //         }
-    //     };
-
     const formatMoney = (amount: number) => {
         return `S/ ${Number(amount).toFixed(2)}`;
     };
