@@ -166,6 +166,7 @@ export interface CreateInstallmentResponse {
 }
 
 export interface InstallmentDetail {
+    id: string;
     date: string;
     amount: number;
     status: string;

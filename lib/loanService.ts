@@ -22,8 +22,12 @@ export const loanService = {
     /**
      * Get loan details (start/end dates and installments)
      */
-    async getDetails(loanId: number | string): Promise<any> {
-        return api.get<any>(`/loans/${loanId}/details`);
+    getDetails: async (id: string) => {
+        return await api.get<any>(`/loans/${id}/details`);
+    },
+
+    deleteInstallment: async (installmentId: string) => {
+        return await api.delete(`/loans/installments/${installmentId}`);
     },
 
     /**

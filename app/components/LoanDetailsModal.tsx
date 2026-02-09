@@ -1,12 +1,15 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, memo } from 'react';
+
 import { loanService } from '@/lib/loanService';
+import { authService } from '@/lib/auth';
 import { formatDateUTC } from '@/lib/loanUtils';
 import { Loan, LoanDetails, InstallmentDetail } from '@/lib/types';
-import { format, parseISO, eachDayOfInterval, isSameDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addMonths, subMonths, isWithinInterval, getDay, addDays, subDays } from 'date-fns';
+import { format, parseISO, eachDayOfInterval, isSameDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addMonths, subMonths, isWithinInterval, getDay, addDays, subDays, differenceInCalendarDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import html2canvas from 'html2canvas';
+import ConfirmModal from './ConfirmModal';
 
 interface LoanDetailsModalProps {
     isOpen: boolean;
@@ -49,6 +52,30 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [activeTab, setActiveTab] = useState<'calendar' | 'list'>('calendar');
+    const user = authService.getUser();
+
+    // Confirm Modal State
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
+
+    const openConfirmDelete = (paymentId: string) => {
+        setPaymentToDelete(paymentId);
+        setIsConfirmOpen(true);
+    };
+
+    const handleDeletePayment = async () => {
+        if (!paymentToDelete) return;
+
+        try {
+            await loanService.deleteInstallment(paymentToDelete);
+            loadDetails(); // Reload details
+            setIsConfirmOpen(false);
+            setPaymentToDelete(null);
+        } catch (err) {
+            console.error('Error deleting payment:', err);
+            alert('Error al eliminar el pago');
+        }
+    };
 
     // Move loadDetails function definition BEFORE useEffect to avoid dependency issues
     const loadDetails = useCallback(async () => {
@@ -57,6 +84,7 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
         setError('');
         try {
             const data = await loanService.getDetails(loan.id);
+            // console.log('Loan details loaded:', data);
             setDetails(data);
         } catch (err: any) {
             console.error(err);
@@ -76,9 +104,7 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
     // Memoize utility functions with stable references
     const parseDateTimeSafe = useCallback((dateStr: string) => {
         if (!dateStr) return new Date();
-        const date = new Date(dateStr);
-        // Crear una fecha local usando los valores UTC para evitar desfase de zona horaria
-        return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+        return new Date(dateStr);
     }, []);
 
     const parseDateSafe = useCallback((dateStr: string) => {
@@ -143,6 +169,17 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
     const isStartDate = useCallback((day: Date) => isSameDay(parsedDates.start, day), [parsedDates.start]);
     const isEndDate = useCallback((day: Date) => isSameDay(parsedDates.end, day), [parsedDates.end]);
     const isToday = useCallback((day: Date) => isSameDay(new Date(), day), []);
+
+    const isPaymentDeleteable = useCallback((paymentDateStr: string) => {
+        if (!paymentDateStr) return false;
+        const paymentDate = parseDateSafe(paymentDateStr); // Usa fecha local sin hora para comparar días calendario
+        const today = new Date();
+        const diff = differenceInCalendarDays(today, paymentDate);
+        // "hasta 2 dias": Hoy (0) y Mañana (1) son válidos. Pasado mañana (2) ya no.
+        // Si el pago fue ayer (diff = 1), todavía es válido.
+        // Si el pago fue anteayer (diff = 2), ya no es válido.
+        return diff < 2;
+    }, [parseDateSafe]);
 
     // Conditional return AFTER all hooks
     if (!isOpen || !loan) return null;
@@ -512,6 +549,9 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
                                                 <th style={{ padding: '0.75rem', textAlign: 'left' }}>Fecha y Hora</th>
                                                 <th style={{ padding: '0.75rem', textAlign: 'right' }}>Monto</th>
                                                 <th style={{ padding: '0.75rem', textAlign: 'right' }}>Cobrador</th>
+                                                {(user?.profile === 'ADMIN' || user?.profile === 'OWNER') && (
+                                                    <th style={{ padding: '0.75rem', textAlign: 'center' }}>Acción</th>
+                                                )}
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -524,6 +564,53 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
                                                             S/ {Number(inst.amount).toFixed(2)}
                                                         </td>
                                                         <td style={{ padding: '0.75rem', textAlign: 'right', color: 'var(--text-secondary)' }}>{inst.registeredBy}</td>
+                                                        {(user?.profile === 'ADMIN' || user?.profile === 'OWNER') && (
+                                                            <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                                                                {isPaymentDeleteable(inst.date) ? (
+                                                                    <button
+                                                                        onClick={() => openConfirmDelete(inst.id)}
+                                                                        title="Eliminar Pago"
+                                                                        style={{
+                                                                            border: 'none',
+                                                                            background: 'transparent',
+                                                                            cursor: 'pointer',
+                                                                            color: '#ef4444',
+                                                                            padding: '0.25rem',
+                                                                            borderRadius: '4px',
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center'
+                                                                        }}
+                                                                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
+                                                                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                                                    >
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="18" height="18">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                                                        </svg>
+                                                                    </button>
+                                                                ) : (
+                                                                    <button
+                                                                        disabled
+                                                                        title="El periodo de eliminación ha expirado (máx 2 días)"
+                                                                        style={{
+                                                                            border: 'none',
+                                                                            background: 'transparent',
+                                                                            cursor: 'not-allowed',
+                                                                            color: '#cbd5e1', // Gray color for disabled state
+                                                                            padding: '0.25rem',
+                                                                            borderRadius: '4px',
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center'
+                                                                        }}
+                                                                    >
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="18" height="18">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                                                        </svg>
+                                                                    </button>
+                                                                )}
+                                                            </td>
+                                                        )}
                                                     </tr>
                                                 ))}
                                         </tbody>
@@ -552,6 +639,7 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
                 fontFamily: 'system-ui, -apple-system, sans-serif',
                 color: '#1e293b'
             }}>
+                {/* ... existing share card content ... */}
                 <div style={{ textAlign: 'center', marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '1rem' }}>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0, color: '#4f46e5' }}>Ficha de Préstamo</h1>
                     <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.8rem' }}>Generado el {format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
@@ -646,6 +734,17 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
                     </div>
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={isConfirmOpen}
+                onClose={() => setIsConfirmOpen(false)}
+                onConfirm={handleDeletePayment}
+                title="Eliminar Pago"
+                message="¿Estás seguro de que deseas eliminar este pago? Esta acción no se puede deshacer."
+                confirmText="Eliminar"
+                cancelText="Cancelar"
+                isDestructive={true}
+            />
         </>
     );
 }
