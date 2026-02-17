@@ -252,31 +252,40 @@ export default function PrestamosPage() {
             </div>
 
             <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', justifyContent: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '0.25rem' }}>
-                <button
-                    onClick={() => !(!!loan.paidToday || loan.inIntervalPayment === 0) && handleOpenPayment(loan)}
-                    disabled={!!loan.paidToday || loan.inIntervalPayment === 0}
-                    title={!!loan.paidToday ? 'Pagado' : (loan.inIntervalPayment === 0 ? 'Restringido' : 'Registrar Pago')}
-                    style={{
-                        padding: '0.6rem',
-                        border: 'none',
-                        backgroundColor: 'transparent',
-                        cursor: (!!loan.paidToday || loan.inIntervalPayment === 0) ? 'not-allowed' : 'pointer',
-                        borderRadius: '0.5rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: (!!loan.paidToday || loan.inIntervalPayment === 0) ? '#94a3b8' : '#22c55e',
-                        opacity: (!!loan.paidToday || loan.inIntervalPayment === 0) ? 0.5 : 1,
-                        flex: 1
-                    }}
-                >
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="24" height="24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
-                        </svg>
-                        <span style={{ fontSize: '0.75rem' }}>Pagar</span>
-                    </div>
-                </button>
+                {(() => {
+                    const status = getLoanStatus(loan, today);
+                    const canPay = loan.inIntervalPayment !== 0 || status.value !== 'green';
+                    const hasBalance = (loan.remainingAmount || 0) > 0;
+                    const isActionEnabled = canPay && hasBalance;
+
+                    return (
+                        <button
+                            onClick={() => isActionEnabled && handleOpenPayment(loan)}
+                            disabled={!isActionEnabled}
+                            title={!hasBalance ? 'Pagado' : (!canPay ? 'Restringido' : 'Registrar Pago')}
+                            style={{
+                                padding: '0.6rem',
+                                border: 'none',
+                                backgroundColor: 'transparent',
+                                cursor: !isActionEnabled ? 'not-allowed' : 'pointer',
+                                borderRadius: '0.5rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: !isActionEnabled ? '#94a3b8' : '#22c55e',
+                                opacity: !isActionEnabled ? 0.5 : 1,
+                                flex: 1
+                            }}
+                        >
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="24" height="24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                                </svg>
+                                <span style={{ fontSize: '0.75rem' }}>Pagar</span>
+                            </div>
+                        </button>
+                    );
+                })()}
 
                 <button
                     onClick={() => handleOpenDetails(loan)}
@@ -627,34 +636,43 @@ export default function PrestamosPage() {
                                         <td style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>
                                             <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center' }}>
                                                 {/* Payment Action */}
-                                                <button
-                                                    onClick={() => !(!!loan.paidToday || loan.inIntervalPayment === 0) && handleOpenPayment(loan)}
-                                                    disabled={!!loan.paidToday || loan.inIntervalPayment === 0}
-                                                    title={!!loan.paidToday ? 'Pagado' : (loan.inIntervalPayment === 0 ? 'Restringido' : 'Registrar Pago')}
-                                                    style={{
-                                                        padding: '0.35rem',
-                                                        border: 'none',
-                                                        backgroundColor: 'transparent',
-                                                        cursor: (!!loan.paidToday || loan.inIntervalPayment === 0) ? 'not-allowed' : 'pointer',
-                                                        borderRadius: '0.375rem',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        transition: 'all 0.2s',
-                                                        color: (!!loan.paidToday || loan.inIntervalPayment === 0) ? '#94a3b8' : '#22c55e',
-                                                        opacity: (!!loan.paidToday || loan.inIntervalPayment === 0) ? 0.5 : 1
-                                                    }}
-                                                    onMouseEnter={(e) => {
-                                                        if (!(!!loan.paidToday || loan.inIntervalPayment === 0)) {
-                                                            e.currentTarget.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
-                                                        }
-                                                    }}
-                                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                                                >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
-                                                    </svg>
-                                                </button>
+                                                {(() => {
+                                                    const status = getLoanStatus(loan, today);
+                                                    const canPay = loan.inIntervalPayment !== 0 || status.value !== 'green';
+                                                    const hasBalance = (loan.remainingAmount || 0) > 0;
+                                                    const isActionEnabled = canPay && hasBalance;
+
+                                                    return (
+                                                        <button
+                                                            onClick={() => isActionEnabled && handleOpenPayment(loan)}
+                                                            disabled={!isActionEnabled}
+                                                            title={!hasBalance ? 'Pagado' : (!canPay ? 'Restringido' : 'Registrar Pago')}
+                                                            style={{
+                                                                padding: '0.35rem',
+                                                                border: 'none',
+                                                                backgroundColor: 'transparent',
+                                                                cursor: !isActionEnabled ? 'not-allowed' : 'pointer',
+                                                                borderRadius: '0.375rem',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                transition: 'all 0.2s',
+                                                                color: !isActionEnabled ? '#94a3b8' : '#22c55e',
+                                                                opacity: !isActionEnabled ? 0.5 : 1
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                if (isActionEnabled) {
+                                                                    e.currentTarget.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
+                                                                }
+                                                            }}
+                                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                                                            </svg>
+                                                        </button>
+                                                    );
+                                                })()}
 
                                                 {/* Details Action */}
                                                 <button

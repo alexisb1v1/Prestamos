@@ -52,7 +52,15 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [activeTab, setActiveTab] = useState<'calendar' | 'list'>('calendar');
+    const [isMobile, setIsMobile] = useState(false);
     const user = authService.getUser();
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     // Confirm Modal State
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -175,11 +183,14 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
         const paymentDate = parseDateSafe(paymentDateStr); // Usa fecha local sin hora para comparar días calendario
         const today = new Date();
         const diff = differenceInCalendarDays(today, paymentDate);
+        if (user?.profile === 'COBRADOR') {
+            return diff === 0;
+        }
         // "hasta 2 dias": Hoy (0) y Mañana (1) son válidos. Pasado mañana (2) ya no.
         // Si el pago fue ayer (diff = 1), todavía es válido.
         // Si el pago fue anteayer (diff = 2), ya no es válido.
         return diff < 2;
-    }, [parseDateSafe]);
+    }, [parseDateSafe, user?.profile]);
 
     // Conditional return AFTER all hooks
     if (!isOpen || !loan) return null;
@@ -282,12 +293,13 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
                 <div className="card" style={{
                     width: '100%',
                     maxWidth: '600px',
-                    maxHeight: '95vh',
-                    overflowY: 'auto',
+                    maxHeight: '90vh',
+                    overflow: 'hidden',
                     position: 'relative',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '1rem'
+                    gap: '1rem',
+                    padding: '1.25rem'
                 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                         <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Detalle de Pagos</h2>
@@ -323,7 +335,8 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
                         padding: '0.25rem',
                         backgroundColor: 'var(--bg-app)',
                         borderRadius: 'var(--radius-md)',
-                        border: '1px solid var(--border-color)'
+                        border: '1px solid var(--border-color)',
+                        flexShrink: 0
                     }}>
                         <button
                             style={{
@@ -361,266 +374,351 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
                         </button>
                     </div>
 
-                    {loading ? (
-                        <div style={{ textAlign: 'center', padding: '2rem' }}>Cargando detalles...</div>
-                    ) : error ? (
-                        <div style={{ color: 'red', textAlign: 'center' }}>{error}</div>
-                    ) : activeTab === 'calendar' ? (
-                        <>
-                            {/* Calendar Header - Show range description */}
-                            <div style={{ textAlign: 'center', padding: '0.25rem 0.5rem', marginBottom: '0.25rem' }}>
-                                <span style={{ fontWeight: 'bold', textTransform: 'capitalize', fontSize: '1.1rem' }}>
-                                    {monthLabel}
-                                </span>
-                            </div>
-
-                            {/* Calendar Grid */}
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(7, 1fr)',
-                                gap: '2px',
-                                backgroundColor: 'var(--border-color)',
-                                border: '1px solid var(--border-color)',
-                                borderRadius: '0.5rem',
-                                overflow: 'hidden',
-                                position: 'relative'
-                            }}>
-                                {/* Days of week - Sticky Header */}
-                                {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(d => (
-                                    <div key={d} style={{
-                                        backgroundColor: 'var(--bg-app)',
-                                        padding: '0.5rem 0',
-                                        textAlign: 'center',
-                                        fontSize: '0.75rem',
-                                        fontWeight: 'bold',
-                                        color: 'var(--text-secondary)',
-                                        position: 'sticky',
-                                        top: 0,
-                                        zIndex: 10,
-                                        borderBottom: '1px solid var(--border-color)'
-                                    }}>
-                                        {d}
-                                    </div>
-                                ))}
-
-                                {/* Calendar Days */}
-                                {days.map(day => {
-                                    const installment = getInstallmentForDay(day);
-                                    const isRelevant = isLoanDate(day);
-                                    const isStart = isStartDate(day);
-                                    const isEnd = isEndDate(day);
-                                    const isTodayDate = isToday(day);
-
-                                    // Month indicator if day is 1st of month
-                                    const isFirstOfMonth = format(day, 'd') === '1';
-
-                                    // Check if it's an overdue unpaid day (before today, no payment, within loan period)
-                                    const today = new Date();
-                                    today.setHours(0, 0, 0, 0);
-                                    const isOverdueUnpaid = isRelevant && day < today && !installment;
-
-                                    // Determine background color
-                                    let bgColor = 'white';
-                                    if (installment) {
-                                        bgColor = '#63c581ff'; // Green for paid
-                                    } else if (isOverdueUnpaid) {
-                                        bgColor = '#fed7aa'; // Orange/yellow for overdue unpaid
-                                    } else if (isTodayDate && isRelevant) {
-                                        bgColor = '#b7d5fdff'; // Darker blue for today
-                                    } else if (isRelevant) {
-                                        bgColor = '#e0f0ff'; // Lighter blue for loan period
-                                    }
-
-                                    return (
-                                        <div key={day.toISOString()} style={{
-                                            minHeight: '85px',
-                                            padding: '4px',
-                                            backgroundColor: bgColor,
-                                            position: 'relative',
-                                            border: isTodayDate && isRelevant ? '2px solid #3b82f6' : (isRelevant ? '1px solid #bfdbfe' : 'none'),
-                                            display: 'flex',
-                                            flexDirection: 'column'
-                                        }}>
-                                            <div style={{
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'start',
-                                                marginBottom: '2px'
-                                            }}>
-                                                <span style={{
-                                                    fontSize: '0.6rem',
-                                                    color: 'var(--text-secondary)',
-                                                    textTransform: 'uppercase',
-                                                    fontWeight: 'bold'
-                                                }}>
-                                                    {isFirstOfMonth ? format(day, 'MMM', { locale: es }) : ''}
-                                                </span>
-                                                <span style={{
-                                                    fontSize: '0.7rem',
-                                                    fontWeight: isStart || isEnd ? 'bold' : 'normal',
-                                                    color: isStart || isEnd ? 'var(--color-primary)' : 'inherit',
-                                                }}>
-                                                    {format(day, 'd')}
-                                                </span>
-                                            </div>
-
-                                            {isStart && (
-                                                <div style={{
-                                                    fontSize: '0.65rem',
-                                                    backgroundColor: '#8b5cf6',
-                                                    color: 'white',
-                                                    padding: '3px 4px',
-                                                    borderRadius: '3px',
-                                                    marginBottom: '2px',
-                                                    textAlign: 'center',
-                                                    fontWeight: 'bold',
-                                                    boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-                                                }}>INICIO</div>
-                                            )}
-
-                                            {isEnd && (
-                                                <div style={{
-                                                    fontSize: '0.65rem',
-                                                    backgroundColor: '#ef4444',
-                                                    color: 'white',
-                                                    padding: '3px 4px',
-                                                    borderRadius: '3px',
-                                                    marginBottom: '2px',
-                                                    textAlign: 'center',
-                                                    fontWeight: 'bold',
-                                                    boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-                                                }}>FIN</div>
-                                            )}
-
-                                            {installment && (
-                                                <div style={{
-                                                    marginTop: 'auto',
-                                                    padding: '6px 2px',
-                                                    backgroundColor: '#63c581ff',
-                                                    borderRadius: '4px',
-                                                    border: '1px solid #1c9641ff',
-                                                    textAlign: 'center'
-                                                }}>
-                                                    <div style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#ffffffff', lineHeight: '1.2' }}>
-                                                        S/ {installment.amount}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-
-                            <div style={{ marginTop: '0.5rem', display: 'flex', gap: '1rem', fontSize: '0.8rem', flexWrap: 'wrap' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                    <div style={{ width: '12px', height: '12px', backgroundColor: '#63c581ff', border: '1px solid #1c9641ff', borderRadius: '2px' }}></div>
-                                    <span>Pago Registrado</span>
+                    <div style={{
+                        flex: 1,
+                        overflowY: 'auto',
+                        overflowX: 'hidden',
+                        paddingRight: '4px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '1rem'
+                    }}>
+                        {loading ? (
+                            <div style={{ textAlign: 'center', padding: '2rem' }}>Cargando detalles...</div>
+                        ) : error ? (
+                            <div style={{ color: 'red', textAlign: 'center' }}>{error}</div>
+                        ) : activeTab === 'calendar' ? (
+                            <>
+                                {/* Calendar Header - Show range description */}
+                                <div style={{ textAlign: 'center', padding: '0.25rem 0.5rem', marginBottom: '0.25rem' }}>
+                                    <span style={{ fontWeight: 'bold', textTransform: 'capitalize', fontSize: '1.1rem' }}>
+                                        {monthLabel}
+                                    </span>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                    <div style={{ width: '12px', height: '12px', backgroundColor: '#fed7aa', border: '1px solid #fb923c', borderRadius: '2px' }}></div>
-                                    <span>Sin Pago (Vencido)</span>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                    <div style={{ width: '12px', height: '12px', backgroundColor: '#e0f0ff', border: '1px solid #bfdbfe', borderRadius: '2px' }}></div>
-                                    <span>Periodo de Préstamo</span>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                    <div style={{ width: '12px', height: '12px', backgroundColor: '#b7d5fdff', border: '2px solid #3b82f6', borderRadius: '2px' }}></div>
-                                    <span>Hoy</span>
-                                </div>
-                            </div>
-                        </>
-                    ) : (
-                        /* List View */
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            {!details?.installments.length ? (
-                                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
-                                    No hay pagos registrados.
-                                </div>
-                            ) : (
+
+                                {/* Calendar Grid */}
                                 <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(7, 1fr)',
+                                    gap: '2px',
+                                    backgroundColor: 'var(--border-color)',
                                     border: '1px solid var(--border-color)',
-                                    borderRadius: 'var(--radius-md)',
-                                    overflow: 'hidden'
+                                    borderRadius: '0.5rem',
+                                    overflow: 'hidden',
+                                    position: 'relative'
                                 }}>
-                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-                                        <thead style={{ backgroundColor: 'var(--bg-app)', borderBottom: '1px solid var(--border-color)' }}>
-                                            <tr>
-                                                <th style={{ padding: '0.75rem', textAlign: 'left' }}>Fecha y Hora</th>
-                                                <th style={{ padding: '0.75rem', textAlign: 'right' }}>Monto</th>
-                                                <th style={{ padding: '0.75rem', textAlign: 'right' }}>Cobrador</th>
-                                                {(user?.profile === 'ADMIN' || user?.profile === 'OWNER') && (
-                                                    <th style={{ padding: '0.75rem', textAlign: 'center' }}>Acción</th>
-                                                )}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {[...details.installments]
-                                                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                                                .map((inst, idx) => (
-                                                    <tr key={idx} style={{ borderBottom: idx < details.installments.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
-                                                        <td style={{ padding: '0.75rem' }}>{formatDateTimePE(inst.date)}</td>
-                                                        <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: 'bold', color: 'var(--color-primary)' }}>
-                                                            S/ {Number(inst.amount).toFixed(2)}
-                                                        </td>
-                                                        <td style={{ padding: '0.75rem', textAlign: 'right', color: 'var(--text-secondary)' }}>{inst.registeredBy}</td>
-                                                        {(user?.profile === 'ADMIN' || user?.profile === 'OWNER') && (
-                                                            <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                                                                {isPaymentDeleteable(inst.date) ? (
-                                                                    <button
-                                                                        onClick={() => openConfirmDelete(inst.id)}
-                                                                        title="Eliminar Pago"
-                                                                        style={{
-                                                                            border: 'none',
-                                                                            background: 'transparent',
-                                                                            cursor: 'pointer',
-                                                                            color: '#ef4444',
-                                                                            padding: '0.25rem',
-                                                                            borderRadius: '4px',
-                                                                            display: 'inline-flex',
-                                                                            alignItems: 'center',
-                                                                            justifyContent: 'center'
-                                                                        }}
-                                                                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
-                                                                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                                                                    >
-                                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="18" height="18">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                                                                        </svg>
-                                                                    </button>
-                                                                ) : (
-                                                                    <button
-                                                                        disabled
-                                                                        title="El periodo de eliminación ha expirado (máx 2 días)"
-                                                                        style={{
-                                                                            border: 'none',
-                                                                            background: 'transparent',
-                                                                            cursor: 'not-allowed',
-                                                                            color: '#cbd5e1', // Gray color for disabled state
-                                                                            padding: '0.25rem',
-                                                                            borderRadius: '4px',
-                                                                            display: 'inline-flex',
-                                                                            alignItems: 'center',
-                                                                            justifyContent: 'center'
-                                                                        }}
-                                                                    >
-                                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="18" height="18">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                                                                        </svg>
-                                                                    </button>
-                                                                )}
-                                                            </td>
-                                                        )}
-                                                    </tr>
-                                                ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </div>
-                    )}
+                                    {/* Days of week - Sticky Header */}
+                                    {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(d => (
+                                        <div key={d} style={{
+                                            backgroundColor: 'var(--bg-app)',
+                                            padding: '0.5rem 0',
+                                            textAlign: 'center',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 'bold',
+                                            color: 'var(--text-secondary)',
+                                            position: 'sticky',
+                                            top: 0,
+                                            zIndex: 10,
+                                            borderBottom: '1px solid var(--border-color)'
+                                        }}>
+                                            {d}
+                                        </div>
+                                    ))}
 
-                    <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
+                                    {/* Calendar Days */}
+                                    {days.map(day => {
+                                        const installment = getInstallmentForDay(day);
+                                        const isRelevant = isLoanDate(day);
+                                        const isStart = isStartDate(day);
+                                        const isEnd = isEndDate(day);
+                                        const isTodayDate = isToday(day);
+
+                                        // Month indicator if day is 1st of month
+                                        const isFirstOfMonth = format(day, 'd') === '1';
+
+                                        // Check if it's an overdue unpaid day (before today, no payment, within loan period)
+                                        const today = new Date();
+                                        today.setHours(0, 0, 0, 0);
+                                        const isOverdueUnpaid = isRelevant && day < today && !installment;
+
+                                        // Determine background color
+                                        let bgColor = 'white';
+                                        if (installment) {
+                                            bgColor = '#63c581ff'; // Green for paid
+                                        } else if (isOverdueUnpaid) {
+                                            bgColor = '#fed7aa'; // Orange/yellow for overdue unpaid
+                                        } else if (isTodayDate && isRelevant) {
+                                            bgColor = '#b7d5fdff'; // Darker blue for today
+                                        } else if (isRelevant) {
+                                            bgColor = '#e0f0ff'; // Lighter blue for loan period
+                                        }
+
+                                        return (
+                                            <div key={day.toISOString()} style={{
+                                                minHeight: '85px',
+                                                padding: '4px',
+                                                backgroundColor: bgColor,
+                                                position: 'relative',
+                                                border: isTodayDate && isRelevant ? '2px solid #3b82f6' : (isRelevant ? '1px solid #bfdbfe' : 'none'),
+                                                display: 'flex',
+                                                flexDirection: 'column'
+                                            }}>
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'start',
+                                                    marginBottom: '2px'
+                                                }}>
+                                                    <span style={{
+                                                        fontSize: '0.6rem',
+                                                        color: 'var(--text-secondary)',
+                                                        textTransform: 'uppercase',
+                                                        fontWeight: 'bold'
+                                                    }}>
+                                                        {isFirstOfMonth ? format(day, 'MMM', { locale: es }) : ''}
+                                                    </span>
+                                                    <span style={{
+                                                        fontSize: '0.7rem',
+                                                        fontWeight: isStart || isEnd ? 'bold' : 'normal',
+                                                        color: isStart || isEnd ? 'var(--color-primary)' : 'inherit',
+                                                    }}>
+                                                        {format(day, 'd')}
+                                                    </span>
+                                                </div>
+
+                                                {isStart && (
+                                                    <div style={{
+                                                        fontSize: '0.65rem',
+                                                        backgroundColor: '#8b5cf6',
+                                                        color: 'white',
+                                                        padding: '3px 4px',
+                                                        borderRadius: '3px',
+                                                        marginBottom: '2px',
+                                                        textAlign: 'center',
+                                                        fontWeight: 'bold',
+                                                        boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                                                    }}>INICIO</div>
+                                                )}
+
+                                                {isEnd && (
+                                                    <div style={{
+                                                        fontSize: '0.65rem',
+                                                        backgroundColor: '#ef4444',
+                                                        color: 'white',
+                                                        padding: '3px 4px',
+                                                        borderRadius: '3px',
+                                                        marginBottom: '2px',
+                                                        textAlign: 'center',
+                                                        fontWeight: 'bold',
+                                                        boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                                                    }}>FIN</div>
+                                                )}
+
+                                                {installment && (
+                                                    <div style={{
+                                                        marginTop: 'auto',
+                                                        padding: '6px 2px',
+                                                        backgroundColor: '#63c581ff',
+                                                        borderRadius: '4px',
+                                                        border: '1px solid #1c9641ff',
+                                                        textAlign: 'center'
+                                                    }}>
+                                                        <div style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#ffffffff', lineHeight: '1.2' }}>
+                                                            S/ {installment.amount}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                <div style={{ marginTop: '0.5rem', display: 'flex', gap: '1rem', fontSize: '0.8rem', flexWrap: 'wrap' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                        <div style={{ width: '12px', height: '12px', backgroundColor: '#63c581ff', border: '1px solid #1c9641ff', borderRadius: '2px' }}></div>
+                                        <span>Pago Registrado</span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                        <div style={{ width: '12px', height: '12px', backgroundColor: '#fed7aa', border: '1px solid #fb923c', borderRadius: '2px' }}></div>
+                                        <span>Sin Pago (Vencido)</span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                        <div style={{ width: '12px', height: '12px', backgroundColor: '#e0f0ff', border: '1px solid #bfdbfe', borderRadius: '2px' }}></div>
+                                        <span>Periodo de Préstamo</span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                        <div style={{ width: '12px', height: '12px', backgroundColor: '#b7d5fdff', border: '2px solid #3b82f6', borderRadius: '2px' }}></div>
+                                        <span>Hoy</span>
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            /* List View */
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                {!details?.installments.length ? (
+                                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                                        No hay pagos registrados.
+                                    </div>
+                                ) : isMobile ? (
+                                    /* Mobile List View */
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                        {[...details.installments]
+                                            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                                            .map((inst, idx) => (
+                                                <div key={idx} style={{
+                                                    padding: '0.85rem',
+                                                    backgroundColor: 'white',
+                                                    borderRadius: 'var(--radius-md)',
+                                                    border: '1px solid var(--border-color)',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                                                }}>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                                                        <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                                                            {formatDateTimePE(inst.date)}
+                                                        </div>
+                                                        <div style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--color-primary)' }}>
+                                                            S/ {Number(inst.amount).toFixed(2)}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                                                            Cobrador: {inst.registeredBy}
+                                                        </div>
+                                                    </div>
+                                                    {(user?.profile === 'ADMIN' || user?.profile === 'OWNER' || user?.profile === 'COBRADOR') && (
+                                                        <div style={{ marginLeft: '0.5rem' }}>
+                                                            {isPaymentDeleteable(inst.date) ? (
+                                                                <button
+                                                                    onClick={() => openConfirmDelete(inst.id)}
+                                                                    title="Eliminar Pago"
+                                                                    style={{
+                                                                        border: 'none',
+                                                                        backgroundColor: '#fee2e2',
+                                                                        cursor: 'pointer',
+                                                                        color: '#ef4444',
+                                                                        padding: '0.6rem',
+                                                                        borderRadius: '0.5rem',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center'
+                                                                    }}
+                                                                >
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                                                    </svg>
+                                                                </button>
+                                                            ) : (
+                                                                <button
+                                                                    disabled
+                                                                    title={user?.profile === 'COBRADOR' ? "Solo pagos del día" : "Periodo expirado"}
+                                                                    style={{
+                                                                        border: 'none',
+                                                                        backgroundColor: '#f1f5f9',
+                                                                        cursor: 'not-allowed',
+                                                                        color: '#cbd5e1',
+                                                                        padding: '0.6rem',
+                                                                        borderRadius: '0.5rem',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center'
+                                                                    }}
+                                                                >
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                                                    </svg>
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                    </div>
+                                ) : (
+                                    <div style={{
+                                        border: '1px solid var(--border-color)',
+                                        borderRadius: 'var(--radius-md)',
+                                        overflow: 'hidden'
+                                    }}>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                                            <thead style={{ backgroundColor: 'var(--bg-app)', borderBottom: '1px solid var(--border-color)' }}>
+                                                <tr>
+                                                    <th style={{ padding: '0.75rem', textAlign: 'left' }}>Fecha y Hora</th>
+                                                    <th style={{ padding: '0.75rem', textAlign: 'right' }}>Monto</th>
+                                                    <th style={{ padding: '0.75rem', textAlign: 'right' }}>Cobrador</th>
+                                                    {(user?.profile === 'ADMIN' || user?.profile === 'OWNER' || user?.profile === 'COBRADOR') && (
+                                                        <th style={{ padding: '0.75rem', textAlign: 'center' }}>Acción</th>
+                                                    )}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {[...details.installments]
+                                                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                                                    .map((inst, idx) => (
+                                                        <tr key={idx} style={{ borderBottom: idx < details.installments.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
+                                                            <td style={{ padding: '0.75rem' }}>{formatDateTimePE(inst.date)}</td>
+                                                            <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: 'bold', color: 'var(--color-primary)' }}>
+                                                                S/ {Number(inst.amount).toFixed(2)}
+                                                            </td>
+                                                            <td style={{ padding: '0.75rem', textAlign: 'right', color: 'var(--text-secondary)' }}>{inst.registeredBy}</td>
+                                                            {(user?.profile === 'ADMIN' || user?.profile === 'OWNER' || user?.profile === 'COBRADOR') && (
+                                                                <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                                                                    {isPaymentDeleteable(inst.date) ? (
+                                                                        <button
+                                                                            onClick={() => openConfirmDelete(inst.id)}
+                                                                            title="Eliminar Pago"
+                                                                            style={{
+                                                                                border: 'none',
+                                                                                background: 'transparent',
+                                                                                cursor: 'pointer',
+                                                                                color: '#ef4444',
+                                                                                padding: '0.25rem',
+                                                                                borderRadius: '4px',
+                                                                                display: 'inline-flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center'
+                                                                            }}
+                                                                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
+                                                                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                                                        >
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="18" height="18">
+                                                                                <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                                                            </svg>
+                                                                        </button>
+                                                                    ) : (
+                                                                        <button
+                                                                            disabled
+                                                                            title={user?.profile === 'COBRADOR' ? "Solo se pueden eliminar pagos del mismo día" : "El periodo de eliminación ha expirado (máx 2 días)"}
+                                                                            style={{
+                                                                                border: 'none',
+                                                                                background: 'transparent',
+                                                                                cursor: 'not-allowed',
+                                                                                color: '#cbd5e1', // Gray color for disabled state
+                                                                                padding: '0.25rem',
+                                                                                borderRadius: '4px',
+                                                                                display: 'inline-flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center'
+                                                                            }}
+                                                                        >
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="18" height="18">
+                                                                                <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                                                            </svg>
+                                                                        </button>
+                                                                    )}
+                                                                </td>
+                                                            )}
+                                                        </tr>
+                                                    ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    <div style={{ marginTop: 'auto', paddingTop: '1rem', flexShrink: 0 }}>
                         <button className="btn" style={{ width: '100%', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)' }} onClick={onClose}>
                             Cerrar
                         </button>
