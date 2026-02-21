@@ -13,6 +13,11 @@ export const formatDateUTC = (dateString: string) => {
 };
 
 export const getLoanStatus = (loan: Loan, referenceDate?: Date) => {
+    // If loan is Liquidado, return Liquidado status immediately
+    if (loan.status === 'Liquidado' || (loan as any).remainingAmount === 0) {
+        return { label: 'Liquidado', color: 'var(--color-primary)', icon: '🔵', value: 'blue' };
+    }
+
     // If referenceDate provided, use it (assumed to be startOfDay or current time).
     // Normalize to startOfDay to ensure consistent comparison.
     const today = referenceDate ? startOfDay(referenceDate) : startOfDay(new Date());

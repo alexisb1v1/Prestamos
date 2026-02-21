@@ -14,9 +14,10 @@ interface CreateLoanModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
+    loanToRenew?: any | null;
 }
 
-export default function CreateLoanModal({ isOpen, onClose, onSuccess }: CreateLoanModalProps) {
+export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRenew }: CreateLoanModalProps) {
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -47,10 +48,29 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess }: CreateLo
 
     useEffect(() => {
         if (isOpen) {
-            resetState();
             setCurrentUser(authService.getUser());
+            if (loanToRenew) {
+                setStep(2);
+                setLoading(false);
+                setError('');
+                // If we have loanToRenew, we assumed person info is available or can be reconstructed
+                // For renewal, we need person object. In the list, we have clientName and documentNumber.
+                // It's better if we pass the whole loan object.
+                setPerson({
+                    id: loanToRenew.idPeople?.toString() || '',
+                    documentType: 'DNI', // Defaulting to DNI, or extract if available
+                    documentNumber: loanToRenew.documentNumber,
+                    firstName: loanToRenew.clientName.split(' ')[0],
+                    lastName: loanToRenew.clientName.split(' ').slice(1).join(' '),
+                    birthday: ''
+                });
+                setAmount(loanToRenew.amount);
+                setAddress(loanToRenew.address);
+            } else {
+                resetState();
+            }
         }
-    }, [isOpen]);
+    }, [isOpen, loanToRenew]);
 
     const resetState = () => {
         setStep(1);
@@ -156,7 +176,7 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess }: CreateLo
             <div className={styles.modal}>
                 <div className={styles.header}>
                     <h2 className={styles.title}>
-                        {step === 1 ? 'Identificar Cliente' : 'Datos del Préstamo'}
+                        {loanToRenew ? 'Renovar Préstamo' : (step === 1 ? 'Identificar Cliente' : 'Datos del Préstamo')}
                     </h2>
                     <button className={styles.closeButton} onClick={onClose}>&times;</button>
                 </div>

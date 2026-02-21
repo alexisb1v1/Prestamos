@@ -32,6 +32,7 @@ export default function PrestamosPage() {
 
     // Modal state
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [selectedLoanForRenewal, setSelectedLoanForRenewal] = useState<Loan | null>(null);
 
     // Payment Modal State
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -50,6 +51,11 @@ export default function PrestamosPage() {
     const handleOpenPayment = (loan: Loan) => {
         setSelectedLoanForPayment(loan);
         setIsPaymentModalOpen(true);
+    };
+
+    const handleRenewLoan = (loan: Loan) => {
+        setSelectedLoanForRenewal(loan);
+        setIsCreateModalOpen(true);
     };
 
     useEffect(() => {
@@ -254,6 +260,33 @@ export default function PrestamosPage() {
             <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', justifyContent: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '0.25rem' }}>
                 {(() => {
                     const status = getLoanStatus(loan, today);
+                    if (loan.status === 'Liquidado') {
+                        return (
+                            <button
+                                onClick={() => handleRenewLoan(loan)}
+                                style={{
+                                    padding: '0.6rem',
+                                    border: 'none',
+                                    backgroundColor: 'transparent',
+                                    cursor: 'pointer',
+                                    borderRadius: '0.5rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'var(--color-primary)',
+                                    flex: 1
+                                }}
+                            >
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="24" height="24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                    </svg>
+                                    <span style={{ fontSize: '0.75rem' }}>Renovar</span>
+                                </div>
+                            </button>
+                        );
+                    }
+
                     const canPay = loan.inIntervalPayment !== 0 || status.value !== 'green';
                     const hasBalance = (loan.remainingAmount || 0) > 0;
                     const isActionEnabled = canPay && hasBalance;
@@ -495,14 +528,21 @@ export default function PrestamosPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                     <span>🔴</span> <span>Mora Grave (6+ días)</span>
                 </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <span>🔵</span> <span>Liquidado</span>
+                </div>
             </div>
 
             <CreateLoanModal
                 isOpen={isCreateModalOpen}
-                onClose={() => setIsCreateModalOpen(false)}
+                onClose={() => {
+                    setIsCreateModalOpen(false);
+                    setSelectedLoanForRenewal(null);
+                }}
                 onSuccess={() => {
                     loadLoans(currentUser);
                 }}
+                loanToRenew={selectedLoanForRenewal}
             />
 
             <CreatePaymentModal
@@ -635,9 +675,39 @@ export default function PrestamosPage() {
                                         </td>
                                         <td style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap' }}>
                                             <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center' }}>
-                                                {/* Payment Action */}
+                                                {/* Action (Payment or Renew) */}
                                                 {(() => {
                                                     const status = getLoanStatus(loan, today);
+
+                                                    if (loan.status === 'Liquidado') {
+                                                        return (
+                                                            <button
+                                                                onClick={() => handleRenewLoan(loan)}
+                                                                title="Renovar Préstamo"
+                                                                style={{
+                                                                    padding: '0.35rem',
+                                                                    border: 'none',
+                                                                    backgroundColor: 'transparent',
+                                                                    cursor: 'pointer',
+                                                                    borderRadius: '0.375rem',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    transition: 'all 0.2s',
+                                                                    color: 'var(--color-primary)'
+                                                                }}
+                                                                onMouseEnter={(e) => {
+                                                                    e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+                                                                }}
+                                                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                                                </svg>
+                                                            </button>
+                                                        );
+                                                    }
+
                                                     const canPay = loan.inIntervalPayment !== 0 || status.value !== 'green';
                                                     const hasBalance = (loan.remainingAmount || 0) > 0;
                                                     const isActionEnabled = canPay && hasBalance;
