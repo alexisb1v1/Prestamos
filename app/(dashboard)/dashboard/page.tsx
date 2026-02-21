@@ -524,8 +524,8 @@ export default function DashboardPage() {
                                 {index + 1}
                             </div>
                             <div>
-                                <div style={{ fontWeight: 700, fontSize: '1rem', textTransform: 'capitalize' }}>{loan.clientName.toLowerCase()}</div>
-                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{loan.documentNumber}</div>
+                                <div style={{ fontWeight: 700, fontSize: '1rem', textTransform: 'capitalize' }}>{loan.clientName?.toLowerCase() || 'SIN NOMBRE'}</div>
+                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{loan.documentNumber || 'S/D'}</div>
                             </div>
                         </div>
                         <span style={{ fontSize: '1.25rem', lineHeight: 1 }} title={getLoanStatus(loan, today).label}>

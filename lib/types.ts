@@ -60,6 +60,9 @@ export interface Loan {
     paidToday: number;
     inIntervalPayment: number;
     remainingAmount?: number;
+    personId?: string | number;
+    collectorId?: string | number;
+    companyId?: string | number;
 }
 
 export interface Cobrador {

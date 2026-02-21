@@ -190,8 +190,8 @@ export default function PrestamosPage() {
                 borderBottom: '1px solid var(--border-color)'
             }}>
                 <div>
-                    <div style={{ fontWeight: 700, fontSize: '1rem', textTransform: 'capitalize' }}>{loan.clientName.toLowerCase()}</div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{loan.documentNumber}</div>
+                    <div style={{ fontWeight: 700, fontSize: '1rem', textTransform: 'capitalize' }}>{loan.clientName?.toLowerCase() || 'SIN NOMBRE'}</div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{loan.documentNumber || 'S/D'}</div>
                 </div>
                 <span style={{ fontSize: '1.25rem', lineHeight: 1 }} title={getLoanStatus(loan, today).label}>
                     {getLoanStatus(loan, today).icon}
@@ -611,7 +611,7 @@ export default function PrestamosPage() {
                                 loans.map((loan) => (
                                     <tr key={loan.id} style={{ borderTop: '1px solid var(--border-color)', fontSize: '0.9rem' }}>
                                         <td style={{ padding: '1rem' }}>
-                                            <div style={{ fontWeight: 600, fontSize: '0.95rem', textTransform: 'capitalize' }}>{loan.clientName.toLowerCase()}</div>
+                                            <div style={{ fontWeight: 600, fontSize: '0.95rem', textTransform: 'capitalize' }}>{loan.clientName?.toLowerCase() || 'SIN NOMBRE'}</div>
                                             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
                                                 {loan.documentNumber}
                                             </div>

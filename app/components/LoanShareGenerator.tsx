@@ -190,7 +190,7 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, {}>((_, ref) => {
                     <h3 style={{ fontSize: '1rem', fontWeight: 'bold', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.25rem', marginBottom: '0.5rem' }}>Datos del Cliente</h3>
                     <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '0.5rem 1rem', fontSize: '0.9rem' }}>
                         <div style={{ color: '#64748b' }}>Nombre:</div>
-                        <div style={{ fontWeight: 600, textTransform: 'capitalize' }}>{loan.clientName.toLowerCase()}</div>
+                        <div style={{ fontWeight: 600, textTransform: 'capitalize' }}>{loan.clientName?.toLowerCase() || 'SIN NOMBRE'}</div>
                         <div style={{ color: '#64748b' }}>Dirección:</div>
                         <div>{loan.address}</div>
                     </div>

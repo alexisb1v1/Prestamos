@@ -53,15 +53,15 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
                 setStep(2);
                 setLoading(false);
                 setError('');
-                // If we have loanToRenew, we assumed person info is available or can be reconstructed
-                // For renewal, we need person object. In the list, we have clientName and documentNumber.
-                // It's better if we pass the whole loan object.
+                // Use personId from current loan if available
+                const pid = loanToRenew.personId || loanToRenew.idPeople;
+
                 setPerson({
-                    id: loanToRenew.idPeople?.toString() || '',
-                    documentType: 'DNI', // Defaulting to DNI, or extract if available
+                    id: pid?.toString() || '',
+                    documentType: 'DNI',
                     documentNumber: loanToRenew.documentNumber,
-                    firstName: loanToRenew.clientName.split(' ')[0],
-                    lastName: loanToRenew.clientName.split(' ').slice(1).join(' '),
+                    firstName: loanToRenew.clientName?.split(' ')[0] || '',
+                    lastName: loanToRenew.clientName?.split(' ').slice(1).join(' ') || '',
                     birthday: ''
                 });
                 setAmount(loanToRenew.amount);
@@ -141,6 +141,12 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
 
         setLoading(true);
         setError('');
+        if (!person?.id || person.id === '0') {
+            setError('Error: No se encontró el ID del cliente. Por favor, vuelva a buscarlo.');
+            setLoading(false);
+            return;
+        }
+
         try {
             await loanService.create({
                 idPeople: Number(person.id),
