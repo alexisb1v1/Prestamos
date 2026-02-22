@@ -20,4 +20,11 @@ export const expenseService = {
 
         return api.get<any[]>(`/expenses?${params.toString()}`);
     },
+
+    /**
+     * Delete an expense
+     */
+    async delete(id: string): Promise<void> {
+        return api.delete(`/expenses/${id}`);
+    }
 };

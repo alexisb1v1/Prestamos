@@ -83,9 +83,18 @@ export default function CobradoresPage() {
         loadUsers();
     };
 
-    const handleEdit = (user: User) => {
-        setEditingUser(user);
-        setIsModalOpen(true);
+    const handleEdit = async (user: User) => {
+        try {
+            setLoading(true);
+            const freshUser = await userService.getById(user.id);
+            setEditingUser(freshUser);
+            setIsModalOpen(true);
+        } catch (err) {
+            console.error('Error fetching fresh user data:', err);
+            setError('Error al cargar los datos del usuario.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleCloseModal = () => {

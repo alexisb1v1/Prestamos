@@ -21,7 +21,7 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit
     // Initial state
     const initialFormState: CreateUserRequest & { status: 'ACTIVE' | 'INACTIVE' } = {
         username: '',
-        passwordHash: '',
+        password: '',
         profile: 'COBRADOR',
         documentType: 'DNI',
         documentNumber: '',
@@ -63,7 +63,7 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit
             if (userToEdit) {
                 setFormData({
                     username: userToEdit.username,
-                    passwordHash: '', // Password not editable directly here, or handled separately
+                    password: '', // Password not editable directly here, or handled separately
                     profile: userToEdit.profile as any, // Cast to avoid TS error if profile is OWNER (legacy)
                     documentType: userToEdit.documentType || 'DNI',
                     documentNumber: userToEdit.documentNumber || '',
@@ -364,8 +364,8 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit
                                 <input
                                     type="password"
                                     className="input"
-                                    name="passwordHash"
-                                    value={formData.passwordHash}
+                                    name="password"
+                                    value={formData.password}
                                     onChange={handleChange}
                                     required
                                     minLength={6}

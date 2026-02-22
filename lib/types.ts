@@ -27,7 +27,7 @@ export interface User {
 
 export interface LoginRequest {
     username: string;
-    passwordHash: string;
+    password: string;
 }
 
 export interface LoginResponse {
@@ -92,7 +92,7 @@ export interface Company {
 
 export interface CreateUserRequest {
     username: string;
-    passwordHash: string;
+    password: string;
     profile: 'ADMIN' | 'COBRADOR';
     documentType: string;
     documentNumber: string;
@@ -122,6 +122,21 @@ export interface UpdateUserRequest {
 export interface UpdateUserResponse {
     success: boolean;
     message: string;
+}
+
+export interface GetUserResponse {
+    success: boolean;
+    message: string;
+    user: {
+        id: string;
+        username: string;
+        profile: 'ADMIN' | 'OWNER' | 'COBRADOR';
+        status: 'ACTIVE' | 'INACTIVE';
+        idPeople: number;
+        isDayClosed: boolean;
+        idCompany: string;
+    };
+    person: Person;
 }
 
 export interface CreatePersonRequest {

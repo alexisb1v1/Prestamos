@@ -1,5 +1,5 @@
 import { api } from './api';
-import { User, CreateUserRequest, CreateUserResponse, Person, UpdateUserRequest, UpdateUserResponse } from './types';
+import { User, CreateUserRequest, CreateUserResponse, Person, UpdateUserRequest, UpdateUserResponse, GetUserResponse } from './types';
 import { userCache } from './userCache';
 import { authService } from './auth';
 
@@ -41,6 +41,20 @@ export const userService = {
         }
 
         return users;
+    },
+
+    /**
+     * Get a single user by ID
+     * Endpoint: GET /users/:id
+     */
+    async getById(id: string): Promise<User> {
+        const data = await api.get<GetUserResponse>(`/users/${id}`);
+        // Combinar user y person en un solo objeto para el frontend
+        return {
+            ...data.user,
+            ...data.person,
+            id: data.user.id // Asegurar que el ID sea el del usuario
+        };
     },
 
     /**

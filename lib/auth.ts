@@ -18,7 +18,7 @@ export const authService = {
     async login(username: string, password: string): Promise<LoginResponse> {
         const response = await api.post<LoginResponse>('/users/login', {
             username,
-            passwordHash: password, // API expects passwordHash field
+            password: password,
         });
 
         console.log('Login API Response Full:', JSON.stringify(response, null, 2));

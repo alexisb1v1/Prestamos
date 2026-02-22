@@ -8,13 +8,14 @@ import { formatDateUTC } from '@/lib/loanUtils';
 import { Loan, LoanDetails, InstallmentDetail } from '@/lib/types';
 import { format, parseISO, eachDayOfInterval, isSameDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addMonths, subMonths, isWithinInterval, getDay, addDays, subDays, differenceInCalendarDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import html2canvas from 'html2canvas';
+import { LoanShareGeneratorRef } from './LoanShareGenerator';
 import ConfirmModal from './ConfirmModal';
 
 interface LoanDetailsModalProps {
     isOpen: boolean;
     onClose: () => void;
     loan: Loan | null;
+    shareRef?: React.RefObject<LoanShareGeneratorRef | null>;
 }
 
 // ========== GLOBAL CACHE FOR CALENDAR DAYS ==========
@@ -47,7 +48,7 @@ function getOrCreateCachedDays(requestedStart: Date, requestedEnd: Date): Date[]
 }
 // ====================================================
 
-function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
+function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalProps) {
     const [details, setDetails] = useState<LoanDetails | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -196,82 +197,8 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
     if (!isOpen || !loan) return null;
 
     const handleShare = async () => {
-        const element = document.getElementById('loan-share-card');
-        if (!element) {
-            console.error('Share card element not found');
-            return;
-        }
-
-        console.log('Element found:', element);
-        console.log('Element dimensions:', {
-            width: element.offsetWidth,
-            height: element.offsetHeight,
-            scrollWidth: element.scrollWidth,
-            scrollHeight: element.scrollHeight
-        });
-
-        try {
-            // Temporarily make element visible for html2canvas
-            const originalStyle = element.style.cssText;
-            element.style.cssText = 'position: fixed; left: 0; top: 0; z-index: 9999; opacity: 1;';
-
-            console.log('Element made visible, new dimensions:', {
-                width: element.offsetWidth,
-                height: element.offsetHeight
-            });
-
-            // Small delay to ensure rendering
-            await new Promise(resolve => setTimeout(resolve, 300));
-
-            console.log('About to call html2canvas...');
-            const canvas = await html2canvas(element, {
-                scale: 2,
-                backgroundColor: '#ffffff',
-                logging: true,
-                useCORS: true,
-                allowTaint: true
-            } as any);
-
-            console.log('Canvas created:', {
-                width: canvas.width,
-                height: canvas.height
-            });
-
-            // Restore original style
-            element.style.cssText = originalStyle;
-
-            canvas.toBlob(async (blob) => {
-                if (!blob) {
-                    console.error('Failed to create blob from canvas');
-                    return;
-                }
-
-                console.log('Blob created:', blob.size, 'bytes');
-                const fileName = `Ficha_${loan.clientName.replace(/\s+/g, '_')}_${format(new Date(), 'yyyyMMdd')}.png`;
-                const file = new File([blob], fileName, { type: 'image/png' });
-
-                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                    try {
-                        await navigator.share({
-                            files: [file],
-                            title: 'Ficha de Préstamo',
-                            text: `Detalles del préstamo de ${loan.clientName}`
-                        });
-                    } catch (error) {
-                        console.log('Error sharing:', error);
-                    }
-                } else {
-                    // Download fallback
-                    const link = document.createElement('a');
-                    link.href = canvas.toDataURL('image/png');
-                    link.download = fileName;
-                    link.click();
-                }
-            }, 'image/png');
-
-        } catch (err) {
-            console.error('Error generating image:', err);
-            setError('Error al generar la imagen para compartir.');
+        if (loan && shareRef?.current) {
+            shareRef.current.shareLoan(loan);
         }
     };
 
@@ -302,7 +229,35 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
                     padding: '1.25rem'
                 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Detalle de Pagos</h2>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Detalle de Pagos</h2>
+                            <button
+                                onClick={handleShare}
+                                title="Compartir Ficha"
+                                style={{
+                                    padding: '0.25rem',
+                                    border: 'none',
+                                    backgroundColor: 'transparent',
+                                    cursor: 'pointer',
+                                    borderRadius: '0.375rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#3b82f6',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                }}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+                                </svg>
+                            </button>
+                        </div>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                             <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
                         </div>
@@ -722,113 +677,6 @@ function LoanDetailsModal({ isOpen, onClose, loan }: LoanDetailsModalProps) {
                         <button className="btn" style={{ width: '100%', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)' }} onClick={onClose}>
                             Cerrar
                         </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* HIDDEN SHARE CARD CONTAINER */}
-            <div id="loan-share-card" style={{
-                position: 'fixed',
-                top: '-9999px',
-                left: '-9999px',
-                width: '450px', // Fixed width for image
-                backgroundColor: 'white',
-                padding: '20px',
-                fontFamily: 'system-ui, -apple-system, sans-serif',
-                color: '#1e293b'
-            }}>
-                {/* ... existing share card content ... */}
-                <div style={{ textAlign: 'center', marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '1rem' }}>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0, color: '#4f46e5' }}>Ficha de Préstamo</h1>
-                    <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.8rem' }}>Generado el {format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
-                </div>
-
-                <div style={{ marginBottom: '1.5rem' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 'bold', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.25rem', marginBottom: '0.5rem' }}>Datos del Cliente</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '0.5rem 1rem', fontSize: '0.9rem' }}>
-                        <div style={{ color: '#64748b' }}>Nombre:</div>
-                        <div style={{ fontWeight: 600, textTransform: 'capitalize' }}>{loan.clientName?.toLowerCase() || 'SIN NOMBRE'}</div>
-                        <div style={{ color: '#64748b' }}>Dirección:</div>
-                        <div>{loan.address}</div>
-                    </div>
-                </div>
-
-                <div style={{ marginBottom: '1.5rem' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 'bold', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.25rem', marginBottom: '0.5rem' }}>Resumen Financiero</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.9rem' }}>
-                        <div><span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem' }}>Monto Prestado</span><span style={{ fontWeight: 600 }}>S/ {Number(loan.amount).toFixed(2)}</span></div>
-                        <div><span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem' }}>Total a Pagar</span><span style={{ fontWeight: 600 }}>S/ {Number(loan.amount + loan.interest).toFixed(2)}</span></div>
-                        <div><span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem' }}>Pagado</span><span style={{ fontWeight: 600, color: '#16a34a' }}>S/ {Number((loan.amount + loan.interest) - ((loan as any).remainingAmount || 0)).toFixed(2)}</span></div>
-                        <div><span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem' }}>Restante</span><span style={{ fontWeight: 600, color: '#dc2626' }}>S/ {Number((loan as any).remainingAmount || 0).toFixed(2)}</span></div>
-                    </div>
-                    <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
-                        <span style={{ color: '#64748b' }}>Vigencia: </span>
-                        {formatDateUTC(details?.startDate || loan.startDate)} al {formatDateUTC(details?.endDate || loan.endDate)}
-                    </div>
-                </div>
-
-                <div style={{ marginBottom: '1rem' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem', textAlign: 'center' }}>Calendario de Pagos</h3>
-                    {/* Visual Calendar for Image */}
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(7, 1fr)',
-                        gap: '2px',
-                        backgroundColor: '#e2e8f0',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '0.5rem',
-                        overflow: 'hidden'
-                    }}>
-                        {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, idx) => (
-                            <div key={'h' + idx} style={{ backgroundColor: '#f1f5f9', padding: '4px', textAlign: 'center', fontSize: '0.7rem', fontWeight: 'bold' }}>{d}</div>
-                        ))}
-                        {days.map(day => {
-                            const installment = getInstallmentForDay(day);
-                            const isRelevant = isLoanDate(day);
-                            const isStart = isStartDate(day);
-                            const isEnd = isEndDate(day);
-                            const isTodayDate = isToday(day);
-
-                            // Check for overdue unpaid
-                            const today = new Date();
-                            today.setHours(0, 0, 0, 0);
-                            const isOverdueUnpaid = isRelevant && day < today && !installment;
-
-                            // Simple visual representation
-                            let bg = 'white';
-                            if (installment) {
-                                bg = '#63c581ff'; // Green for paid
-                            } else if (isOverdueUnpaid) {
-                                bg = '#fed7aa'; // Orange for overdue unpaid
-                            } else if (isTodayDate && isRelevant) {
-                                bg = '#b7d5fdff'; // Darker blue for today
-                            } else if (isRelevant) {
-                                bg = '#e0f0ff'; // Lighter blue for loan period
-                            }
-
-                            return (
-                                <div key={'img' + day.toISOString()} style={{
-                                    height: '50px',
-                                    backgroundColor: bg,
-                                    padding: '2px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    fontSize: '0.7rem',
-                                    border: isTodayDate && isRelevant && !installment ? '1px solid #3b82f6' : 'none'
-                                }}>
-                                    <div style={{
-                                        fontWeight: isStart || isEnd ? 'bold' : 'normal',
-                                        color: isStart ? '#16a34a' : (isEnd ? '#dc2626' : '#64748b')
-                                    }}>{format(day, 'd')}</div>
-
-                                    {installment && (
-                                        <div style={{ color: '#ffffffff', fontWeight: 'bold', fontSize: '0.65rem' }}>{installment.amount}</div>
-                                    )}
-                                </div>
-                            );
-                        })}
                     </div>
                 </div>
             </div>

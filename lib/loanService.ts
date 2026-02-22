@@ -26,6 +26,20 @@ export const loanService = {
         return await api.get<any>(`/loans/${id}/details`);
     },
 
+    /**
+     * Reassign a loan to a new collector
+     */
+    async reassign(loanId: string, newUserId: number): Promise<void> {
+        return api.patch(`/loans/${loanId}/reassign`, { newUserId });
+    },
+
+    /**
+     * Delete a loan
+     */
+    async delete(loanId: string): Promise<void> {
+        return api.delete(`/loans/${loanId}`);
+    },
+
     deleteInstallment: async (installmentId: string) => {
         return await api.delete(`/loans/installments/${installmentId}`);
     },
