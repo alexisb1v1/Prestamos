@@ -51,13 +51,40 @@ export default function LoginPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'linear-gradient(135deg, #f1f5f9 0%, #e0e7ff 100%)'
+            background: 'radial-gradient(circle at top left, #e0e7ff, transparent), radial-gradient(circle at bottom right, #f1f5f9, transparent), #f8fafc',
+            position: 'relative',
+            overflow: 'hidden'
         }}>
-            <div className="card glass" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem' }}>
-                <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
-                    <div style={{ width: '48px', height: '48px', background: 'var(--color-primary)', borderRadius: '12px', margin: '0 auto 1rem' }}></div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Bienvenido</h1>
-                    <p style={{ color: 'var(--text-secondary)' }}>Ingresa a tu cuenta</p>
+            {/* Background decorative elements */}
+            <div style={{ position: 'absolute', top: '-100px', left: '-100px', width: '300px', height: '300px', background: 'rgba(79, 70, 229, 0.05)', borderRadius: '50%', filter: 'blur(80px)' }}></div>
+            <div style={{ position: 'absolute', bottom: '-80px', right: '-80px', width: '250px', height: '250px', background: 'rgba(79, 70, 229, 0.08)', borderRadius: '50%', filter: 'blur(60px)' }}></div>
+
+            <div className="card glass" style={{
+                width: '100%',
+                maxWidth: '420px',
+                padding: '3rem 2.5rem',
+                border: '1px solid rgba(255, 255, 255, 0.5)',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.1)',
+                borderRadius: '32px'
+            }}>
+                <div style={{ marginBottom: '2.5rem', textAlign: 'center' }}>
+                    <div style={{
+                        width: '64px',
+                        height: '64px',
+                        background: 'linear-gradient(135deg, var(--color-primary), #6366f1)',
+                        borderRadius: '18px',
+                        margin: '0 auto 1.5rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontSize: '1.5rem',
+                        boxShadow: '0 10px 20px rgba(79, 70, 229, 0.3)'
+                    }}>
+                        💰
+                    </div>
+                    <h1 style={{ fontSize: '1.875rem', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.025em' }}>Bienvenido</h1>
+                    <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', fontWeight: '500' }}>Accede a tu panel de préstamos</p>
                 </div>
 
                 {error && (
@@ -115,10 +142,20 @@ export default function LoginPage() {
                     <button
                         type="submit"
                         className="btn btn-primary"
-                        style={{ width: '100%', padding: '0.875rem' }}
+                        style={{
+                            width: '100%',
+                            padding: '1rem',
+                            borderRadius: '14px',
+                            background: 'linear-gradient(135deg, var(--color-primary), #6366f1)',
+                            border: 'none',
+                            fontWeight: '700',
+                            fontSize: '1rem',
+                            boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
+                            transition: 'all 0.2s ease'
+                        }}
                         disabled={loading}
                     >
-                        {loading ? 'Ingresando...' : 'Ingresar'}
+                        {loading ? 'Ingresando...' : 'Iniciar Sesión'}
                     </button>
                 </form>
             </div>

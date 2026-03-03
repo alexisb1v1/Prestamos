@@ -76,11 +76,6 @@ export default function Sidebar() {
             style={{
               ...stylesForDepth,
               width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem',
-              padding: '0.75rem 1rem',
-              color: isChildActive ? 'var(--color-primary)' : 'var(--text-secondary)',
               background: 'none',
               border: 'none',
               cursor: 'pointer',
@@ -90,7 +85,7 @@ export default function Sidebar() {
           >
             <span>{item.icon}</span>
             <span style={{ flex: 1 }}>{item.label}</span>
-            <span style={{ fontSize: '0.8rem' }}>{isExpanded ? '▼' : '▶'}</span>
+            <span style={{ fontSize: '0.8rem', opacity: 0.5 }}>{isExpanded ? '▼' : '▶'}</span>
           </button>
           {isExpanded && (
             <div style={{ paddingLeft: '0.5rem' }}>
@@ -110,17 +105,7 @@ export default function Sidebar() {
         onClick={() => setIsOpen(false)}
         style={{
           ...stylesForDepth,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem',
-          padding: '0.75rem 1rem',
-          color: isActive ? 'var(--color-primary)' : 'var(--text-secondary)',
-          backgroundColor: isActive ? 'var(--color-bg-subtle)' : 'transparent',
-          textDecoration: 'none',
-          borderRadius: 'var(--radius-md)',
           marginBottom: '0.25rem',
-          fontWeight: isActive ? 500 : 400,
-          transition: 'all 0.2s'
         }}
       >
         <span>{item.icon}</span>
@@ -147,8 +132,8 @@ export default function Sidebar() {
 
       <aside className={`${styles.sidebar} ${isOpen ? styles.open : ''}`}>
         <div className={styles.logo}>
-          <div style={{ width: '32px', height: '32px', background: 'var(--color-primary)', borderRadius: '8px' }}></div>
-          <span style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>PrestamosApp</span>
+          <div style={{ width: '36px', height: '36px', background: 'linear-gradient(135deg, var(--color-primary), #6366f1)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyCenter: 'center', color: 'white', fontSize: '1.2rem', boxShadow: '0 4px 10px rgba(79, 70, 229, 0.3)' }}>💰</div>
+          <span style={{ fontSize: '1.4rem', fontWeight: '800', color: 'white', letterSpacing: '-0.025em' }}>Préstamos<span style={{ color: 'var(--color-accent)' }}>App</span></span>
         </div>
 
         <nav className={styles.nav}>
@@ -163,8 +148,8 @@ export default function Sidebar() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#334155' }}></div>
             <div>
-              <div style={{ fontSize: '0.875rem', fontWeight: '500' }}>{formatUserName(user)}</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{user?.profile || 'Perfil'}</div>
+              <div style={{ fontSize: '0.9rem', fontWeight: '600', color: 'white' }}>{formatUserName(user)}</div>
+              <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: '500' }}>{user?.profile || 'Perfil'}</div>
             </div>
           </div>
           <button

@@ -20,32 +20,32 @@
 }
 
 .mainFab {
-    width: 56px;
-    height: 56px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
-    background-color: #0f172a;
-    /* Dark 'negrito' */
+    background: linear-gradient(135deg, var(--color-primary), #6366f1);
     color: white;
     border: none;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
+    font-size: 1.6rem;
     cursor: pointer;
-    transition: transform 0.2s, background-color 0.2s;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     z-index: 2;
 }
 
 .mainFab:hover {
-    transform: scale(1.1);
-    background-color: #1e293b;
-    /* Slightly lighter on hover */
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.5);
+    background: linear-gradient(135deg, #4338ca, #4f46e5);
 }
 
 .mainFab.open {
-    transform: rotate(45deg);
-    background-color: #ef4444;
+    transform: rotate(135deg);
+    background: #ef4444;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
 }
 
 .menuItem {

@@ -80,6 +80,11 @@ button {
   border-radius: var(--radius-lg);
   padding: 1.5rem;
   box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
 }
 
 .btn {
@@ -104,17 +109,25 @@ button {
 
 .input {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.75rem 1rem;
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
-  background-color: var(--bg-app);
+  border: 1.5px solid var(--border-color);
+  background-color: #ffffff;
+  /* White background for better contrast */
   color: var(--text-primary);
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
 }
 
 .input:focus {
   border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+  background-color: #ffffff;
+}
+
+.input::placeholder {
+  color: #94a3b8;
 }
 
 .label {
