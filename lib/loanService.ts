@@ -15,7 +15,7 @@ export const loanService = {
         return api.get<Loan[]>(`/loans${queryString ? `?${queryString}` : ''}`);
     },
 
-    async create(loan: { idPeople: number; amount: number; userId: number; address: string }): Promise<Loan> {
+    async create(loan: { idPeople: number; amount: number; userId: number; address: string; days: number }): Promise<Loan> {
         return api.post<Loan>('/loans', loan);
     },
 
@@ -54,5 +54,18 @@ export const loanService = {
 
         const queryString = params.toString();
         return api.get<any>(`/loans/dashboard${queryString ? `?${queryString}` : ''}`);
+    },
+
+    /**
+     * Get loan report data for specific date range
+     */
+    async getLoanReport(startDate: string, endDate: string, companyId?: string, userId?: string): Promise<any> {
+        const params = new URLSearchParams();
+        params.append('startDate', startDate);
+        params.append('endDate', endDate);
+        if (companyId) params.append('companyId', companyId);
+        if (userId) params.append('userId', userId);
+
+        return api.get<any>(`/reports/loans?${params.toString()}`);
     }
 };

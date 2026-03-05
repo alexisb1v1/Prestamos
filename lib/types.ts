@@ -229,3 +229,27 @@ export interface Expense {
     userId: string;
     user?: User;
 }
+
+export interface ReportPayment {
+    cliente: string;
+    monto: number;
+    estado: 'COBRADO' | 'PENDIENTE';
+    metodo: string;
+}
+
+export interface ReportDay {
+    fecha: string;
+    pagos: ReportPayment[];
+    gastos: any[];
+}
+
+export interface ReportData {
+    summary: {
+        totalGasto: number;
+        totalCobradoEfectivo: number;
+        totalCobradoYape: number;
+        totalCobrado: number;
+        totalPrestado: number;
+    };
+    pagosPorDia: ReportDay[];
+}

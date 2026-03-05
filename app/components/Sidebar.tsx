@@ -25,7 +25,7 @@ const MENU_ITEMS: MenuItem[] = [
     icon: '⚙️',
     children: [
       { label: 'Usuarios', href: '/cobradores', icon: '👥' },
-      // { label: 'Reportes', href: '/reportes', icon: '📊' },
+      { label: 'Reportes', href: '/reportes', icon: '📊' },
       // { label: 'Configuración', href: '/configuracion', icon: '⚙️' }
     ]
   },
@@ -132,7 +132,7 @@ export default function Sidebar() {
 
       <aside className={`${styles.sidebar} ${isOpen ? styles.open : ''}`}>
         <div className={styles.logo}>
-          <div style={{ width: '36px', height: '36px', background: 'linear-gradient(135deg, var(--color-primary), #6366f1)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyCenter: 'center', color: 'white', fontSize: '1.2rem', boxShadow: '0 4px 10px rgba(79, 70, 229, 0.3)' }}>💰</div>
+          <div style={{ width: '36px', height: '36px', background: 'linear-gradient(135deg, var(--color-primary), #6366f1)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.2rem', boxShadow: '0 4px 10px rgba(79, 70, 229, 0.3)' }}>💰</div>
           <span style={{ fontSize: '1.4rem', fontWeight: '800', color: 'white', letterSpacing: '-0.025em' }}>Préstamos<span style={{ color: 'var(--color-accent)' }}>App</span></span>
         </div>
 

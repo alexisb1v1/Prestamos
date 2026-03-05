@@ -41,10 +41,10 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
     // Step 2: Loan Details State
     const [amount, setAmount] = useState<number | ''>('');
     const [address, setAddress] = useState('');
+    const [days, setDays] = useState<number>(24);
 
     // Calculations
     const interestRate = 0.20; // 20%
-    const defaultDays = 24;
 
     useEffect(() => {
         if (isOpen) {
@@ -66,6 +66,7 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
                 });
                 setAmount(loanToRenew.amount);
                 setAddress(loanToRenew.address);
+                setDays(24);
             } else {
                 resetState();
             }
@@ -89,6 +90,7 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
         });
         setAmount('');
         setAddress('');
+        setDays(24);
     };
 
     const handleSearchPerson = async () => {
@@ -139,6 +141,11 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
     const handleCreateLoan = async () => {
         if (!person || !currentUser || !amount) return;
 
+        if (Number(days) < 24) {
+            setError('La cantidad mínima de días es 24.');
+            return;
+        }
+
         setLoading(true);
         setError('');
         if (!person?.id || person.id === '0') {
@@ -152,7 +159,8 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
                 idPeople: Number(person.id),
                 amount: Number(amount),
                 userId: Number(currentUser.id),
-                address: address
+                address: address,
+                days: Number(days)
             });
             onSuccess();
             onClose();
@@ -167,7 +175,7 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
         const amt = Number(amount) || 0;
         const interest = amt * interestRate;
         const total = amt + interest;
-        const fee = total / defaultDays;
+        const fee = total / (Number(days) || 24);
         return { interest, total, fee };
     };
 
@@ -346,6 +354,18 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
                             />
                         </div>
 
+                        <div>
+                            <label className="label">Días del Préstamo</label>
+                            <input
+                                type="number"
+                                className="input"
+                                value={days}
+                                onChange={e => setDays(Number(e.target.value))}
+                                min={24}
+                                placeholder="24"
+                            />
+                        </div>
+
                         {/* Resumen / Simulador */}
                         <div style={{
                             padding: '1rem',
@@ -366,7 +386,7 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
                                 <span style={{ color: 'var(--text-secondary)' }}>Plazo:</span>
-                                <span>{defaultDays} días</span>
+                                <span>{days} días</span>
                             </div>
                             <div style={{ width: '100%', height: '1px', backgroundColor: 'var(--border-color)', margin: '0.25rem 0' }} />
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: 'bold' }}>
