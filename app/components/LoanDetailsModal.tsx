@@ -8,6 +8,7 @@ import { formatDateUTC } from '@/lib/loanUtils';
 import { Loan, LoanDetails, InstallmentDetail } from '@/lib/types';
 import { format, parseISO, eachDayOfInterval, isSameDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addMonths, subMonths, isWithinInterval, getDay, addDays, subDays, differenceInCalendarDays } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { usePermissions } from '@/hooks/usePermissions';
 import { LoanShareGeneratorRef } from './LoanShareGenerator';
 import ConfirmModal from './ConfirmModal';
 
@@ -54,7 +55,7 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
     const [error, setError] = useState('');
     const [activeTab, setActiveTab] = useState<'calendar' | 'list'>('calendar');
     const [isMobile, setIsMobile] = useState(false);
-    const user = authService.getUser();
+    const { user, canDeletePayment } = usePermissions();
 
     useEffect(() => {
         const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -93,7 +94,6 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
         setError('');
         try {
             const data = await loanService.getDetails(loan.id);
-            // console.log('Loan details loaded:', data);
             setDetails(data);
         } catch (err: any) {
             console.error(err);
@@ -119,7 +119,7 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
     const parseDateSafe = useCallback((dateStr: string) => {
         if (!dateStr) return new Date();
         const date = new Date(dateStr);
-        // Crear una fecha local usando los valores UTC para evitar desfase de zona horaria
+        // Crear una fecha local usando los valores UTC para evitar desfase de zona horaria en fechas tipo DATE
         return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
     }, []);
 
@@ -166,8 +166,15 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
     }, [parsedDates.start, parsedDates.end]);
 
     const getInstallmentForDay = useCallback((day: Date) => {
-        return details?.installments?.find(inst => isSameDay(parseDateTimeSafe(inst.date), day));
-    }, [details?.installments, parseDateTimeSafe]);
+        // Normalizamos 'day' a solo fecha local para la comparación
+        const normalizedDay = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+
+        return details?.installments?.find(inst => {
+            const instDate = new Date(inst.date);
+            const instDay = new Date(instDate.getFullYear(), instDate.getMonth(), instDate.getDate());
+            return instDay.getTime() === normalizedDay.getTime();
+        });
+    }, [details?.installments]);
 
     const isLoanDate = useCallback((day: Date) => {
         const withinInterval = isWithinInterval(day, { start: parsedDates.start, end: parsedDates.end });
@@ -179,19 +186,9 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
     const isEndDate = useCallback((day: Date) => isSameDay(parsedDates.end, day), [parsedDates.end]);
     const isToday = useCallback((day: Date) => isSameDay(new Date(), day), []);
 
-    const isPaymentDeleteable = useCallback((paymentDateStr: string) => {
-        if (!paymentDateStr) return false;
-        const paymentDate = parseDateSafe(paymentDateStr); // Usa fecha local sin hora para comparar días calendario
-        const today = new Date();
-        const diff = differenceInCalendarDays(today, paymentDate);
-        if (user?.profile === 'COBRADOR') {
-            return diff === 0;
-        }
-        // "hasta 2 dias": Hoy (0) y Mañana (1) son válidos. Pasado mañana (2) ya no.
-        // Si el pago fue ayer (diff = 1), todavía es válido.
-        // Si el pago fue anteayer (diff = 2), ya no es válido.
-        return diff < 2;
-    }, [parseDateSafe, user?.profile]);
+    const isPaymentDeleteable = useCallback((paymentDateStr: string, registeredByUserId?: string) => {
+        return canDeletePayment(paymentDateStr, registeredByUserId);
+    }, [canDeletePayment]);
 
     // Conditional return AFTER all hooks
     if (!isOpen || !loan) return null;
@@ -543,7 +540,7 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                                                     </div>
                                                     {(user?.profile === 'ADMIN' || user?.profile === 'OWNER' || user?.profile === 'COBRADOR') && (
                                                         <div style={{ marginLeft: '0.5rem' }}>
-                                                            {isPaymentDeleteable(inst.date) ? (
+                                                            {isPaymentDeleteable(inst.date, inst.registeredByUserId) ? (
                                                                 <button
                                                                     onClick={() => openConfirmDelete(inst.id)}
                                                                     title="Eliminar Pago"
@@ -618,7 +615,7 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                                                             <td style={{ padding: '0.75rem', textAlign: 'right', color: 'var(--text-secondary)' }}>{inst.registeredBy}</td>
                                                             {(user?.profile === 'ADMIN' || user?.profile === 'OWNER' || user?.profile === 'COBRADOR') && (
                                                                 <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                                                                    {isPaymentDeleteable(inst.date) ? (
+                                                                    {isPaymentDeleteable(inst.date, inst.registeredByUserId) ? (
                                                                         <button
                                                                             onClick={() => openConfirmDelete(inst.id)}
                                                                             title="Eliminar Pago"

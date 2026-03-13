@@ -30,18 +30,21 @@ export default function DashboardLayout({
 
         setShowShareButton(user.profile === 'COBRADOR' || user.profile === 'ADMIN');
 
-        // Restricted paths for non-ADMIN users
-        const restrictedPaths = ['/cobradores', '/reportes', '/configuracion'];
+        // Restricted paths logic
+        const ownerOnlyPaths = ['/empresas'];
+        const adminAndOwnerPaths = ['/cobradores', '/reportes', '/configuracion'];
 
-        if (user.profile !== 'ADMIN' && user.profile !== 'OWNER') {
-            // Check if day is closed
+        if (user.profile === 'COBRADOR') {
+            const allRestricted = [...ownerOnlyPaths, ...adminAndOwnerPaths];
             if (user.isDayClosed) {
                 router.push('/system-closed');
                 return;
             }
-
-            // Check restricted paths
-            if (restrictedPaths.some(path => pathname.startsWith(path))) {
+            if (allRestricted.some(path => pathname.startsWith(path))) {
+                router.push('/dashboard');
+            }
+        } else if (user.profile === 'ADMIN') {
+            if (ownerOnlyPaths.some(path => pathname.startsWith(path))) {
                 router.push('/dashboard');
             }
         }

@@ -23,6 +23,19 @@ export interface User {
     lastName?: string;
     birthday?: string;
     person?: Person;
+    permissions?: UserPermissions;
+}
+
+export interface UserPermissions {
+    canDeleteLoan: boolean;
+    canDeletePayment: (paymentDate: string, registeredByUserId?: string) => boolean;
+    canReassignLoan: boolean;
+    canManageUsers: boolean;
+    canManageCompanies: boolean;
+    canViewReports: boolean;
+    canViewExpenses: boolean;
+    canCreateLoan: boolean;
+    canCreateExpense: boolean;
 }
 
 export interface LoginRequest {
@@ -84,10 +97,18 @@ export interface Payment {
 export interface Company {
     id: string;
     companyName: string;
-    ruc?: string;
-    address?: string;
-    phone?: string;
+    label?: string;
     status: string;
+    createdAt: string;
+}
+
+export interface CreateCompanyRequest {
+    companyName: string;
+    label?: string;
+}
+
+export interface UpdateCompanyRequest {
+    companyName: string;
 }
 
 export interface CreateUserRequest {
@@ -189,6 +210,7 @@ export interface InstallmentDetail {
     amount: number;
     status: string;
     registeredBy: string;
+    registeredByUserId: string;
 }
 
 export interface LoanDetails {

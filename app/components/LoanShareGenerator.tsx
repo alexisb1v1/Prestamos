@@ -41,7 +41,6 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, {}>((_, ref) => {
 
     useImperativeHandle(ref, () => ({
         shareLoan: async (loan: Loan) => {
-            console.log('ShareLoan called for:', loan.clientName);
             if (generating) return;
 
             try {
@@ -115,7 +114,7 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, {}>((_, ref) => {
                                     text: `Detalles del préstamo de ${loan.clientName}`
                                 });
                             } catch (e) {
-                                console.log('Share cancelled');
+                                // Cancelled or failed
                             }
                         } else {
                             const link = document.createElement('a');

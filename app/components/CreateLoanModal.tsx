@@ -46,6 +46,13 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
     // Calculations
     const interestRate = 0.20; // 20%
 
+    // Rule: amount < 1000 => days = 24
+    useEffect(() => {
+        if (amount !== '' && Number(amount) < 1000) {
+            setDays(24);
+        }
+    }, [amount]);
+
     useEffect(() => {
         if (isOpen) {
             setCurrentUser(authService.getUser());
@@ -341,6 +348,18 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
                                 placeholder="0.00"
                                 autoFocus
                             />
+                            <p style={{
+                                fontSize: '0.75rem',
+                                marginTop: '0.25rem',
+                                color: (amount === '' || Number(amount) < 1000) ? 'var(--color-primary)' : 'var(--text-secondary)',
+                                fontWeight: (amount === '' || Number(amount) < 1000) ? '600' : 'normal',
+                                display: 'block',
+                                minHeight: '1.2em'
+                            }}>
+                                {(amount === '' || Number(amount) < 1000)
+                                    ? 'ℹ️ Montos menores a S/ 1,000 tienen un plazo fijo de 24 días.'
+                                    : '✅ Monto mayor o igual a S/ 1,000 permite plazos personalizados.'}
+                            </p>
                         </div>
 
                         <div>
@@ -358,11 +377,12 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
                             <label className="label">Días del Préstamo</label>
                             <input
                                 type="number"
-                                className="input"
+                                className={`input ${amount !== '' && Number(amount) < 1000 ? styles.disabledInput : ''}`}
                                 value={days}
                                 onChange={e => setDays(Number(e.target.value))}
                                 min={24}
                                 placeholder="24"
+                                disabled={amount !== '' && Number(amount) < 1000}
                             />
                         </div>
 

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import styles from './Sidebar.module.css';
+import { usePermissions } from '@/hooks/usePermissions';
 import { authService } from '@/lib/auth';
 import { User } from '@/lib/types';
 import { formatUserName } from '@/lib/utils';
@@ -13,6 +14,7 @@ type MenuItem = {
   label: string;
   href?: string;
   icon: string;
+  permission?: keyof ReturnType<typeof usePermissions>;
   children?: MenuItem[];
 };
 
@@ -24,9 +26,9 @@ const MENU_ITEMS: MenuItem[] = [
     label: 'Configuración',
     icon: '⚙️',
     children: [
-      { label: 'Usuarios', href: '/cobradores', icon: '👥' },
-      { label: 'Reportes', href: '/reportes', icon: '📊' },
-      // { label: 'Configuración', href: '/configuracion', icon: '⚙️' }
+      { label: 'Usuarios', href: '/cobradores', icon: '👥', permission: 'canManageUsers' },
+      { label: 'Empresas', href: '/empresas', icon: '🏢', permission: 'canManageCompanies' },
+      { label: 'Reportes', href: '/reportes', icon: '📊', permission: 'canViewReports' },
     ]
   },
 ];
@@ -35,13 +37,10 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const permissions = usePermissions();
+  const { user } = permissions;
   // State to track expanded menu items by label
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({ 'Configuración': true });
-
-  useEffect(() => {
-    setUser(authService.getUser());
-  }, []);
 
   const handleLogout = () => {
     authService.logout();
@@ -56,6 +55,11 @@ export default function Sidebar() {
   };
 
   const renderMenuItem = (item: MenuItem, depth = 0) => {
+    // Check permission for the item itself
+    if (item.permission && !(permissions as any)[item.permission]) {
+      return null;
+    }
+
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedItems[item.label];
 
@@ -137,11 +141,7 @@ export default function Sidebar() {
         </div>
 
         <nav className={styles.nav}>
-          {MENU_ITEMS.filter(item => {
-            if (user?.profile === 'ADMIN' || user?.profile === 'OWNER') return true;
-            // Non-admin users see Resumen, Préstamos, and Gastos
-            return ['Resumen', 'Préstamos', 'Gastos'].includes(item.label);
-          }).map((item) => renderMenuItem(item))}
+          {MENU_ITEMS.map((item) => renderMenuItem(item))}
         </nav>
 
         <div className={styles.footer}>

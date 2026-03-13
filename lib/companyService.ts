@@ -1,5 +1,5 @@
 import { api } from './api';
-import { Company } from './types';
+import { Company, CreateCompanyRequest, UpdateCompanyRequest } from './types';
 
 export const companyService = {
     /**
@@ -12,21 +12,21 @@ export const companyService = {
     /**
      * Create a new company
      */
-    async create(company: Partial<Company>): Promise<Company> {
-        return api.post<Company>('/companies', company);
+    async create(data: CreateCompanyRequest): Promise<{ id: string }> {
+        return api.post<{ id: string }>('/companies', data);
     },
 
     /**
      * Update a company
      */
-    async update(id: string, company: Partial<Company>): Promise<Company> {
-        return api.put<Company>(`/companies/${id}`, company);
+    async update(id: string, data: UpdateCompanyRequest): Promise<{ message: string }> {
+        return api.put<{ message: string }>(`/companies/${id}`, data);
     },
 
     /**
-     * Deactivate a company
+     * Update company status
      */
-    async deactivate(id: string): Promise<void> {
-        return api.patch(`/companies/${id}/deactivate`, {});
+    async updateStatus(id: string, status: string): Promise<{ message: string }> {
+        return api.patch<{ message: string }>(`/companies/${id}/status`, { status });
     }
 };

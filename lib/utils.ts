@@ -38,10 +38,6 @@ export function getLandingRoute(response: LoginResponse): string {
     const { companyStatus, profile, isDayClosed } = user;
 
     const isSuspended = companyStatus === 'SUSPENDED' || companyStatus === 'SUSPENDIDO';
-    console.log('companyStatus:', companyStatus);
-    console.log('susopedido:', isSuspended);
-    console.log('Perfil:', profile);
-    console.log('Dia cerrado:', user.isDayClosed);
 
     if (profile === 'OWNER') return '/dashboard';
 

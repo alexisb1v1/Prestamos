@@ -21,8 +21,6 @@ export const authService = {
             password: password,
         });
 
-        console.log('Login API Response Full:', JSON.stringify(response, null, 2));
-
         // Check if login was successful
         if (!response.success) {
             console.error('Login failed response:', response);

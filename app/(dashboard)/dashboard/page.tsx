@@ -43,6 +43,7 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [isMobile, setIsMobile] = useState(false);
+    const [searchTermLocal, setSearchTermLocal] = useState('');
 
     // Share Generator Ref
     const shareRef = useRef<LoanShareGeneratorRef>(null);
@@ -249,6 +250,16 @@ export default function DashboardPage() {
 
     }, []);
 
+    // Local filtering logic for search
+    const filteredLoans = (orderedLoans || []).filter(loan => {
+        if (!searchTermLocal.trim()) return true;
+        const search = searchTermLocal.toLowerCase();
+        return (
+            loan.clientName?.toLowerCase().includes(search) ||
+            loan.documentNumber?.toLowerCase().includes(search)
+        );
+    });
+
     // Effect to reload data when company changes (only for Owner mainly)
     useEffect(() => {
         if (currentUser?.profile === 'OWNER') {
@@ -282,7 +293,7 @@ export default function DashboardPage() {
             transform,
             transition,
             isDragging,
-        } = useSortable({ id: String(loan.id) });
+        } = useSortable({ id: String(loan.id), disabled: !!searchTermLocal.trim() });
 
         const style = {
             transform: CSS.Transform.toString(transform),
@@ -307,9 +318,11 @@ export default function DashboardPage() {
                             }}
                             title="Arrastra para reordenar"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="18" height="18">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                            </svg>
+                            {!searchTermLocal.trim() && (
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="18" height="18">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                                </svg>
+                            )}
                         </div>
                         <div style={{
                             minWidth: '28px',
@@ -411,7 +424,7 @@ export default function DashboardPage() {
             transform,
             transition,
             isDragging,
-        } = useSortable({ id: String(loan.id) });
+        } = useSortable({ id: String(loan.id), disabled: !!searchTermLocal.trim() });
 
         const style = {
             transform: CSS.Transform.toString(transform),
@@ -446,9 +459,11 @@ export default function DashboardPage() {
                                 }}
                                 title="Arrastra para reordenar"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                                </svg>
+                                {!searchTermLocal.trim() && (
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                                    </svg>
+                                )}
                             </div>
                             <div style={{
                                 minWidth: '30px',
@@ -746,158 +761,186 @@ export default function DashboardPage() {
                     </div>
 
                     <div style={{ marginTop: '2rem' }}>
+                        {/* Sticky Header Container */}
                         <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            marginBottom: '1rem',
-                            flexWrap: 'wrap',
-                            gap: '0.5rem'
+                            position: 'sticky',
+                            top: 0,
+                            zIndex: 20,
+                            backgroundColor: 'var(--bg-app)',
+                            margin: '0 -1rem',
+                            padding: '1rem',
+                            borderBottom: '1px solid var(--border-color)',
+                            transition: 'all 0.3s ease'
                         }}>
-                            <h2 style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 'bold', margin: 0 }}>
-                                Ruta de Cobro (Hoy) <span style={{ color: 'var(--text-secondary)', fontSize: '1rem', fontWeight: 'normal' }}>({orderedLoans.length} pendientes)</span>
-                            </h2>
-                        </div>
-
-                        {/* Status Legend */}
-                        <div style={{
-                            display: 'flex',
-                            gap: '1rem',
-                            fontSize: '0.8rem',
-                            color: 'var(--text-secondary)',
-                            marginBottom: '1rem',
-                            flexWrap: 'wrap',
-                            backgroundColor: 'var(--bg-card)',
-                            padding: '0.5rem 1rem',
-                            borderRadius: 'var(--radius-sm)',
-                            border: '1px solid var(--border-color)',
-                            width: 'fit-content'
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                <span>🟢</span> <span>Al día (0-1 días)</span>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                <span>🟡</span> <span>Mora Leve (2-5 días)</span>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                <span>🔴</span> <span>Mora Grave (6+ días)</span>
-                            </div>
-                        </div>
-
-                        {orderedLoans.length === 0 ? (
-                            <div className="card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                No hay préstamos pendientes para cobrar hoy.
-                            </div>
-                        ) : isMobile ? (
-                            <DndContext
-                                sensors={sensors}
-                                collisionDetection={closestCenter}
-                                onDragEnd={handleDragEnd}
-                            >
-                                <SortableContext
-                                    items={orderedLoans.map(loan => String(loan.id))}
-                                    strategy={verticalListSortingStrategy}
-                                >
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                        {orderedLoans.map((loan, index) => (
-                                            <SortableMobileCard key={loan.id} loan={loan} index={index} />
-                                        ))}
-                                    </div>
-                                </SortableContext>
-                            </DndContext>
-                        ) : (
-                            <DndContext
-                                sensors={sensors}
-                                collisionDetection={closestCenter}
-                                onDragEnd={handleDragEnd}
-                            >
-                                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                        <thead style={{ backgroundColor: 'var(--bg-app)', textAlign: 'left' }}>
-                                            <tr>
-                                                <th style={{ padding: '1rem' }}>Cliente</th>
-                                                <th style={{ padding: '1rem' }}>Vigencia</th>
-                                                <th style={{ padding: '1rem' }}>Detalle del Préstamo</th>
-                                                <th style={{ padding: '1rem' }}>Pagado</th>
-                                                <th style={{ padding: '1rem' }}>Estado</th>
-                                                <th style={{ padding: '1rem' }}>Acción</th>
-                                            </tr>
-                                        </thead>
-                                        <SortableContext
-                                            items={orderedLoans.map(loan => String(loan.id))}
-                                            strategy={verticalListSortingStrategy}
-                                        >
-                                            <tbody>
-                                                {orderedLoans.map((loan, index) => (
-                                                    <SortableTableRow key={loan.id} loan={loan} index={index} />
-                                                ))}
-                                            </tbody>
-                                        </SortableContext>
-                                    </table>
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: '1rem',
+                                flexWrap: 'wrap',
+                                gap: '0.5rem'
+                            }}>
+                                <h2 style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 'bold', margin: 0 }}>
+                                    Ruta de Cobro (Hoy) <span style={{ color: 'var(--text-secondary)', fontSize: '1rem', fontWeight: 'normal' }}>({filteredLoans.length} pendientes)</span>
+                                </h2>
+                                <div style={{ width: isMobile ? '100%' : '300px' }}>
+                                    <input
+                                        type="text"
+                                        className="input"
+                                        placeholder="Buscar por nombre o DNI..."
+                                        value={searchTermLocal}
+                                        onChange={(e) => setSearchTermLocal(e.target.value)}
+                                        style={{
+                                            width: '100%',
+                                            backgroundColor: isMobile ? 'var(--bg-card)' : 'var(--bg-app)',
+                                            height: '2.5rem',
+                                            fontSize: '0.875rem'
+                                        }}
+                                    />
                                 </div>
-                            </DndContext>
-                        )}
+                            </div>
+
+                            {/* Status Legend */}
+                            <div style={{
+                                display: 'flex',
+                                gap: '1rem',
+                                fontSize: '0.8rem',
+                                color: 'var(--text-secondary)',
+                                flexWrap: 'wrap',
+                                backgroundColor: 'var(--bg-card)',
+                                padding: '0.5rem 1rem',
+                                borderRadius: 'var(--radius-sm)',
+                                border: '1px solid var(--border-color)',
+                                width: 'fit-content'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <span>🟢</span> <span>Al día (0-1 días)</span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <span>🟡</span> <span>Mora Leve (2-5 días)</span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <span>🔴</span> <span>Mora Grave (6+ días)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ marginTop: '1rem' }}>
+
+                            {orderedLoans.length === 0 ? (
+                                <div className="card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                    No hay préstamos pendientes para cobrar hoy.
+                                </div>
+                            ) : isMobile ? (
+                                <DndContext
+                                    sensors={sensors}
+                                    collisionDetection={closestCenter}
+                                    onDragEnd={handleDragEnd}
+                                >
+                                    <SortableContext
+                                        items={filteredLoans.map(loan => String(loan.id))}
+                                        strategy={verticalListSortingStrategy}
+                                    >
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                            {filteredLoans.map((loan, index) => (
+                                                <SortableMobileCard key={loan.id} loan={loan} index={index} />
+                                            ))}
+                                        </div>
+                                    </SortableContext>
+                                </DndContext>
+                            ) : (
+                                <DndContext
+                                    sensors={sensors}
+                                    collisionDetection={closestCenter}
+                                    onDragEnd={handleDragEnd}
+                                >
+                                    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                            <thead style={{ backgroundColor: 'var(--bg-app)', textAlign: 'left' }}>
+                                                <tr>
+                                                    <th style={{ padding: '1rem' }}>Cliente</th>
+                                                    <th style={{ padding: '1rem' }}>Vigencia</th>
+                                                    <th style={{ padding: '1rem' }}>Detalle del Préstamo</th>
+                                                    <th style={{ padding: '1rem' }}>Pagado</th>
+                                                    <th style={{ padding: '1rem' }}>Estado</th>
+                                                    <th style={{ padding: '1rem' }}>Acción</th>
+                                                </tr>
+                                            </thead>
+                                            <SortableContext
+                                                items={filteredLoans.map(loan => String(loan.id))}
+                                                strategy={verticalListSortingStrategy}
+                                            >
+                                                <tbody>
+                                                    {filteredLoans.map((loan, index) => (
+                                                        <SortableTableRow key={loan.id} loan={loan} index={index} />
+                                                    ))}
+                                                </tbody>
+                                            </SortableContext>
+                                        </table>
+                                    </div>
+                                </DndContext>
+                            )}
+                        </div>
                     </div>
-                </>
-            )
-            }
 
-            {/* Modals */}
-            <CreatePaymentModal
-                isOpen={isPaymentModalOpen}
-                onClose={() => setIsPaymentModalOpen(false)}
-                onSuccess={() => {
-                    loadDashboard(selectedUserId, selectedCompanyId);
-                }}
-                loan={selectedLoanForPayment}
-            />
-
-            {
-                selectedLoanForDetails && (
-                    <LoanDetailsModal
-                        isOpen={isDetailsModalOpen}
-                        onClose={() => setIsDetailsModalOpen(false)}
-                        loan={selectedLoanForDetails}
-                        shareRef={shareRef}
+                    {/* Modals */}
+                    <CreatePaymentModal
+                        isOpen={isPaymentModalOpen}
+                        onClose={() => setIsPaymentModalOpen(false)}
+                        onSuccess={() => {
+                            loadDashboard(selectedUserId, selectedCompanyId);
+                        }}
+                        loan={selectedLoanForPayment}
                     />
-                )
-            }
-            {isCreateModalOpen && (
-                <CreateLoanModal
-                    isOpen={isCreateModalOpen}
-                    onClose={() => {
-                        setIsCreateModalOpen(false);
-                        setSelectedLoanForRenewal(null);
-                    }}
-                    onSuccess={() => loadDashboard(selectedUserId, selectedCompanyId)}
-                    loanToRenew={selectedLoanForRenewal}
-                />
-            )}
 
-            {isReassignModalOpen && selectedLoanForReassign && (
-                <ReassignLoanModal
-                    isOpen={isReassignModalOpen}
-                    onClose={() => {
-                        setIsReassignModalOpen(false);
-                        setSelectedLoanForReassign(null);
-                    }}
-                    onSuccess={() => loadDashboard(selectedUserId, selectedCompanyId)}
-                    loan={selectedLoanForReassign}
-                />
-            )}
+                    {
+                        selectedLoanForDetails && (
+                            <LoanDetailsModal
+                                isOpen={isDetailsModalOpen}
+                                onClose={() => setIsDetailsModalOpen(false)}
+                                loan={selectedLoanForDetails}
+                                shareRef={shareRef}
+                            />
+                        )
+                    }
+                    {isCreateModalOpen && (
+                        <CreateLoanModal
+                            isOpen={isCreateModalOpen}
+                            onClose={() => {
+                                setIsCreateModalOpen(false);
+                                setSelectedLoanForRenewal(null);
+                            }}
+                            onSuccess={() => loadDashboard(selectedUserId, selectedCompanyId)}
+                            loanToRenew={selectedLoanForRenewal}
+                        />
+                    )}
 
-            {isDeleteModalOpen && selectedLoanForDelete && (
-                <DeleteLoanConfirmModal
-                    isOpen={isDeleteModalOpen}
-                    onClose={() => {
-                        setIsDeleteModalOpen(false);
-                        setSelectedLoanForDelete(null);
-                    }}
-                    onSuccess={() => loadDashboard(selectedUserId, selectedCompanyId)}
-                    loan={selectedLoanForDelete}
-                />
+                    {isReassignModalOpen && selectedLoanForReassign && (
+                        <ReassignLoanModal
+                            isOpen={isReassignModalOpen}
+                            onClose={() => {
+                                setIsReassignModalOpen(false);
+                                setSelectedLoanForReassign(null);
+                            }}
+                            onSuccess={() => loadDashboard(selectedUserId, selectedCompanyId)}
+                            loan={selectedLoanForReassign}
+                        />
+                    )}
+
+                    {isDeleteModalOpen && selectedLoanForDelete && (
+                        <DeleteLoanConfirmModal
+                            isOpen={isDeleteModalOpen}
+                            onClose={() => {
+                                setIsDeleteModalOpen(false);
+                                setSelectedLoanForDelete(null);
+                            }}
+                            onSuccess={() => loadDashboard(selectedUserId, selectedCompanyId)}
+                            loan={selectedLoanForDelete}
+                        />
+                    )}
+                </>
             )}
             <LoanShareGenerator ref={shareRef} />
-        </div >
+        </div>
     );
 }
