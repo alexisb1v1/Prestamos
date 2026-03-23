@@ -593,7 +593,7 @@ export default function DashboardPage() {
                                 <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', minWidth: isMobile ? '60px' : 'auto' }}>Empresa:</span>
                                 <select
                                     className="input"
-                                    style={{ padding: '0.4rem', fontSize: '0.875rem', width: isMobile ? '100%' : '200px' }}
+                                    style={{ padding: '0.6rem 0.8rem', fontSize: '0.875rem', width: isMobile ? '100%' : '200px' }}
                                     value={selectedCompanyId}
                                     onChange={handleCompanyChange}
                                 >

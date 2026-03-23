@@ -108,7 +108,7 @@
     .sidebar {
         position: fixed;
         transform: none;
-        border-right: 1px solid var(--border-color);
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
         box-shadow: none;
         height: 100vh;
     }

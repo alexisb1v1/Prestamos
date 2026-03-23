@@ -8,8 +8,8 @@
 
   --text-primary: #0f172a;
   /* Slate 900 */
-  --text-secondary: #64748b;
-  /* Slate 500 */
+  --text-secondary: #475569;
+  /* Slate 600 */
 
   --color-primary: #4f46e5;
   /* Indigo 600 */
@@ -25,8 +25,8 @@
   --color-danger: #dc2626;
   /* Red 600 */
 
-  --border-color: #e2e8f0;
-  /* Slate 200 */
+  --border-color: #cbd5e1;
+  /* Slate 300 */
 
   /* Spacing & Radius */
   --radius-sm: 0.375rem;
@@ -101,6 +101,7 @@ button {
 .btn-primary {
   background-color: var(--color-primary);
   color: white;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
 }
 
 .btn-primary:hover {
@@ -109,7 +110,7 @@ button {
 
 .input {
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 0.85rem 1rem;
   border-radius: var(--radius-md);
   border: 1.5px solid var(--border-color);
   background-color: #ffffff;
@@ -117,24 +118,25 @@ button {
   color: var(--text-primary);
   outline: none;
   transition: all 0.2s ease;
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 
 .input:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.2);
   background-color: #ffffff;
 }
 
 .input::placeholder {
-  color: #94a3b8;
+  color: #64748b;
 }
 
 .label {
   display: block;
   font-size: 0.875rem;
+  font-weight: 500;
   color: var(--text-secondary);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.65rem;
 }
 
 /* Glassmorphism utility */
@@ -143,6 +145,18 @@ button {
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: var(--shadow-xl);
+}
+
+/* Animaciones Premium */
+@keyframes shadowPulse {
+  0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.3); }
+  50% { box-shadow: 0 0 35px 5px rgba(79, 70, 229, 0.15); }
+  100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.3); }
+}
+
+.shadow-pulse-card {
+  background-color: #ffffff;
+  animation: shadowPulse 4s ease-in-out infinite;
 }
 
 .btn-icon {

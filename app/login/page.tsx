@@ -51,59 +51,55 @@ export default function LoginPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'radial-gradient(circle at top left, #e0e7ff, transparent), radial-gradient(circle at bottom right, #f1f5f9, transparent), #f8fafc',
-            position: 'relative',
-            overflow: 'hidden'
+            backgroundColor: '#f8fafc', // Fondo gris muy limpio
+            padding: '1rem'
         }}>
-            {/* Background decorative elements */}
-            <div style={{ position: 'absolute', top: '-100px', left: '-100px', width: '300px', height: '300px', background: 'rgba(79, 70, 229, 0.05)', borderRadius: '50%', filter: 'blur(80px)' }}></div>
-            <div style={{ position: 'absolute', bottom: '-80px', right: '-80px', width: '250px', height: '250px', background: 'rgba(79, 70, 229, 0.08)', borderRadius: '50%', filter: 'blur(60px)' }}></div>
-
-            <div className="card glass" style={{
+            <div className="shadow-pulse-card" style={{ 
                 width: '100%',
-                maxWidth: '420px',
-                padding: '3rem 2.5rem',
-                border: '1px solid rgba(255, 255, 255, 0.5)',
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.1)',
-                borderRadius: '32px'
+                maxWidth: '400px',
+                padding: '2.5rem',
+                border: '1px solid #e2e8f0',
+                borderRadius: '12px' // Curvatura sutil y corporativa
             }}>
-                <div style={{ marginBottom: '2.5rem', textAlign: 'center' }}>
+                <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
                     <div style={{
-                        width: '64px',
-                        height: '64px',
+                        width: '56px',
+                        height: '56px',
                         background: 'linear-gradient(135deg, var(--color-primary), #6366f1)',
-                        borderRadius: '18px',
+                        borderRadius: '14px',
                         margin: '0 auto 1.5rem',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: 'white',
                         fontSize: '1.5rem',
-                        boxShadow: '0 10px 20px rgba(79, 70, 229, 0.3)'
+                        boxShadow: '0 8px 16px rgba(79, 70, 229, 0.25)'
                     }}>
                         💰
                     </div>
-                    <h1 style={{ fontSize: '1.875rem', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.025em' }}>Bienvenido</h1>
-                    <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', fontWeight: '500' }}>Accede a tu panel de préstamos</p>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: '600', color: '#0f172a' }}>Iniciar Sesión</h1>
+                    <p style={{ color: '#64748b', marginTop: '0.5rem', fontSize: '0.9rem' }}>
+                        Accede a tu panel de control
+                    </p>
                 </div>
 
                 {error && (
                     <div style={{
                         padding: '0.75rem',
-                        marginBottom: '1rem',
-                        backgroundColor: 'rgba(220, 38, 38, 0.1)',
-                        border: '1px solid var(--color-danger)',
-                        borderRadius: 'var(--radius-md)',
-                        color: 'var(--color-danger)',
+                        marginBottom: '1.25rem',
+                        backgroundColor: '#fef2f2',
+                        border: '1px solid #f87171',
+                        borderRadius: '6px',
+                        color: '#b91c1c',
                         fontSize: '0.875rem'
                     }}>
                         {error}
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                     <div>
-                        <label className="label">Usuario</label>
+                        <label className="label" style={{ fontWeight: 500, color: '#0f172a' }}>Usuario</label>
                         <input
                             type="text"
                             className="input"
@@ -112,11 +108,15 @@ export default function LoginPage() {
                             onChange={(e) => setUsername(e.target.value)}
                             required
                             disabled={loading}
+                            style={{ padding: '0.75rem 1rem', borderRadius: '8px' }} // Sobrescribir input global si es necesario
                         />
                     </div>
 
                     <div>
-                        <label className="label">Contraseña</label>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
+                            <label className="label" style={{ margin: 0, fontWeight: 500, color: '#0f172a' }}>Contraseña</label>
+                            <a href="#" style={{ color: 'var(--color-primary)', fontSize: '0.85rem', fontWeight: '500', textDecoration: 'none' }}>¿Olvidaste tu contraseña?</a>
+                        </div>
                         <input
                             type="password"
                             className="input"
@@ -125,35 +125,39 @@ export default function LoginPage() {
                             onChange={(e) => setPassword(e.target.value)}
                             required
                             disabled={loading}
+                            style={{ padding: '0.75rem 1rem', borderRadius: '8px' }}
                         />
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
-                        <label style={{ display: 'flex', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', marginTop: '0.25rem', marginBottom: '0.25rem' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#475569', fontSize: '0.9rem' }}>
                             <input
                                 type="checkbox"
                                 checked={rememberUser}
                                 onChange={(e) => setRememberUser(e.target.checked)}
-                            /> Recuérdame
+                                style={{ width: '16px', height: '16px', borderRadius: '4px', cursor: 'pointer' }}
+                            /> 
+                            Recuérdame
                         </label>
-                        <a href="#" style={{ color: 'var(--color-primary)' }}>¿Olvidaste tu contraseña?</a>
                     </div>
 
                     <button
                         type="submit"
-                        className="btn btn-primary"
+                        disabled={loading}
                         style={{
                             width: '100%',
-                            padding: '1rem',
-                            borderRadius: '14px',
-                            background: 'linear-gradient(135deg, var(--color-primary), #6366f1)',
+                            padding: '0.85rem',
+                            marginTop: '0.5rem',
+                            borderRadius: '8px',
+                            backgroundColor: 'var(--color-primary)',
+                            color: 'white',
                             border: 'none',
-                            fontWeight: '700',
-                            fontSize: '1rem',
-                            boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
-                            transition: 'all 0.2s ease'
+                            fontWeight: '600',
+                            fontSize: '0.95rem',
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            opacity: loading ? 0.7 : 1,
+                            transition: 'background-color 0.2s'
                         }}
-                        disabled={loading}
                     >
                         {loading ? 'Ingresando...' : 'Iniciar Sesión'}
                     </button>

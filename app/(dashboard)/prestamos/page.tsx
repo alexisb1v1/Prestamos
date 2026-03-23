@@ -65,7 +65,7 @@ const MobileLoanCard = ({
         <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '0.5rem',
+            gap: '0.75rem',
             fontSize: '0.9rem',
             marginBottom: '0.75rem'
         }}>
@@ -465,8 +465,9 @@ export default function PrestamosPage() {
                 flexWrap: 'wrap',
                 backgroundColor: 'var(--bg-card)',
                 padding: '0.5rem 1rem',
-                borderRadius: 'var(--radius-sm)',
+                borderRadius: 'var(--radius-md)',
                 border: '1px solid var(--border-color)',
+                boxShadow: 'var(--shadow-sm)',
                 width: 'fit-content'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -528,12 +529,12 @@ export default function PrestamosPage() {
                     <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
                         <thead style={{ backgroundColor: 'var(--bg-app)', textAlign: 'left' }}>
                             <tr>
-                                <th style={{ padding: '1rem' }}>Cliente</th>
-                                <th style={{ padding: '1rem' }}>Vigencia</th>
-                                <th style={{ padding: '1rem' }}>Detalle del Préstamo</th>
-                                <th style={{ padding: '1rem' }}>Estado</th>
-                                <th style={{ padding: '1rem' }}>Cobrador</th>
-                                <th style={{ padding: '1rem' }}>Acción</th>
+                                <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600' }}>Cliente</th>
+                                <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600' }}>Vigencia</th>
+                                <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600' }}>Detalle del Préstamo</th>
+                                <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600' }}>Estado</th>
+                                <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600' }}>Cobrador</th>
+                                <th style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '600' }}>Acción</th>
                             </tr>
                         </thead>
                         <tbody>
