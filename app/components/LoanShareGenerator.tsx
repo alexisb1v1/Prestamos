@@ -210,7 +210,14 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, {}>((_, ref) => {
                 </div>
 
                 <div style={{ marginBottom: '1rem' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem', textAlign: 'center' }}>Calendario de Pagos</h3>
+                    <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 'bold', margin: '0 0 0.25rem 0' }}>Calendario de Pagos</h3>
+                        <div style={{ fontWeight: 600, textTransform: 'capitalize', fontSize: '1rem', color: '#1e1b4b' }}>
+                            {format(startDate, 'MMM yyyy') === format(endDate, 'MMM yyyy') 
+                                ? format(startDate, 'MMMM yyyy', { locale: es })
+                                : `${format(startDate, 'MMMM', { locale: es })} - ${format(endDate, 'MMMM yyyy', { locale: es })}`}
+                        </div>
+                    </div>
                     <div style={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(7, 1fr)',
