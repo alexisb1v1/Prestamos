@@ -32,6 +32,20 @@ export default function LoanActions({
     shareRef
 }: LoanActionsProps) {
     const [activeMenu, setActiveMenu] = useState(false);
+    const [isSharing, setIsSharing] = useState(false);
+
+    const handleShare = async () => {
+        if (!shareRef.current) return;
+        setIsSharing(true);
+        try {
+            await shareRef.current.shareLoan(loan);
+        } catch (error) {
+            console.error("Error al compartir ficha:", error);
+        } finally {
+            setIsSharing(false);
+            setActiveMenu(false);
+        }
+    };
 
     // Close menu when clicking outside
     useEffect(() => {
@@ -111,23 +125,34 @@ export default function LoanActions({
                 </button>
 
                 <button
-                    onClick={() => shareRef.current?.shareLoan(loan)}
+                    onClick={handleShare}
+                    disabled={isSharing}
                     title="Compartir Ficha"
                     style={{
                         padding: '0.35rem',
                         border: 'none',
                         backgroundColor: 'transparent',
-                        cursor: 'pointer',
+                        cursor: isSharing ? 'wait' : 'pointer',
                         borderRadius: '0.375rem',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#3b82f6'
+                        color: '#3b82f6',
+                        opacity: isSharing ? 0.6 : 1,
+                        transition: 'all 0.2s'
                     }}
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
-                    </svg>
+                    {isSharing ? (
+                        <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="30" strokeLinecap="round" opacity="0.6">
+                                <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite" />
+                            </circle>
+                        </svg>
+                    ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+                        </svg>
+                    )}
                 </button>
             </div>
         );
@@ -266,10 +291,8 @@ export default function LoanActions({
                     marginBottom: '0.5rem'
                 }}>
                     <button
-                        onClick={() => {
-                            shareRef.current?.shareLoan(loan);
-                            setActiveMenu(false);
-                        }}
+                        onClick={handleShare}
+                        disabled={isSharing}
                         style={{
                             padding: '0.75rem 1rem',
                             border: 'none',
@@ -277,16 +300,25 @@ export default function LoanActions({
                             display: 'flex',
                             alignItems: 'center',
                             gap: '0.75rem',
-                            cursor: 'pointer',
+                            cursor: isSharing ? 'wait' : 'pointer',
                             textAlign: 'left',
                             color: '#3b82f6',
-                            fontSize: '0.85rem'
+                            fontSize: '0.85rem',
+                            opacity: isSharing ? 0.6 : 1,
                         }}
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="18" height="18">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
-                        </svg>
-                        Compartir
+                        {isSharing ? (
+                            <svg viewBox="0 0 24 24" fill="none" width="18" height="18" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="30" strokeLinecap="round" opacity="0.6">
+                                    <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite" />
+                                </circle>
+                            </svg>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="18" height="18">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+                            </svg>
+                        )}
+                        {isSharing ? 'Generando...' : 'Compartir'}
                     </button>
 
                     {canReassignLoan && (

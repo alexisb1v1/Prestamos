@@ -56,6 +56,7 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
     const [error, setError] = useState('');
     const [activeTab, setActiveTab] = useState<'calendar' | 'list'>('calendar');
     const [isMobile, setIsMobile] = useState(false);
+    const [isSharing, setIsSharing] = useState(false);
     const { user, canDeletePayment } = usePermissions();
 
     useEffect(() => {
@@ -196,7 +197,14 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
 
     const handleShare = async () => {
         if (loan && shareRef?.current) {
-            shareRef.current.shareLoan(loan);
+            setIsSharing(true);
+            try {
+                await shareRef.current.shareLoan(loan);
+            } catch (error) {
+                console.error("Error al compartir ficha:", error);
+            } finally {
+                setIsSharing(false);
+            }
         }
     };
 
@@ -231,29 +239,39 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                             <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Detalle de Pagos</h2>
                             <button
                                 onClick={handleShare}
+                                disabled={isSharing}
                                 title="Compartir Ficha"
                                 style={{
                                     padding: '0.25rem',
                                     border: 'none',
                                     backgroundColor: 'transparent',
-                                    cursor: 'pointer',
+                                    cursor: isSharing ? 'wait' : 'pointer',
                                     borderRadius: '0.375rem',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     color: '#3b82f6',
+                                    opacity: isSharing ? 0.6 : 1,
                                     transition: 'all 0.2s'
                                 }}
                                 onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+                                    if(!isSharing) e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
                                 }}
                                 onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                    if(!isSharing) e.currentTarget.style.backgroundColor = 'transparent';
                                 }}
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
-                                </svg>
+                                {isSharing ? (
+                                    <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" strokeWidth="2">
+                                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="30" strokeLinecap="round" opacity="0.6">
+                                            <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite" />
+                                        </circle>
+                                    </svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+                                    </svg>
+                                )}
                             </button>
                         </div>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -341,9 +359,9 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                         ) : error ? (
                             <div style={{ color: 'red', textAlign: 'center' }}>{error}</div>
                         ) : activeTab === 'calendar' ? (
-                            <>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                                 {/* Calendar Header - Show range description */}
-                                <div style={{ textAlign: 'center', padding: '0.25rem 0.5rem', marginBottom: '0.25rem' }}>
+                                <div style={{ textAlign: 'center', padding: '0', marginBottom: '0' }}>
                                     <span style={{ fontWeight: 'bold', textTransform: 'capitalize', fontSize: '1.1rem' }}>
                                         {monthLabel}
                                     </span>
@@ -497,7 +515,7 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                                     })}
                                 </div>
 
-                                <div style={{ marginTop: '0.5rem', display: 'flex', gap: '1rem', fontSize: '0.8rem', flexWrap: 'wrap' }}>
+                                <div style={{ marginTop: '0', display: 'flex', gap: '0.75rem', fontSize: '0.8rem', flexWrap: 'wrap', justifyContent: 'center' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                                         <div style={{ width: '12px', height: '12px', backgroundColor: '#63c581ff', border: '1px solid #1c9641ff', borderRadius: '2px' }}></div>
                                         <span>Pago Registrado</span>
@@ -515,7 +533,7 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                                         <span>Hoy</span>
                                     </div>
                                 </div>
-                            </>
+                            </div>
                         ) : (
                             /* List View */
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -682,7 +700,7 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                         )}
                     </div>
 
-                    <div style={{ marginTop: 'auto', paddingTop: '1rem', flexShrink: 0 }}>
+                    <div style={{ marginTop: 'auto', paddingTop: '0.25rem', flexShrink: 0 }}>
                         <button className="btn" style={{ width: '100%', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)' }} onClick={onClose}>
                             Cerrar
                         </button>
