@@ -296,7 +296,12 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, {}>((_, ref) => {
 
                 {/* Footer */}
                 <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.65rem', color: '#94a3b8', borderTop: '1px solid #e2e8f0', paddingTop: '0.5rem' }}>
-                    <p style={{ margin: 0 }}>Cuentas Claras - Sistema de Control de Préstamos</p>
+                    <p style={{ margin: 0 }}>
+                        <span style={{ fontWeight: 800, color: '#0f172a', letterSpacing: '-0.025em' }}>
+                            Neo<span style={{ color: '#4f46e5' }}>Cobros</span>
+                        </span>
+                        {' '}- Sistema de Control de Préstamos
+                    </p>
                 </div>
             </div>
         </div>

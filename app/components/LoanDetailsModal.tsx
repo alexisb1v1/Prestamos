@@ -11,6 +11,7 @@ import { es } from 'date-fns/locale';
 import { usePermissions } from '@/hooks/usePermissions';
 import { LoanShareGeneratorRef } from './LoanShareGenerator';
 import ConfirmModal from './ConfirmModal';
+import LoadingSpinner from './LoadingSpinner';
 
 interface LoanDetailsModalProps {
     isOpen: boolean;
@@ -336,7 +337,7 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                         gap: '1rem'
                     }}>
                         {loading ? (
-                            <div style={{ textAlign: 'center', padding: '2rem' }}>Cargando detalles...</div>
+                            <LoadingSpinner message="Cargando detalles..." />
                         ) : error ? (
                             <div style={{ color: 'red', textAlign: 'center' }}>{error}</div>
                         ) : activeTab === 'calendar' ? (
@@ -407,13 +408,14 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
 
                                         return (
                                             <div key={day.toISOString()} style={{
-                                                minHeight: '85px',
-                                                padding: '4px',
+                                                minHeight: isMobile ? '55px' : '80px',
+                                                padding: isMobile ? '2px' : '4px',
                                                 backgroundColor: bgColor,
                                                 position: 'relative',
                                                 border: isTodayDate && isRelevant ? '2px solid #3b82f6' : (isRelevant ? '1px solid #bfdbfe' : 'none'),
                                                 display: 'flex',
-                                                flexDirection: 'column'
+                                                flexDirection: 'column',
+                                                justifyContent: 'space-between'
                                             }}>
                                                 <div style={{
                                                     display: 'flex',
@@ -422,15 +424,16 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                                                     marginBottom: '2px'
                                                 }}>
                                                     <span style={{
-                                                        fontSize: '0.6rem',
+                                                        fontSize: isMobile ? '0.55rem' : '0.6rem',
                                                         color: 'var(--text-secondary)',
                                                         textTransform: 'uppercase',
-                                                        fontWeight: 'bold'
+                                                        fontWeight: 'bold',
+                                                        letterSpacing: '-0.02em',
                                                     }}>
                                                         {isFirstOfMonth ? format(day, 'MMM', { locale: es }) : ''}
                                                     </span>
                                                     <span style={{
-                                                        fontSize: '0.7rem',
+                                                        fontSize: isMobile ? '0.65rem' : '0.7rem',
                                                         fontWeight: isStart || isEnd ? 'bold' : 'normal',
                                                         color: isStart || isEnd ? 'var(--color-primary)' : 'inherit',
                                                     }}>
@@ -440,24 +443,25 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
 
                                                 {isStart && (
                                                     <div style={{
-                                                        fontSize: '0.65rem',
+                                                        fontSize: isMobile ? '0.55rem' : '0.65rem',
                                                         backgroundColor: '#8b5cf6',
                                                         color: 'white',
-                                                        padding: '3px 4px',
+                                                        padding: isMobile ? '2px 1px' : '3px 4px',
                                                         borderRadius: '3px',
                                                         marginBottom: '2px',
                                                         textAlign: 'center',
                                                         fontWeight: 'bold',
-                                                        boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                                                        boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                                                        letterSpacing: isMobile ? '-0.03em' : 'normal'
                                                     }}>INICIO</div>
                                                 )}
 
                                                 {isEnd && (
                                                     <div style={{
-                                                        fontSize: '0.65rem',
+                                                        fontSize: isMobile ? '0.55rem' : '0.65rem',
                                                         backgroundColor: '#ef4444',
                                                         color: 'white',
-                                                        padding: '3px 4px',
+                                                        padding: isMobile ? '2px 1px' : '3px 4px',
                                                         borderRadius: '3px',
                                                         marginBottom: '2px',
                                                         textAlign: 'center',
@@ -469,14 +473,22 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                                                 {installment && (
                                                     <div style={{
                                                         marginTop: 'auto',
-                                                        padding: '6px 2px',
+                                                        padding: isMobile ? '4px 1px' : '6px 2px',
                                                         backgroundColor: '#63c581ff',
                                                         borderRadius: '4px',
                                                         border: '1px solid #1c9641ff',
-                                                        textAlign: 'center'
+                                                        textAlign: 'center',
+                                                        wordBreak: 'break-word',
+                                                        overflowWrap: 'break-word'
                                                     }}>
-                                                        <div style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#ffffffff', lineHeight: '1.2' }}>
-                                                            S/ {installment.amount}
+                                                        <div style={{ 
+                                                            fontSize: isMobile ? '0.65rem' : '0.95rem', 
+                                                            fontWeight: 'bold', 
+                                                            color: '#ffffffff', 
+                                                            lineHeight: '1.1',
+                                                            letterSpacing: isMobile ? '-0.03em' : 'normal'
+                                                        }}>
+                                                            {isMobile ? installment.amount : `S/ ${installment.amount}`}
                                                         </div>
                                                     </div>
                                                 )}

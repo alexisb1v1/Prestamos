@@ -5,6 +5,7 @@ import { companyService } from '@/lib/companyService';
 import { Company } from '@/lib/types';
 import CreateCompanyModal from '@/app/components/CreateCompanyModal';
 import ConfirmModal from '@/app/components/ConfirmModal';
+import LoadingSpinner from '@/app/components/LoadingSpinner';
 
 interface MobileCompanyCardProps {
     company: Company;
@@ -214,7 +215,7 @@ export default function EmpresasPage() {
             {isMobile ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {loading ? (
-                        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Cargando datos...</div>
+                        <LoadingSpinner message="Cargando datos..." />
                     ) : filteredCompanies.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)', fontWeight: 500 }}>No se encontraron registros.</div>
                     ) : (
@@ -249,7 +250,7 @@ export default function EmpresasPage() {
                             </thead>
                             <tbody>
                                 {loading ? (
-                                    <tr><td colSpan={5} style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)', fontWeight: 500 }}>Cargando datos...</td></tr>
+                                    <tr><td colSpan={5}><LoadingSpinner message="Cargando datos..." /></td></tr>
                                 ) : filteredCompanies.length === 0 ? (
                                     <tr><td colSpan={5} style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)', fontWeight: 500 }}>No se encontraron registros.</td></tr>
                                 ) : (

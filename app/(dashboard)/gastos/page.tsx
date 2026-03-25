@@ -8,6 +8,7 @@ import { authService } from '@/lib/auth';
 import { Expense, User, Company } from '@/lib/types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import LoadingSpinner from '../../components/LoadingSpinner';
 
 export default function ExpensesPage() {
     const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -281,7 +282,7 @@ export default function ExpensesPage() {
             {/* Results Section */}
             <div style={{ maxWidth: '800px', margin: '0 auto' }}>
                 {loading ? (
-                    <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>Cargando gastos...</div>
+                    <LoadingSpinner message="Cargando gastos..." />
                 ) : expenses.length === 0 ? (
                     <div style={{
                         textAlign: 'center',

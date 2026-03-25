@@ -54,7 +54,7 @@ export default function LoginPage() {
             backgroundColor: '#f8fafc', // Fondo gris muy limpio
             padding: '1rem'
         }}>
-            <div className="shadow-pulse-card" style={{ 
+            <div className="shadow-pulse-card" style={{
                 width: '100%',
                 maxWidth: '400px',
                 padding: '2.5rem',
@@ -67,7 +67,7 @@ export default function LoginPage() {
                         height: '56px',
                         background: 'linear-gradient(135deg, var(--color-primary), #6366f1)',
                         borderRadius: '14px',
-                        margin: '0 auto 1.5rem',
+                        margin: '0 auto 1rem',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -77,8 +77,10 @@ export default function LoginPage() {
                     }}>
                         💰
                     </div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: '600', color: '#0f172a' }}>Iniciar Sesión</h1>
-                    <p style={{ color: '#64748b', marginTop: '0.5rem', fontSize: '0.9rem' }}>
+                    <h1 style={{ fontSize: '1.75rem', fontWeight: '800', letterSpacing: '-0.025em', color: '#0f172a', marginBottom: '0.25rem' }}>
+                        Neo<span style={{ color: 'var(--color-primary)' }}>Cobros</span>
+                    </h1>
+                    <p style={{ color: '#64748b', marginTop: '0.25rem', fontSize: '0.9rem' }}>
                         Accede a tu panel de control
                     </p>
                 </div>
@@ -115,7 +117,6 @@ export default function LoginPage() {
                     <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
                             <label className="label" style={{ margin: 0, fontWeight: 500, color: '#0f172a' }}>Contraseña</label>
-                            <a href="#" style={{ color: 'var(--color-primary)', fontSize: '0.85rem', fontWeight: '500', textDecoration: 'none' }}>¿Olvidaste tu contraseña?</a>
                         </div>
                         <input
                             type="password"
@@ -136,7 +137,7 @@ export default function LoginPage() {
                                 checked={rememberUser}
                                 onChange={(e) => setRememberUser(e.target.checked)}
                                 style={{ width: '16px', height: '16px', borderRadius: '4px', cursor: 'pointer' }}
-                            /> 
+                            />
                             Recuérdame
                         </label>
                     </div>

@@ -14,6 +14,7 @@ import ReassignLoanModal from '../../components/ReassignLoanModal';
 import DeleteLoanConfirmModal from '../../components/DeleteLoanConfirmModal';
 import LoanShareGenerator, { LoanShareGeneratorRef } from '../../components/LoanShareGenerator';
 import LoanActions from '../../components/LoanActions';
+import LoadingSpinner from '../../components/LoadingSpinner';
 
 const formatMoney = (amount: number) => {
     return `S/ ${Number(amount).toFixed(2)}`;
@@ -501,7 +502,7 @@ export default function PrestamosPage() {
             {isMobile ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {loading ? (
-                        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Cargando...</div>
+                        <LoadingSpinner message="Cargando préstamos..." />
                     ) : loans.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>No se encontraron préstamos.</div>
                     ) : (
@@ -540,8 +541,8 @@ export default function PrestamosPage() {
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                        Cargando préstamos...
+                                    <td colSpan={6}>
+                                        <LoadingSpinner message="Cargando préstamos..." />
                                     </td>
                                 </tr>
                             ) : loans.length === 0 ? (

@@ -14,6 +14,8 @@ import ReassignLoanModal from '../../components/ReassignLoanModal';
 import DeleteLoanConfirmModal from '../../components/DeleteLoanConfirmModal';
 import LoanShareGenerator, { LoanShareGeneratorRef } from '../../components/LoanShareGenerator';
 import LoanActions from '../../components/LoanActions';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import AnimatedNumber from '../../components/AnimatedNumber';
 import {
     DndContext,
     closestCenter,
@@ -568,7 +570,7 @@ export default function DashboardPage() {
         );
     }
 
-    if (loading && !data) return <div style={{ padding: '2rem', textAlign: 'center' }}>Cargando resumen...</div>;
+    if (loading && !data) return <LoadingSpinner message="Cargando resumen..." />;
     if (error) return <div style={{ padding: '2rem', color: 'red', textAlign: 'center' }}>{error}</div>;
 
     const isAdmin = currentUser?.profile === 'ADMIN' || currentUser?.profile === 'OWNER';
@@ -641,12 +643,12 @@ export default function DashboardPage() {
                         {/* Stat Cards */}
                         <div className="card" style={{ padding: isMobile ? '0.75rem' : '1.5rem' }}>
                             <h3 className="label" style={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}>Préstamos Hoy</h3>
-                            <p style={{ fontSize: isMobile ? '1.25rem' : '2rem', fontWeight: 'bold', color: 'var(--color-primary)', margin: '0.25rem 0' }}>{formatMoney(data.totalLentToday)}</p>
+                            <p style={{ fontSize: isMobile ? '1.25rem' : '2rem', fontWeight: 'bold', color: 'var(--color-primary)', margin: '0.25rem 0' }}><AnimatedNumber value={data.totalLentToday} isCurrency /></p>
                         </div>
 
                         <div className="card" style={{ padding: isMobile ? '0.75rem' : '1.5rem' }}>
                             <h3 className="label" style={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}>Cobrado Hoy</h3>
-                            <p style={{ fontSize: isMobile ? '1.25rem' : '2rem', fontWeight: 'bold', color: 'var(--text-primary)', margin: '0.25rem 0' }}>{formatMoney(data.collectedToday)}</p>
+                            <p style={{ fontSize: isMobile ? '1.25rem' : '2rem', fontWeight: 'bold', color: 'var(--text-primary)', margin: '0.25rem 0' }}><AnimatedNumber value={data.collectedToday} isCurrency /></p>
                             {data.detailCollectedToday && (
                                 <div style={{
                                     marginTop: '0.75rem',
@@ -658,11 +660,11 @@ export default function DashboardPage() {
                                 }}>
                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                         <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>Yape</span>
-                                        <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#6366f1' }}>{formatMoney(data.detailCollectedToday.yape)}</span>
+                                        <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#6366f1' }}><AnimatedNumber value={data.detailCollectedToday.yape} isCurrency /></span>
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', borderLeft: '1px solid var(--border-color)' }}>
                                         <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>Efectivo</span>
-                                        <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#22c55e' }}>{formatMoney(data.detailCollectedToday.efectivo)}</span>
+                                        <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#22c55e' }}><AnimatedNumber value={data.detailCollectedToday.efectivo} isCurrency /></span>
                                     </div>
                                 </div>
                             )}
@@ -670,12 +672,12 @@ export default function DashboardPage() {
 
                         <div className="card" style={{ padding: isMobile ? '0.75rem' : '1.5rem' }}>
                             <h3 className="label" style={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}>Clientes Activos</h3>
-                            <p style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold', color: 'var(--text-primary)', margin: '0.25rem 0' }}>{data.activeClients}</p>
+                            <p style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold', color: 'var(--text-primary)', margin: '0.25rem 0' }}><AnimatedNumber value={data.activeClients} /></p>
                         </div>
 
                         <div className="card" style={{ padding: isMobile ? '0.75rem' : '1.5rem' }}>
                             <h3 className="label" style={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}>Gastos Hoy</h3>
-                            <p style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold', color: '#ef4444', margin: '0.25rem 0' }}>{formatMoney(data.totalExpensesToday || 0)}</p>
+                            <p style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold', color: '#ef4444', margin: '0.25rem 0' }}><AnimatedNumber value={data.totalExpensesToday || 0} isCurrency /></p>
                         </div>
                         <div className="card" style={{ padding: isMobile ? '0.75rem' : '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                             <h3 className="label" style={{ fontSize: isMobile ? '0.75rem' : '0.875rem', alignSelf: 'flex-start', marginBottom: '0.25rem' }}>Termometro</h3>
@@ -764,7 +766,7 @@ export default function DashboardPage() {
                         {/* Sticky Header Container */}
                         <div style={{
                             position: 'sticky',
-                            top: 0,
+                            top: isMobile ? '4rem' : 0,
                             zIndex: 20,
                             backgroundColor: 'var(--bg-app)',
                             margin: '0 -1rem',

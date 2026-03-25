@@ -11,6 +11,7 @@ import { es } from 'date-fns/locale';
 import ConfirmModal from './ConfirmModal';
 import CreateLoanModal from './CreateLoanModal';
 import CreateExpenseModal from './CreateExpenseModal';
+import LoadingSpinner from './LoadingSpinner';
 import { useRouter } from 'next/navigation';
 
 export default function FabMenu() {
@@ -108,6 +109,9 @@ export default function FabMenu() {
                     link.click();
                 }
             }, 'image/png');
+
+            // Pausa forzada de 3 segundos para dar tiempo a la imagen y al compartir
+            await new Promise(resolve => setTimeout(resolve, 3000));
 
             // 4. API Call & Logout
             await userService.toggleDayStatus(String(currentUser.id), true);
@@ -271,11 +275,33 @@ export default function FabMenu() {
                         </span>
                     </div>
 
-                    <div className={styles.footer}>
-                        Generado por {stats?.user || 'App Préstamos'}
+                    <div className={styles.footer} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                        <div>Generado por {stats?.user || 'App Préstamos'}</div>
+                        <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>
+                            <span style={{ fontWeight: 800, color: '#0f172a', letterSpacing: '-0.025em' }}>
+                                Neo<span style={{ color: '#4f46e5' }}>Cobros</span>
+                            </span>
+                            {' '}- Sistema de Control de Préstamos
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {/* Pantalla bloqueadora de carga mientras se ejecuta el cierre */}
+            {loading && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    zIndex: 99999,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}>
+                    <LoadingSpinner message="Guardando datos y generando documento de cierre..." />
+                </div>
+            )}
         </>
     );
 }

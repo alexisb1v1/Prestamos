@@ -7,6 +7,7 @@ import { companyService } from '@/lib/companyService';
 import { User, Company } from '@/lib/types';
 import CreateUserModal from '@/app/components/CreateUserModal';
 import ConfirmModal from '@/app/components/ConfirmModal';
+import LoadingSpinner from '@/app/components/LoadingSpinner';
 
 export default function CobradoresPage() {
     const [users, setUsers] = useState<User[]>([]);
@@ -262,7 +263,7 @@ export default function CobradoresPage() {
                 isMobile ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {loading ? (
-                            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Cargando...</div>
+                            <LoadingSpinner message="Cargando usuarios..." />
                         ) : users.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>No se encontraron usuarios.</div>
                         ) : (
@@ -417,8 +418,8 @@ export default function CobradoresPage() {
                                 <tbody>
                                     {loading ? (
                                         <tr>
-                                            <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                                                Cargando usuarios...
+                                            <td colSpan={5}>
+                                                <LoadingSpinner message="Cargando usuarios..." />
                                             </td>
                                         </tr>
                                     ) : users.length === 0 ? (

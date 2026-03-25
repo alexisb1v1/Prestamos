@@ -137,7 +137,7 @@ export default function Sidebar() {
       <aside className={`${styles.sidebar} ${isOpen ? styles.open : ''}`}>
         <div className={styles.logo}>
           <div style={{ width: '36px', height: '36px', background: 'linear-gradient(135deg, var(--color-primary), #6366f1)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.2rem', boxShadow: '0 4px 10px rgba(79, 70, 229, 0.3)' }}>💰</div>
-          <span style={{ fontSize: '1.4rem', fontWeight: '800', color: 'white', letterSpacing: '-0.025em' }}>Préstamos<span style={{ color: 'var(--color-accent)' }}>App</span></span>
+          <span style={{ fontSize: '1.4rem', fontWeight: '800', color: 'white', letterSpacing: '-0.025em' }}>Neo<span style={{ color: 'var(--color-accent)' }}>Cobros</span></span>
         </div>
 
         <nav className={styles.nav}>
@@ -146,7 +146,20 @@ export default function Sidebar() {
 
         <div className={styles.footer}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#334155' }}></div>
+            <div style={{ 
+              width: '40px', 
+              height: '40px', 
+              borderRadius: '50%', 
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20" color="#cbd5e1">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                </svg>
+            </div>
             <div>
               <div style={{ fontSize: '0.9rem', fontWeight: '600', color: 'white' }}>{formatUserName(user)}</div>
               <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: '500' }}>{user?.profile || 'Perfil'}</div>
