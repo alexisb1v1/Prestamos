@@ -6,7 +6,7 @@ import { userService } from '@/lib/userService';
 import { companyService } from '@/lib/companyService';
 import { authService } from '@/lib/auth';
 import { Loan, User, Company } from '@/lib/types';
-import { getLoanStatus, formatDateUTC } from '@/lib/loanUtils';
+import { getLoanStatus, formatDateUTC, formatMoney } from '@/lib/loanUtils';
 import CreateLoanModal from '../../components/CreateLoanModal';
 import CreatePaymentModal from '../../components/CreatePaymentModal';
 import LoanDetailsModal from '../../components/LoanDetailsModal';
@@ -15,127 +15,9 @@ import DeleteLoanConfirmModal from '../../components/DeleteLoanConfirmModal';
 import LoanShareGenerator, { LoanShareGeneratorRef } from '../../components/LoanShareGenerator';
 import LoanActions from '../../components/LoanActions';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import LoanMobileCard from '../../components/LoanMobileCard';
 
-const formatMoney = (amount: number) => {
-    return `S/ ${Number(amount).toFixed(2)}`;
-};
-
-interface MobileLoanCardProps {
-    loan: Loan;
-    today: Date;
-    currentUser: User | null;
-    activeMenuLoanId: string | null;
-    setActiveMenuLoanId: (id: string | null) => void;
-    handleRenewLoan: (loan: Loan) => void;
-    handleOpenPayment: (loan: Loan) => void;
-    handleOpenDetails: (loan: Loan) => void;
-    handleOpenReassign: (loan: Loan) => void;
-    handleOpenDelete: (loan: Loan) => void;
-    shareRef: React.RefObject<LoanShareGeneratorRef | null>;
-}
-
-const MobileLoanCard = ({
-    loan, today, currentUser, activeMenuLoanId, setActiveMenuLoanId,
-    handleRenewLoan, handleOpenPayment, handleOpenDetails, handleOpenReassign, handleOpenDelete,
-    shareRef
-}: MobileLoanCardProps) => (
-    <div style={{
-        backgroundColor: 'var(--bg-card)',
-        padding: '1rem 1rem 0.25rem 1rem',
-        borderRadius: 'var(--radius-md)',
-        border: '1px solid var(--border-color)',
-        boxShadow: 'var(--shadow-sm)'
-    }}>
-        <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'start',
-            paddingBottom: '0.75rem',
-            marginBottom: '0.75rem',
-            borderBottom: '1px solid var(--border-color)'
-        }}>
-            <div>
-                <div style={{ fontWeight: 700, fontSize: '1rem', textTransform: 'capitalize' }}>{loan.clientName?.toLowerCase() || 'SIN NOMBRE'}</div>
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{loan.documentNumber || 'S/D'}</div>
-            </div>
-            <span style={{ fontSize: '1.25rem', lineHeight: 1 }} title={getLoanStatus(loan, today).label}>
-                {getLoanStatus(loan, today).icon}
-            </span>
-        </div>
-
-        <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '0.75rem',
-            fontSize: '0.9rem',
-            marginBottom: '0.75rem'
-        }}>
-            <div>
-                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Monto</span>
-                {formatMoney(loan.amount)}
-            </div>
-            <div>
-                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Interés</span>
-                {formatMoney(loan.interest)}
-            </div>
-            <div>
-                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Días</span>
-                <span>{loan.days}</span>
-            </div>
-            <div>
-                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Cuota</span>
-                {formatMoney(loan.fee || 0)}
-            </div>
-            <div>
-                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Total</span>
-                <span style={{ fontWeight: 600, color: 'var(--color-primary)', fontSize: '0.9rem' }}>
-                    {formatMoney(loan.amount + loan.interest)}
-                </span>
-            </div>
-            <div>
-                <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Restante</span>
-                <span style={{ fontWeight: 700, color: 'var(--color-danger)', fontSize: '0.95rem' }}>
-                    {formatMoney((loan as any).remainingAmount || 0)}
-                </span>
-            </div>
-        </div>
-
-        <div style={{
-            fontSize: '0.85rem',
-            color: 'var(--text-secondary)',
-            paddingBottom: '1rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.4rem'
-        }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
-                <span style={{ whiteSpace: 'nowrap' }}>Dirección:</span>
-                <span style={{ textAlign: 'right', color: 'var(--text-primary)' }}>{loan.address}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <span>Vigencia:</span>
-                <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--color-primary)', textAlign: 'right' }}>
-                    <div style={{ fontWeight: 600, marginBottom: '0.1rem' }}>
-                        {formatDateUTC(loan.startDate)} - {formatDateUTC(loan.endDate)}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <LoanActions
-            loan={loan}
-            currentUser={currentUser}
-            isMobile={true}
-            today={today}
-            onPay={handleOpenPayment}
-            onDetails={handleOpenDetails}
-            onRenew={handleRenewLoan}
-            onReassign={handleOpenReassign}
-            onDelete={handleOpenDelete}
-            shareRef={shareRef}
-        />
-    </div>
-);
+// formatMoney and formatDateUTC are now imported from lib/loanUtils above
 
 export default function PrestamosPage() {
     const [loans, setLoans] = useState<Loan[]>([]);
@@ -507,18 +389,16 @@ export default function PrestamosPage() {
                         <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>No se encontraron préstamos.</div>
                     ) : (
                         loans.map(loan => (
-                            <MobileLoanCard
+                            <LoanMobileCard
                                 key={loan.id}
                                 loan={loan}
                                 today={today}
                                 currentUser={currentUser}
-                                activeMenuLoanId={activeMenuLoanId}
-                                setActiveMenuLoanId={setActiveMenuLoanId}
-                                handleRenewLoan={handleRenewLoan}
-                                handleOpenPayment={handleOpenPayment}
-                                handleOpenDetails={handleOpenDetails}
-                                handleOpenReassign={handleOpenReassign}
-                                handleOpenDelete={handleOpenDelete}
+                                onRenew={handleRenewLoan}
+                                onPay={handleOpenPayment}
+                                onDetails={handleOpenDetails}
+                                onReassign={handleOpenReassign}
+                                onDelete={handleOpenDelete}
                                 shareRef={shareRef}
                             />
                         ))

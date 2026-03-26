@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import html2canvas from 'html2canvas';
 import { loanService } from '@/lib/loanService';
 import { authService } from '@/lib/auth';
+import { formatMoney } from '@/lib/loanUtils';
 import styles from './ShareButton.module.css';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -92,9 +93,7 @@ export default function ShareButton() {
         }
     };
 
-    const formatMoney = (amount: number) => {
-        return `S/ ${Number(amount).toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
-    };
+    // formatMoney is now imported from lib/loanUtils above
 
     const today = format(new Date(), "EEEE, d 'de' MMMM", { locale: es });
 

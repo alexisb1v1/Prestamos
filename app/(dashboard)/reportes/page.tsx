@@ -7,6 +7,7 @@ import { companyService } from '@/lib/companyService';
 import { authService } from '@/lib/auth';
 import { ReportData, User, Company } from '@/lib/types';
 import DateRangePicker from '@/app/components/DateRangePicker';
+import { formatMoney } from '@/lib/loanUtils';
 
 export default function ReportesPage() {
     const [reportData, setReportData] = useState<ReportData | null>(null);
@@ -100,9 +101,7 @@ export default function ReportesPage() {
         }
     };
 
-    const formatMoney = (amount: number) => {
-        return `S/ ${Number(amount).toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
-    };
+    // formatMoney is now imported from lib/loanUtils above
 
     const formatDateHeader = (dateStr: string) => {
         if (!dateStr) return '';

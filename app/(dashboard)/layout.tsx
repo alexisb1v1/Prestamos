@@ -5,6 +5,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import { authService } from '@/lib/auth';
 import Sidebar from '../components/Sidebar';
 import FabMenu from '../components/FabMenu';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export default function DashboardLayout({
     children,
@@ -69,9 +71,14 @@ export default function DashboardLayout({
                     padding: '0 1rem'
                 }}>
                     <div style={{ width: '40px' }}></div> {/* Espaciador invisible para balancear y mantener centrado el título frente a menú hamburguesa */}
-                    <span style={{ fontSize: '1.25rem', fontWeight: '800', letterSpacing: '-0.025em' }}>
-                        Neo<span style={{ color: 'var(--color-primary)' }}>Cobros</span>
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontSize: '1.35rem', fontWeight: '800', letterSpacing: '-0.025em', lineHeight: '1.2' }}>
+                            Neo<span style={{ color: 'var(--color-primary)' }}>Cobros</span>
+                        </span>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--color-primary)', fontWeight: 600, letterSpacing: '0.02em', marginTop: '0.15rem' }}>
+                            {format(new Date(), "d 'de' MMMM 'del' yyyy", { locale: es })}
+                        </span>
+                    </div>
                     <button 
                         onClick={() => {
                             authService.logout();
@@ -98,7 +105,7 @@ export default function DashboardLayout({
                     flex: 1,
                     marginLeft: isMobile ? 0 : 'var(--sidebar-width)',
                     padding: '1rem',
-                    paddingTop: isMobile ? '5rem' : '2rem', // Más espacio para no chocar con la cabecera
+                    paddingTop: isMobile ? '5.5rem' : '2rem', // Más espacio para no chocar con la cabecera
                     transition: 'margin-left 0.3s ease-in-out',
                     width: '100%'
                 }}>

@@ -5,6 +5,7 @@ import html2canvas from 'html2canvas';
 import { loanService } from '@/lib/loanService';
 import { userService } from '@/lib/userService';
 import { authService } from '@/lib/auth';
+import { formatMoney } from '@/lib/loanUtils';
 import styles from './FabMenu.module.css';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -127,9 +128,7 @@ export default function FabMenu() {
         }
     };
 
-    const formatMoney = (amount: number) => {
-        return `S/ ${Number(amount).toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
-    };
+    // formatMoney is now imported from lib/loanUtils above
 
     const today = format(new Date(), "EEEE, d 'de' MMMM", { locale: es });
 

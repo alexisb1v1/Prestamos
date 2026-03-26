@@ -234,7 +234,7 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                     gap: '1rem',
                     padding: '1.25rem'
                 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '-0.25rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Detalle de Pagos</h2>
                             <button
@@ -286,14 +286,14 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                         border: '1px solid var(--border-color)',
                         fontSize: '0.9rem'
                     }}>
-                        <div style={{ fontWeight: 'bold', textTransform: 'capitalize' }}>Cliente: {loan.clientName?.toLowerCase() || 'SIN NOMBRE'}</div>
-                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
-                            <div style={{ color: 'var(--text-secondary)' }}>ID Préstamo: #{loan.id}</div>
-                            <div style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>
-                                {formatDateUTC(details?.startDate || loan.startDate)} - {formatDateUTC(details?.endDate || loan.endDate)}
-                            </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                            <div style={{ fontWeight: 'bold', textTransform: 'capitalize' }}>Cliente: {loan.clientName?.toLowerCase() || 'SIN NOMBRE'}</div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', whiteSpace: 'nowrap', fontWeight: '500', marginTop: '0.1rem' }}>ID: #{loan.id}</div>
                         </div>
-                        <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                        <div style={{ color: 'var(--color-primary)', fontWeight: 'bold', marginTop: '0.15rem', fontSize: '0.95rem' }}>
+                            {formatDateUTC(details?.startDate || loan.startDate)} - {formatDateUTC(details?.endDate || loan.endDate)}
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem', marginTop: '0.4rem' }}>
                             <div><span style={{ color: 'var(--text-secondary)' }}>Monto:</span> S/ {Number(loan.amount).toFixed(2)}</div>
                             <div><span style={{ color: 'var(--text-secondary)' }}>Cuota:</span> S/ {Number(loan.fee || 0).toFixed(2)}</div>
                         </div>

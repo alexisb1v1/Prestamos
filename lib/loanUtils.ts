@@ -12,6 +12,11 @@ export const formatDateUTC = (dateString: string) => {
     return `${day}/${month}/${year}`;
 };
 
+export const formatMoney = (amount: number | undefined | null) => {
+    if (amount === undefined || amount === null) return 'S/ 0.00';
+    return `S/ ${Number(amount).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+
 export const getLoanStatus = (loan: Loan, referenceDate?: Date) => {
     // If loan is Liquidado, return Liquidado status immediately
     if (loan.status === 'Liquidado' || (loan as any).remainingAmount === 0) {

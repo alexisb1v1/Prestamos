@@ -79,8 +79,12 @@ export async function apiRequest<T = any>(
         }
 
         return data;
-    } catch (error) {
-        console.error('API Request Error:', error);
+    } catch (error: any) {
+        // En Next.js Dev, un console.error de una petición rechazada activa la molesta pantalla roja.
+        // Silenciamos los 404 o mensajes de "no encontrado" porque son flujos esperados (ej. buscar cliente).
+        if (error.statusCode !== 404 && !error.message?.toLowerCase().includes('not found') && !error.message?.toLowerCase().includes('no encontrado')) {
+            console.error('API Request Error:', error);
+        }
         throw error;
     }
 }

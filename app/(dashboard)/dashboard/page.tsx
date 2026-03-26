@@ -6,7 +6,7 @@ import { userService } from '@/lib/userService';
 import { companyService } from '@/lib/companyService';
 import { authService } from '@/lib/auth';
 import { DashboardData, Loan, User, Company } from '@/lib/types';
-import { getLoanStatus, formatDateUTC } from '@/lib/loanUtils';
+import { getLoanStatus, formatDateUTC, formatMoney } from '@/lib/loanUtils';
 import CreatePaymentModal from '../../components/CreatePaymentModal';
 import LoanDetailsModal from '../../components/LoanDetailsModal';
 import CreateLoanModal from '../../components/CreateLoanModal';
@@ -16,6 +16,7 @@ import LoanShareGenerator, { LoanShareGeneratorRef } from '../../components/Loan
 import LoanActions from '../../components/LoanActions';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import AnimatedNumber from '../../components/AnimatedNumber';
+import LoanMobileCard from '../../components/LoanMobileCard';
 import {
     DndContext,
     closestCenter,
@@ -87,6 +88,7 @@ export default function DashboardPage() {
 
     // States for new actions
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isThermometerInfoOpen, setIsThermometerInfoOpen] = useState(false);
     const [selectedLoanForRenewal, setSelectedLoanForRenewal] = useState<Loan | null>(null);
     const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
     const [selectedLoanForReassign, setSelectedLoanForReassign] = useState<Loan | null>(null);
@@ -282,9 +284,7 @@ export default function DashboardPage() {
         // Effect will trigger reload
     };
 
-    const formatMoney = (amount: number) => {
-        return `S/ ${Number(amount).toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
-    };
+    // formatMoney is now imported from lib/loanUtils above
 
     // Sortable Table Row Component
     function SortableTableRow({ loan, index }: { loan: Loan; index: number }) {
@@ -432,140 +432,27 @@ export default function DashboardPage() {
             transform: CSS.Transform.toString(transform),
             transition,
             opacity: isDragging ? 0.7 : 1,
-            boxShadow: isDragging ? '0 8px 16px rgba(0,0,0,0.15)' : 'none',
-            padding: '0rem',
+            zIndex: isDragging ? 1000 : 1,
+            position: 'relative' as const
         };
 
         return (
-            <div ref={setNodeRef} style={style} className="card" key={loan.id}>
-                <div style={{ padding: '1rem 1rem 0.25rem 1rem' }}>
-                    <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'start',
-                        paddingBottom: '0.75rem',
-                        marginBottom: '0.75rem',
-                        borderBottom: '1px solid var(--border-color)'
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'start', gap: '0.5rem', flex: 1 }}>
-                            <div
-                                {...attributes}
-                                {...listeners}
-                                style={{
-                                    cursor: isDragging ? 'grabbing' : 'grab',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    color: 'var(--text-secondary)',
-                                    paddingTop: '0.25rem',
-                                    touchAction: 'none'
-                                }}
-                                title="Arrastra para reordenar"
-                            >
-                                {!searchTermLocal.trim() && (
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                                    </svg>
-                                )}
-                            </div>
-                            <div style={{
-                                minWidth: '30px',
-                                height: '30px',
-                                borderRadius: '50%',
-                                backgroundColor: 'var(--color-primary)',
-                                color: 'white',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontWeight: 'bold',
-                                fontSize: '1rem',
-                                flexShrink: 0
-                            }}>
-                                {index + 1}
-                            </div>
-                            <div>
-                                <div style={{ fontWeight: 700, fontSize: '1rem', textTransform: 'capitalize' }}>{loan.clientName?.toLowerCase() || 'SIN NOMBRE'}</div>
-                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{loan.documentNumber || 'S/D'}</div>
-                            </div>
-                        </div>
-                        <span style={{ fontSize: '1.25rem', lineHeight: 1 }} title={getLoanStatus(loan, today).label}>
-                            {getLoanStatus(loan, today).icon}
-                        </span>
-                    </div>
-
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(3, 1fr)',
-                        gap: '0.5rem',
-                        fontSize: '0.9rem',
-                        marginBottom: '0.75rem'
-                    }}>
-                        <div>
-                            <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Monto</span>
-                            {formatMoney(loan.amount)}
-                        </div>
-                        <div>
-                            <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Interés</span>
-                            {formatMoney(loan.interest)}
-                        </div>
-                        <div>
-                            <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Días</span>
-                            <span>{loan.days}</span>
-                        </div>
-                        <div>
-                            <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Cuota</span>
-                            {formatMoney(loan.fee)}
-                        </div>
-                        <div>
-                            <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Total</span>
-                            <span style={{ fontWeight: 600, color: 'var(--color-primary)', fontSize: '0.9rem' }}>
-                                {formatMoney(loan.amount + loan.interest)}
-                            </span>
-                        </div>
-                        <div>
-                            <span style={{ color: 'var(--text-secondary)', display: 'block', fontSize: '0.75rem' }}>Restante</span>
-                            <span style={{ fontWeight: 700, color: 'var(--color-danger)', fontSize: '0.95rem' }}>
-                                {formatMoney((loan as any).remainingAmount || 0)}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div style={{
-                        fontSize: '0.85rem',
-                        color: 'var(--text-secondary)',
-                        paddingBottom: '1rem',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.4rem'
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
-                            <span style={{ whiteSpace: 'nowrap' }}>Dirección:</span>
-                            <span style={{ textAlign: 'right', color: 'var(--text-primary)' }}>{loan.address}</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <span>Vigencia:</span>
-                            <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--color-primary)', textAlign: 'right' }}>
-                                <div style={{ fontWeight: 600, marginBottom: '0.1rem' }}>
-                                    {formatDateUTC(loan.startDate)} - {formatDateUTC(loan.endDate)}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.5rem', justifyContent: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '0.25rem' }}>
-                        <LoanActions
-                            loan={loan}
-                            currentUser={currentUser}
-                            isMobile={true}
-                            today={today}
-                            onPay={handleOpenPayment}
-                            onDetails={handleOpenDetails}
-                            onRenew={handleRenewLoan}
-                            onReassign={handleOpenReassign}
-                            onDelete={handleOpenDelete}
-                            shareRef={shareRef}
-                        />
-                    </div>
-                </div>
+            <div ref={setNodeRef} style={style}>
+                <LoanMobileCard
+                    loan={loan}
+                    index={index}
+                    today={today}
+                    currentUser={currentUser}
+                    onPay={handleOpenPayment}
+                    onDetails={handleOpenDetails}
+                    onRenew={handleRenewLoan}
+                    onReassign={handleOpenReassign}
+                    onDelete={handleOpenDelete}
+                    shareRef={shareRef}
+                    showDragHandle={!searchTermLocal.trim()}
+                    dragHandleProps={{ ...attributes, ...listeners }}
+                    isDragging={isDragging}
+                />
             </div>
         );
     }
@@ -642,32 +529,61 @@ export default function DashboardPage() {
                     }}>
                         {/* Stat Cards */}
                         <div className="card" style={{ padding: isMobile ? '0.75rem' : '1.5rem' }}>
-                            <h3 className="label" style={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}>Préstamos Hoy</h3>
+                            <h3 className="label" style={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}>Prestado</h3>
                             <p style={{ fontSize: isMobile ? '1.25rem' : '2rem', fontWeight: 'bold', color: 'var(--color-primary)', margin: '0.25rem 0' }}><AnimatedNumber value={data.totalLentToday} isCurrency /></p>
                         </div>
 
-                        <div className="card" style={{ padding: isMobile ? '0.75rem' : '1.5rem' }}>
-                            <h3 className="label" style={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}>Cobrado Hoy</h3>
-                            <p style={{ fontSize: isMobile ? '1.25rem' : '2rem', fontWeight: 'bold', color: 'var(--text-primary)', margin: '0.25rem 0' }}><AnimatedNumber value={data.collectedToday} isCurrency /></p>
-                            {data.detailCollectedToday && (
-                                <div style={{
-                                    marginTop: '0.75rem',
-                                    paddingTop: '0.75rem',
-                                    borderTop: '1px solid var(--border-color)',
-                                    display: 'grid',
-                                    gridTemplateColumns: '1fr 1fr',
-                                    gap: '0.5rem'
+                        <div className="card" style={{ padding: 0, display: 'flex', minHeight: isMobile ? '120px' : '160px' }}>
+                            {/* Mitad Izquierda */}
+                            <div style={{ 
+                                flex: 1, 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                justifyContent: 'space-between', 
+                                alignItems: 'flex-start',
+                                padding: isMobile ? '0.75rem' : '1.5rem',
+                                borderRight: '1px solid var(--border-color)'
+                            }}>
+                                <h3 className="label" style={{ fontSize: isMobile ? '0.75rem' : '0.875rem', margin: 0 }}>Cobrado</h3>
+                                <p style={{ fontSize: isMobile ? '1.25rem' : '2rem', fontWeight: 'bold', color: 'var(--text-primary)', margin: '0.25rem 0 0 0' }}>
+                                    <AnimatedNumber value={data.collectedToday} isCurrency />
+                                </p>
+                            </div>
+
+                            {/* Mitad Derecha */}
+                            <div style={{ 
+                                flex: 1, 
+                                display: 'flex', 
+                                flexDirection: 'column'
+                            }}>
+                                <div style={{ 
+                                    flex: 1, 
+                                    display: 'flex', 
+                                    flexDirection: 'column', 
+                                    justifyContent: 'center', 
+                                    alignItems: 'flex-start',
+                                    padding: isMobile ? '0.5rem 0.75rem' : '0.75rem 1.5rem',
+                                    borderBottom: '1px solid var(--border-color)'
                                 }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>Yape</span>
-                                        <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#6366f1' }}><AnimatedNumber value={data.detailCollectedToday.yape} isCurrency /></span>
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', borderLeft: '1px solid var(--border-color)' }}>
-                                        <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>Efectivo</span>
-                                        <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#22c55e' }}><AnimatedNumber value={data.detailCollectedToday.efectivo} isCurrency /></span>
-                                    </div>
+                                    <span style={{ fontSize: isMobile ? '0.7rem' : '0.8rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Yape</span>
+                                    <span style={{ fontSize: isMobile ? '0.95rem' : '1.2rem', fontWeight: 'bold', color: '#2563eb', marginTop: '0.1rem' }}>
+                                        <AnimatedNumber value={data.detailCollectedToday?.yape || 0} isCurrency />
+                                    </span>
                                 </div>
-                            )}
+                                <div style={{ 
+                                    flex: 1, 
+                                    display: 'flex', 
+                                    flexDirection: 'column', 
+                                    justifyContent: 'center', 
+                                    alignItems: 'flex-start',
+                                    padding: isMobile ? '0.5rem 0.75rem' : '0.75rem 1.5rem'
+                                }}>
+                                    <span style={{ fontSize: isMobile ? '0.7rem' : '0.8rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Efectivo</span>
+                                    <span style={{ fontSize: isMobile ? '0.95rem' : '1.2rem', fontWeight: 'bold', color: '#16a34a', marginTop: '0.1rem' }}>
+                                        <AnimatedNumber value={data.detailCollectedToday?.efectivo || 0} isCurrency />
+                                    </span>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="card" style={{ padding: isMobile ? '0.75rem' : '1.5rem' }}>
@@ -677,10 +593,29 @@ export default function DashboardPage() {
 
                         <div className="card" style={{ padding: isMobile ? '0.75rem' : '1.5rem' }}>
                             <h3 className="label" style={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}>Gastos Hoy</h3>
-                            <p style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold', color: '#ef4444', margin: '0.25rem 0' }}><AnimatedNumber value={data.totalExpensesToday || 0} isCurrency /></p>
+                            <p style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold', color: '#b91c1c', margin: '0.25rem 0' }}><AnimatedNumber value={data.totalExpensesToday || 0} isCurrency /></p>
                         </div>
-                        <div className="card" style={{ padding: isMobile ? '0.75rem' : '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                            <h3 className="label" style={{ fontSize: isMobile ? '0.75rem' : '0.875rem', alignSelf: 'flex-start', marginBottom: '0.25rem' }}>Termometro</h3>
+                        <div className="card" style={{ padding: isMobile ? '0.75rem' : '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', alignSelf: 'flex-start', marginBottom: '0.25rem', gap: '0.4rem' }}>
+                                <h3 className="label" style={{ fontSize: isMobile ? '0.75rem' : '0.875rem', margin: 0 }}>Retorno de Capital</h3>
+                                <button 
+                                    onClick={() => setIsThermometerInfoOpen(true)}
+                                    style={{ 
+                                        background: '#eff6ff', 
+                                        border: 'none', 
+                                        color: '#3b82f6', 
+                                        cursor: 'pointer', 
+                                        display: 'flex', 
+                                        padding: '0.15rem',
+                                        borderRadius: '50%'
+                                    }}
+                                    title="Información del indicador"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" width="15" height="15">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                                    </svg>
+                                </button>
+                            </div>
                             {data.thermometer !== undefined ? (
                                 <div style={{
                                     position: 'relative',
@@ -706,21 +641,21 @@ export default function DashboardPage() {
                                             fontSize: isMobile ? '1.25rem' : '1.75rem', // Fuente más pequeña en móvil
                                             fontWeight: '800',
                                             lineHeight: 1,
-                                            color: 'var(--text-primary)'
+                                            color: data.thermometer <= 30 ? '#3b82f6' : (data.thermometer <= 70 ? '#ca8a04' : (data.thermometer <= 94 ? '#16a34a' : '#15803d'))
                                         }}>
                                             {Number(data.thermometer).toFixed(0)}%
                                         </div>
                                         <div style={{
-                                            fontSize: isMobile ? '0.6rem' : '0.75rem',
+                                            fontSize: isMobile ? '0.55rem' : '0.65rem',
                                             fontWeight: '700',
                                             textTransform: 'uppercase',
                                             padding: '2px 8px',
                                             borderRadius: '12px',
                                             marginTop: '2px',
-                                            backgroundColor: data.thermometer < 80 ? '#fef2f2' : (data.thermometer < 100 ? '#fefce8' : '#f0fdf4'),
-                                            color: data.thermometer < 80 ? '#ef4444' : (data.thermometer < 100 ? '#ca8a04' : '#16a34a')
+                                            backgroundColor: data.thermometer <= 30 ? '#eff6ff' : (data.thermometer <= 70 ? '#fefce8' : (data.thermometer <= 94 ? '#f0fdf4' : '#dcfce7')),
+                                            color: data.thermometer <= 30 ? '#3b82f6' : (data.thermometer <= 70 ? '#ca8a04' : (data.thermometer <= 94 ? '#16a34a' : '#15803d'))
                                         }}>
-                                            {data.thermometer < 80 ? 'Bajo' : (data.thermometer < 100 ? 'Regular' : 'Excelente')}
+                                            {data.thermometer <= 30 ? 'Inv. Activa' : (data.thermometer <= 70 ? 'Retorno Cap.' : (data.thermometer <= 94 ? 'Zona Segura' : 'Éxito Total'))}
                                         </div>
                                     </div>
 
@@ -739,7 +674,7 @@ export default function DashboardPage() {
                                         <path
                                             d="M 20 65 A 40 40 0 1 1 100 65"
                                             fill="none"
-                                            stroke={data.thermometer < 80 ? '#ef4444' : (data.thermometer < 100 ? '#eab308' : '#22c55e')}
+                                            stroke={data.thermometer <= 30 ? '#3b82f6' : (data.thermometer <= 70 ? '#eab308' : (data.thermometer <= 94 ? '#22c55e' : '#15803d'))}
                                             strokeWidth="12"
                                             strokeLinecap="round"
                                             strokeDasharray={`${(Math.min(data.thermometer, 100) / 100) * 126}, 200`}
@@ -796,7 +731,8 @@ export default function DashboardPage() {
                                             width: '100%',
                                             backgroundColor: isMobile ? 'var(--bg-card)' : 'var(--bg-app)',
                                             height: '2.5rem',
-                                            fontSize: '0.875rem'
+                                            fontSize: '0.875rem',
+                                            paddingLeft: '1rem'
                                         }}
                                     />
                                 </div>
@@ -815,13 +751,13 @@ export default function DashboardPage() {
                                 border: '1px solid var(--border-color)',
                                 width: 'fit-content'
                             }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <span>🟢</span> <span>Al día (0-1 días)</span>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <span>🟡</span> <span>Mora Leve (2-5 días)</span>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <span>🔴</span> <span>Mora Grave (6+ días)</span>
                                 </div>
                             </div>
@@ -905,6 +841,48 @@ export default function DashboardPage() {
                             />
                         )
                     }
+                    {isThermometerInfoOpen && (
+                        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+                            <div className="card" style={{ width: '100%', maxWidth: '450px', backgroundColor: 'var(--bg-app)', borderRadius: '12px', padding: '1.5rem', position: 'relative' }}>
+                                <button onClick={() => setIsThermometerInfoOpen(false)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>&times;</button>
+                                <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem', color: 'var(--text-primary)' }}>Retorno de Capital</h2>
+                                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: '1.4' }}>
+                                    Este termómetro mide el porcentaje de Retorno de Inversión sobre el capital total prestado históricamente.
+                                </p>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                    <div style={{ padding: '0.75rem', backgroundColor: '#eff6ff', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                                            <span style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '0.85rem' }}>Inversión Activa</span>
+                                            <span style={{ fontWeight: 'bold', color: '#3b82f6', fontSize: '0.85rem' }}>0% - 30%</span>
+                                        </div>
+                                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#475569' }}>El capital está recién colocado; enfoque en colocación sana.</p>
+                                    </div>
+                                    <div style={{ padding: '0.75rem', backgroundColor: '#fefce8', borderRadius: '8px', borderLeft: '4px solid #eab308' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                                            <span style={{ fontWeight: 'bold', color: '#854d0e', fontSize: '0.85rem' }}>Retorno de Capital</span>
+                                            <span style={{ fontWeight: 'bold', color: '#ca8a04', fontSize: '0.85rem' }}>31% - 70%</span>
+                                        </div>
+                                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#475569' }}>Etapa crítica de cobranza para asegurar el punto de equilibrio.</p>
+                                    </div>
+                                    <div style={{ padding: '0.75rem', backgroundColor: '#f0fdf4', borderRadius: '8px', borderLeft: '4px solid #22c55e' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                                            <span style={{ fontWeight: 'bold', color: '#166534', fontSize: '0.85rem' }}>Zona Segura</span>
+                                            <span style={{ fontWeight: 'bold', color: '#16a34a', fontSize: '0.85rem' }}>71% - 94%</span>
+                                        </div>
+                                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#475569' }}>Casi todo el capital inicial ha vuelto; los cobros restantes son mayormente utilidad.</p>
+                                    </div>
+                                    <div style={{ padding: '0.75rem', backgroundColor: '#dcfce7', borderRadius: '8px', borderLeft: '4px solid #16a34a' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                                            <span style={{ fontWeight: 'bold', color: '#14532d', fontSize: '0.85rem' }}>Éxito Total</span>
+                                            <span style={{ fontWeight: 'bold', color: '#15803d', fontSize: '0.85rem' }}>+95%</span>
+                                        </div>
+                                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#475569' }}>Has recuperado prácticamente todo lo invertido históricamente.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {isCreateModalOpen && (
                         <CreateLoanModal
                             isOpen={isCreateModalOpen}
