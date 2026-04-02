@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { loanService } from '@/lib/loanService';
+import { reassignLoanUseCase } from '@/app/features/loans';
 import { userService } from '@/lib/userService';
 import { companyService } from '@/lib/companyService';
 import { authService } from '@/lib/auth';
@@ -92,16 +92,21 @@ export default function ReassignLoanModal({ isOpen, onClose, onSuccess, loan }: 
 
         setSubmitting(true);
         setError('');
-        try {
-            await loanService.reassign(loan.id, parseInt(selectedCollectorId));
-            onSuccess();
-            onClose();
-        } catch (err: any) {
-            console.error('Error reassigning loan:', err);
-            setError(err.message || 'Error al reasignar el préstamo.');
-        } finally {
-            setSubmitting(false);
-        }
+        
+        const result = await reassignLoanUseCase.execute(String(loan.id), selectedCollectorId);
+        
+        result.match(
+            () => {
+                onSuccess();
+                onClose();
+            },
+            (err) => {
+                console.error('Error reassigning loan:', err);
+                setError(err.message || 'Error al reasignar el préstamo.');
+            }
+        );
+        
+        setSubmitting(false);
     };
 
     if (!isOpen || !loan) return null;

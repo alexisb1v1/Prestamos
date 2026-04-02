@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { loanService } from '@/lib/loanService';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { getDashboardDataUseCase, DashboardData, Loan } from '@/app/features/loans';
 import { userService } from '@/lib/userService';
 import { companyService } from '@/lib/companyService';
 import { authService } from '@/lib/auth';
-import { DashboardData, Loan, User, Company } from '@/lib/types';
+import { User, Company } from '@/lib/types';
 import { getLoanStatus, formatDateUTC, formatMoney } from '@/lib/loanUtils';
 import CreatePaymentModal from '../../components/CreatePaymentModal';
 import LoanDetailsModal from '../../components/LoanDetailsModal';
@@ -17,11 +19,15 @@ import LoanActions from '../../components/LoanActions';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import AnimatedNumber from '../../components/AnimatedNumber';
 import LoanMobileCard from '../../components/LoanMobileCard';
+import CollectionRouteCard from '../../components/CollectionRouteCard';
+import DashboardFilterModal from '../../components/DashboardFilterModal';
 import {
     DndContext,
     closestCenter,
     KeyboardSensor,
     PointerSensor,
+    MouseSensor,
+    TouchSensor,
     useSensor,
     useSensors,
     DragEndEvent,
@@ -59,9 +65,15 @@ export default function DashboardPage() {
 
     // Configure drag sensors
     const sensors = useSensors(
-        useSensor(PointerSensor, {
+        useSensor(MouseSensor, {
             activationConstraint: {
-                distance: 8, // 8px of movement required before drag starts
+                distance: 10, // 10px of movement required
+            },
+        }),
+        useSensor(TouchSensor, {
+            activationConstraint: {
+                delay: 250, // Long press requirement for mobile
+                tolerance: 5, // Allow 5px of movement during delay
             },
         }),
         useSensor(KeyboardSensor, {
@@ -71,7 +83,7 @@ export default function DashboardPage() {
 
     // Auth & Filtering state
     const [currentUser, setCurrentUser] = useState<User | null>(null);
-    const [selectedUserId, setSelectedUserId] = useState<string | number>('');
+    const [selectedUserId, setSelectedUserId] = useState<string>('');
     const [collectors, setCollectors] = useState<User[]>([]);
     const [loadingCollectors, setLoadingCollectors] = useState(false);
 
@@ -94,6 +106,10 @@ export default function DashboardPage() {
     const [selectedLoanForReassign, setSelectedLoanForReassign] = useState<Loan | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedLoanForDelete, setSelectedLoanForDelete] = useState<Loan | null>(null);
+    const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+
+    // Debounce timer for saving order to backend
+    const saveOrderTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     const handleOpenDetails = (loan: Loan) => {
         setSelectedLoanForDetails(loan);
@@ -107,8 +123,15 @@ export default function DashboardPage() {
             loadDashboard(selectedUserId, selectedCompanyId); // Reload with current filter
         };
         window.addEventListener('dashboard-update', handleUpdate);
-        return () => window.removeEventListener('dashboard-update', handleUpdate);
-    }, [selectedUserId, selectedCompanyId]); // Dependency on selectedUserId and selectedCompanyId is key
+        
+        const handleOpenFilters = () => setIsFilterModalOpen(true);
+        const filterBtn = document.getElementById('open-filters-btn');
+        if (filterBtn) filterBtn.onclick = handleOpenFilters;
+
+        return () => {
+            window.removeEventListener('dashboard-update', handleUpdate);
+        };
+    }, [selectedUserId, selectedCompanyId]);
 
     const handleOpenPayment = (loan: Loan) => {
         setSelectedLoanForPayment(loan);
@@ -131,20 +154,30 @@ export default function DashboardPage() {
     };
 
 
-    const loadDashboard = async (userIdFilter?: string | number, companyId?: string) => {
+    const loadDashboard = async (userIdFilter?: string, companyId?: string) => {
         const compId = companyId !== undefined ? companyId : selectedCompanyId;
         try {
             setLoading(true);
-            const result = await loanService.getDashboardData(userIdFilter, compId);
-            setData(result);
+            const result = await getDashboardDataUseCase.execute(userIdFilter, compId);
+            
+            result.match(
+                (data) => {
+                    setData(data);
+                    // Apply saved order: Priority 1: LocalStorage, Priority 2: User profile (Backend)
+                    let savedOrder = getCollectionOrder(userIdFilter || 'all');
+                    
+                    if (!savedOrder && currentUser?.collectionOrder) {
+                        savedOrder = currentUser.collectionOrder;
+                    }
 
-            // Apply saved order
-            const savedOrder = getCollectionOrder(userIdFilter || 'all');
-            const ordered = applySavedOrder<Loan>(result.pendingLoans, savedOrder);
-            setOrderedLoans(ordered);
-        } catch (err) {
-            console.error('Error loading dashboard:', err);
-            setError('Error al cargar los datos del dashboard.');
+                    const ordered = applySavedOrder<Loan>(data.pendingLoans, savedOrder);
+                    setOrderedLoans(ordered);
+                },
+                (err) => {
+                    console.error('Error loading dashboard:', err);
+                    setError('Error al cargar los datos del dashboard.');
+                }
+            );
         } finally {
             setLoading(false);
         }
@@ -160,9 +193,26 @@ export default function DashboardPage() {
 
                 const newOrder = arrayMove(items, oldIndex, newIndex);
 
-                // Save to localStorage
-                const loanIds = newOrder.map(loan => loan.id);
+                // 1. Save to localStorage (instant)
+                const loanIds = newOrder.map(loan => String(loan.id));
                 saveCollectionOrder(selectedUserId || 'all', loanIds);
+                
+                // 2. Persist to Backend with Debounce (small delay)
+                if (saveOrderTimerRef.current) clearTimeout(saveOrderTimerRef.current);
+                
+                saveOrderTimerRef.current = setTimeout(async () => {
+                    try {
+                        console.log('Sincronizando orden con el backend...');
+                        const response = await userService.updateCollectionOrder(loanIds);
+                        
+                        if (response.success) {
+                            // Update the User object in session/localStorage so the order is remembered
+                            authService.updateUser({ collectionOrder: loanIds });
+                        }
+                    } catch (err) {
+                        console.error('Error al sincronizar el orden con el backend:', err);
+                    }
+                }, 800); // 800ms debounce
 
                 return newOrder;
             });
@@ -438,17 +488,13 @@ export default function DashboardPage() {
 
         return (
             <div ref={setNodeRef} style={style}>
-                <LoanMobileCard
+                <CollectionRouteCard
                     loan={loan}
                     index={index}
                     today={today}
                     currentUser={currentUser}
                     onPay={handleOpenPayment}
                     onDetails={handleOpenDetails}
-                    onRenew={handleRenewLoan}
-                    onReassign={handleOpenReassign}
-                    onDelete={handleOpenDelete}
-                    shareRef={shareRef}
                     showDragHandle={!searchTermLocal.trim()}
                     dragHandleProps={{ ...attributes, ...listeners }}
                     isDragging={isDragging}
@@ -461,58 +507,74 @@ export default function DashboardPage() {
     if (error) return <div style={{ padding: '2rem', color: 'red', textAlign: 'center' }}>{error}</div>;
 
     const isAdmin = currentUser?.profile === 'ADMIN' || currentUser?.profile === 'OWNER';
-    // const isCobrador = currentUser?.profile === 'COBRADOR'; // checking removed as button is removed
 
     return (
         <div>
+            {isAdmin && (
+                <div style={{
+                    display: 'flex',
+                    gap: '0.4rem',
+                    marginBottom: '0.65rem',
+                    flexWrap: 'wrap'
+                }}>
+                    <div style={{ 
+                        backgroundColor: 'white', 
+                        padding: '0.3rem 0.65rem', 
+                        borderRadius: '2rem', 
+                        fontSize: '0.7rem', 
+                        fontWeight: 600, 
+                        color: '#64748b',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
+                        border: '1px solid #f1f5f9'
+                    }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path></svg>
+                        {selectedCompanyId ? companies.find(c => c.id === selectedCompanyId)?.companyName : 'Todas las empresas'}
+                    </div>
+                    <div style={{ 
+                        backgroundColor: 'white', 
+                        padding: '0.3rem 0.65rem', 
+                        borderRadius: '2rem', 
+                        fontSize: '0.7rem', 
+                        fontWeight: 600, 
+                        color: '#64748b',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
+                        border: '1px solid #f1f5f9'
+                    }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        {selectedUserId ? collectors.find(c => c.id === selectedUserId)?.username : 'Todos los cobradores'}
+                    </div>
+                </div>
+            )}
+
             <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                flexDirection: isMobile ? 'column' : 'row',
-                gap: '1rem',
-                marginBottom: '1.5rem'
+                marginBottom: '0.75rem'
             }}>
-                <h1 style={{ fontSize: isMobile ? '1.5rem' : '1.875rem', fontWeight: 'bold' }}>Resumen</h1>
-
+                <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#1e293b' }}>Resumen</h1>
                 {isAdmin && (
-                    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '1rem', width: isMobile ? '100%' : 'auto' }}>
-                        {currentUser?.profile === 'OWNER' && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: isMobile ? '100%' : 'auto' }}>
-                                <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', minWidth: isMobile ? '60px' : 'auto' }}>Empresa:</span>
-                                <select
-                                    className="input"
-                                    style={{ padding: '0.6rem 0.8rem', fontSize: '0.875rem', width: isMobile ? '100%' : '200px' }}
-                                    value={selectedCompanyId}
-                                    onChange={handleCompanyChange}
-                                >
-                                    <option value="">Todas las empresas</option>
-                                    {companies.map(c => (
-                                        <option key={c.id} value={c.id}>
-                                            {c.companyName}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                    <button 
+                        onClick={() => setIsFilterModalOpen(true)}
+                        style={{
+                            width: '36px', height: '36px', borderRadius: '0.75rem',
+                            background: 'white', border: '1.5px solid #f1f5f9',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer', color: '#64748b',
+                            position: 'relative',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                        }}
+                        title="Filtros de Vista"
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                        {(selectedCompanyId || selectedUserId) && (
+                            <div style={{ position: 'absolute', top: '7px', right: '7px', width: '7px', height: '7px', backgroundColor: '#ef4444', borderRadius: '50%', border: '2px solid white' }}></div>
                         )}
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: isMobile ? '100%' : 'auto' }}>
-                            <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', minWidth: isMobile ? '60px' : 'auto' }}>Cobrador:</span>
-                            <select
-                                className="input"
-                                style={{ padding: '0.4rem', fontSize: '0.875rem', width: isMobile ? '100%' : '200px' }}
-                                value={selectedUserId}
-                                onChange={handleFilterChange}
-                            >
-                                <option value="">Todos</option>
-                                {collectors.map(c => (
-                                    <option key={c.id} value={c.id}>
-                                        {c.username} ({c.firstName} {c.lastName})
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
+                    </button>
                 )}
             </div>
 
@@ -524,246 +586,214 @@ export default function DashboardPage() {
                 <>
                     <div style={{
                         display: 'grid',
-                        gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(250px, 1fr))',
-                        gap: isMobile ? '0.75rem' : '1.5rem'
+                        gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))',
+                        gap: '0.75rem'
                     }}>
-                        {/* Stat Cards */}
-                        <div className="card" style={{ padding: isMobile ? '0.75rem' : '1.5rem' }}>
-                            <h3 className="label" style={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}>Prestado</h3>
-                            <p style={{ fontSize: isMobile ? '1.25rem' : '2rem', fontWeight: 'bold', color: 'var(--color-primary)', margin: '0.25rem 0' }}><AnimatedNumber value={data.totalLentToday} isCurrency /></p>
-                        </div>
-
-                        <div className="card" style={{ padding: 0, display: 'flex', minHeight: isMobile ? '120px' : '160px' }}>
-                            {/* Mitad Izquierda */}
-                            <div style={{ 
-                                flex: 1, 
-                                display: 'flex', 
-                                flexDirection: 'column', 
-                                justifyContent: 'space-between', 
-                                alignItems: 'flex-start',
-                                padding: isMobile ? '0.75rem' : '1.5rem',
-                                borderRight: '1px solid var(--border-color)'
-                            }}>
-                                <h3 className="label" style={{ fontSize: isMobile ? '0.75rem' : '0.875rem', margin: 0 }}>Cobrado</h3>
-                                <p style={{ fontSize: isMobile ? '1.25rem' : '2rem', fontWeight: 'bold', color: 'var(--text-primary)', margin: '0.25rem 0 0 0' }}>
+                        {/* Main Minimal Stat Card */}
+                        <div className="card" style={{
+                            gridColumn: isMobile ? 'span 1' : 'span 2',
+                            padding: '1.15rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.85rem'
+                        }}>
+                            <div>
+                                <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Cobrado Hoy</div>
+                                <div style={{ fontSize: '1.7rem', fontWeight: 800, color: '#1e293b', marginTop: '0.1rem' }}>
                                     <AnimatedNumber value={data.collectedToday} isCurrency />
-                                </p>
-                            </div>
-
-                            {/* Mitad Derecha */}
-                            <div style={{ 
-                                flex: 1, 
-                                display: 'flex', 
-                                flexDirection: 'column'
-                            }}>
-                                <div style={{ 
-                                    flex: 1, 
-                                    display: 'flex', 
-                                    flexDirection: 'column', 
-                                    justifyContent: 'center', 
-                                    alignItems: 'flex-start',
-                                    padding: isMobile ? '0.5rem 0.75rem' : '0.75rem 1.5rem',
-                                    borderBottom: '1px solid var(--border-color)'
-                                }}>
-                                    <span style={{ fontSize: isMobile ? '0.7rem' : '0.8rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Yape</span>
-                                    <span style={{ fontSize: isMobile ? '0.95rem' : '1.2rem', fontWeight: 'bold', color: '#2563eb', marginTop: '0.1rem' }}>
-                                        <AnimatedNumber value={data.detailCollectedToday?.yape || 0} isCurrency />
-                                    </span>
-                                </div>
-                                <div style={{ 
-                                    flex: 1, 
-                                    display: 'flex', 
-                                    flexDirection: 'column', 
-                                    justifyContent: 'center', 
-                                    alignItems: 'flex-start',
-                                    padding: isMobile ? '0.5rem 0.75rem' : '0.75rem 1.5rem'
-                                }}>
-                                    <span style={{ fontSize: isMobile ? '0.7rem' : '0.8rem', fontWeight: '600', color: 'var(--text-secondary)' }}>Efectivo</span>
-                                    <span style={{ fontSize: isMobile ? '0.95rem' : '1.2rem', fontWeight: 'bold', color: '#16a34a', marginTop: '0.1rem' }}>
-                                        <AnimatedNumber value={data.detailCollectedToday?.efectivo || 0} isCurrency />
-                                    </span>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="card" style={{ padding: isMobile ? '0.75rem' : '1.5rem' }}>
-                            <h3 className="label" style={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}>Clientes Activos</h3>
-                            <p style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold', color: 'var(--text-primary)', margin: '0.25rem 0' }}><AnimatedNumber value={data.activeClients} /></p>
-                        </div>
-
-                        <div className="card" style={{ padding: isMobile ? '0.75rem' : '1.5rem' }}>
-                            <h3 className="label" style={{ fontSize: isMobile ? '0.75rem' : '0.875rem' }}>Gastos Hoy</h3>
-                            <p style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold', color: '#b91c1c', margin: '0.25rem 0' }}><AnimatedNumber value={data.totalExpensesToday || 0} isCurrency /></p>
-                        </div>
-                        <div className="card" style={{ padding: isMobile ? '0.75rem' : '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', alignSelf: 'flex-start', marginBottom: '0.25rem', gap: '0.4rem' }}>
-                                <h3 className="label" style={{ fontSize: isMobile ? '0.75rem' : '0.875rem', margin: 0 }}>Retorno de Capital</h3>
-                                <button 
-                                    onClick={() => setIsThermometerInfoOpen(true)}
-                                    style={{ 
-                                        background: '#eff6ff', 
-                                        border: 'none', 
-                                        color: '#3b82f6', 
-                                        cursor: 'pointer', 
-                                        display: 'flex', 
-                                        padding: '0.15rem',
-                                        borderRadius: '50%'
-                                    }}
-                                    title="Información del indicador"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" width="15" height="15">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
-                                    </svg>
-                                </button>
-                            </div>
-                            {data.thermometer !== undefined ? (
-                                <div style={{
-                                    position: 'relative',
-                                    width: isMobile ? '140px' : '180px', // Reducido en móvil
-                                    height: isMobile ? '85px' : '110px',  // Reducido en móvil
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
+                                <div style={{ 
+                                    backgroundColor: '#f5f3ff', 
+                                    borderRadius: '0.9rem',
+                                    padding: '0.7rem 0.8rem',
+                                    border: '1.5px solid #ede9fe',
                                     display: 'flex',
-                                    flexDirection: 'column',
                                     alignItems: 'center',
-                                    justifyContent: 'flex-end',
-                                    marginTop: '0.5rem'
+                                    gap: '0.6rem',
+                                    flex: 1
                                 }}>
-
-                                    {/* Text Info (Moved to Top) */}
-                                    <div style={{
-                                        position: 'absolute',
-                                        top: '0',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'center',
-                                        zIndex: 10
-                                    }}>
-                                        <div style={{
-                                            fontSize: isMobile ? '1.25rem' : '1.75rem', // Fuente más pequeña en móvil
-                                            fontWeight: '800',
-                                            lineHeight: 1,
-                                            color: data.thermometer <= 30 ? '#3b82f6' : (data.thermometer <= 70 ? '#ca8a04' : (data.thermometer <= 94 ? '#16a34a' : '#15803d'))
-                                        }}>
-                                            {Number(data.thermometer).toFixed(0)}%
-                                        </div>
-                                        <div style={{
-                                            fontSize: isMobile ? '0.55rem' : '0.65rem',
-                                            fontWeight: '700',
-                                            textTransform: 'uppercase',
-                                            padding: '2px 8px',
-                                            borderRadius: '12px',
-                                            marginTop: '2px',
-                                            backgroundColor: data.thermometer <= 30 ? '#eff6ff' : (data.thermometer <= 70 ? '#fefce8' : (data.thermometer <= 94 ? '#f0fdf4' : '#dcfce7')),
-                                            color: data.thermometer <= 30 ? '#3b82f6' : (data.thermometer <= 70 ? '#ca8a04' : (data.thermometer <= 94 ? '#16a34a' : '#15803d'))
-                                        }}>
-                                            {data.thermometer <= 30 ? 'Inv. Activa' : (data.thermometer <= 70 ? 'Retorno Cap.' : (data.thermometer <= 94 ? 'Zona Segura' : 'Éxito Total'))}
+                                    <div style={{ width: '28px', height: '28px', borderRadius: '0.45rem', backgroundColor: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                                    </div>
+                                    <div style={{ overflow: 'hidden' }}>
+                                        <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#6366f1', textTransform: 'uppercase' }}>YAPE</div>
+                                        <div style={{ fontSize: '1rem', fontWeight: 800, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {formatMoney(data.detailCollectedToday?.yape || 0).replace('S/ ', 'S/')}
                                         </div>
                                     </div>
-
-                                    {/* Gauge SVG */}
-                                    <svg viewBox="0 0 120 75" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
-                                        {/* Background Track */}
-                                        <path
-                                            d="M 20 65 A 40 40 0 1 1 100 65"
-                                            fill="none"
-                                            stroke="#f1f5f9"
-                                            strokeWidth="12"
-                                            strokeLinecap="round"
-                                        />
-
-                                        {/* Dynamic Color Path */}
-                                        <path
-                                            d="M 20 65 A 40 40 0 1 1 100 65"
-                                            fill="none"
-                                            stroke={data.thermometer <= 30 ? '#3b82f6' : (data.thermometer <= 70 ? '#eab308' : (data.thermometer <= 94 ? '#22c55e' : '#15803d'))}
-                                            strokeWidth="12"
-                                            strokeLinecap="round"
-                                            strokeDasharray={`${(Math.min(data.thermometer, 100) / 100) * 126}, 200`}
-                                        />
-
-                                        {/* Aguja Indicadora */}
-                                        <g style={{
-                                            transformOrigin: '60px 65px',
-                                            transform: `rotate(${(Math.min(data.thermometer, 100) / 100) * 180 - 90}deg)`,
-                                            transition: 'transform 0.8s ease-out'
-                                        }}>
-                                            <polygon points="60,65 56,35 64,35" fill="#1e293b" />
-                                            <circle cx="60" cy="65" r="4" fill="#1e293b" />
-                                        </g>
-                                    </svg>
                                 </div>
-                            ) : (
-                                <p style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 'bold', color: 'var(--color-success)', margin: '0.25rem 0' }}>S/ 5,000</p>
-                            )}
+                                <div style={{ 
+                                    backgroundColor: '#f0fdf4', 
+                                    borderRadius: '0.9rem',
+                                    padding: '0.7rem 0.8rem',
+                                    border: '1.5px solid #dcfce7',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.6rem',
+                                    flex: 1
+                                }}>
+                                    <div style={{ width: '28px', height: '28px', borderRadius: '0.45rem', backgroundColor: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+                                    </div>
+                                    <div style={{ overflow: 'hidden' }}>
+                                        <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#10b981', textTransform: 'uppercase' }}>EFECTIVO</div>
+                                        <div style={{ fontSize: '1rem', fontWeight: 800, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {formatMoney(data.detailCollectedToday?.efectivo || 0).replace('S/ ', 'S/')}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Status Cards Grid */}
+                        <div style={{ 
+                            display: 'grid', 
+                            gridTemplateColumns: '1fr 1fr', 
+                            gridColumn: isMobile ? 'span 1' : 'span 2',
+                            gap: '0.75rem' 
+                        }}>
+                            <div className="card" style={{ padding: '0.9rem', borderRadius: '1rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                                <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#eff6ff', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '0.6rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Prestado</div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1e293b' }}>
+                                        {formatMoney(data.totalLentToday).replace('S/ ', 'S/')}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="card" style={{ padding: '0.9rem', borderRadius: '1rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                                <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#f5f3ff', color: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '0.6rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Clientes</div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1e293b' }}>{data.activeClients}</div>
+                                </div>
+                            </div>
+
+                            <div className="card" style={{ padding: '0.9rem', borderRadius: '1rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                                <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#fff1f2', color: '#f43f5e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '0.6rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Gastos Hoy</div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1e293b' }}>
+                                        {formatMoney(data.totalExpensesToday || 0).replace('S/ ', 'S/')}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="card" style={{ padding: '0.9rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                                <button 
+                                    onClick={() => setIsThermometerInfoOpen(true)}
+                                    style={{
+                                        position: 'absolute',
+                                        top: '0.5rem',
+                                        right: '0.5rem',
+                                        background: 'none',
+                                        border: 'none',
+                                        color: '#94a3b8',
+                                        cursor: 'pointer',
+                                        padding: '0.2rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        zIndex: 5
+                                    }}
+                                    title="Más información"
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                                </button>
+                                <div style={{ position: 'relative', width: '50px', height: '50px' }}>
+                                    <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+                                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#f1f5f9" strokeWidth="3" />
+                                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke={getThermometerColor(data.thermometer || 0)} strokeWidth="3" strokeDasharray={`${data.thermometer || 0}, 100`} strokeLinecap="round" />
+                                    </svg>
+                                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1e293b' }}>{Math.round(data.thermometer || 0)}%</span>
+                                    </div>
+                                </div>
+                                <div style={{ marginLeft: '0.6rem', flex: 1 }}>
+                                    <div style={{ fontSize: '0.55rem', fontWeight: 800, color: getThermometerColor(data.thermometer || 0), textTransform: 'uppercase', lineHeight: 1.1 }}>
+                                        {getThermometerLabel(data.thermometer || 0)}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div style={{ marginTop: '2rem' }}>
+                    <div style={{ marginTop: '1.25rem' }}>
                         {/* Sticky Header Container */}
                         <div style={{
                             position: 'sticky',
-                            top: isMobile ? '4rem' : 0,
+                            top: isMobile ? '4rem' : '0.5rem',
                             zIndex: 20,
-                            backgroundColor: 'var(--bg-app)',
-                            margin: '0 -1rem',
-                            padding: '1rem',
-                            borderBottom: '1px solid var(--border-color)',
+                            backgroundColor: 'white',
+                            margin: '0',
+                            padding: '0.85rem 1rem',
+                            borderRadius: '1.25rem',
+                            border: '2px solid #f1f5f9',
+                            boxShadow: '0 10px 30px -10px rgba(0,0,0,0.05)',
                             transition: 'all 0.3s ease'
                         }}>
                             <div style={{
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
-                                marginBottom: '1rem',
-                                flexWrap: 'wrap',
-                                gap: '0.5rem'
+                                marginBottom: '0.55rem'
                             }}>
-                                <h2 style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 'bold', margin: 0 }}>
-                                    Ruta de Cobro (Hoy) <span style={{ color: 'var(--text-secondary)', fontSize: '1rem', fontWeight: 'normal' }}>({filteredLoans.length} pendientes)</span>
+                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
+                                    Ruta de Cobro
                                 </h2>
-                                <div style={{ width: isMobile ? '100%' : '300px' }}>
-                                    <input
-                                        type="text"
-                                        className="input"
-                                        placeholder="Buscar por nombre o DNI..."
-                                        value={searchTermLocal}
-                                        onChange={(e) => setSearchTermLocal(e.target.value)}
-                                        style={{
-                                            width: '100%',
-                                            backgroundColor: isMobile ? 'var(--bg-card)' : 'var(--bg-app)',
-                                            height: '2.5rem',
-                                            fontSize: '0.875rem',
-                                            paddingLeft: '1rem'
-                                        }}
-                                    />
+                                <div style={{
+                                    backgroundColor: '#fff1f2',
+                                    color: '#f43f5e',
+                                    padding: '0.25rem 0.6rem',
+                                    borderRadius: '2rem',
+                                    fontSize: '0.62rem',
+                                    fontWeight: 800,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.3rem',
+                                    border: '1px solid #ffe4e6'
+                                }}>
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                    {filteredLoans.length} PENDIENTES
                                 </div>
                             </div>
-
-                            {/* Status Legend */}
-                            <div style={{
-                                display: 'flex',
-                                gap: '1rem',
-                                fontSize: '0.8rem',
-                                color: 'var(--text-secondary)',
-                                flexWrap: 'wrap',
-                                backgroundColor: 'var(--bg-card)',
-                                padding: '0.5rem 1rem',
-                                borderRadius: 'var(--radius-sm)',
-                                border: '1px solid var(--border-color)',
-                                width: 'fit-content'
-                            }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <span>🟢</span> <span>Al día (0-1 días)</span>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <span>🟡</span> <span>Mora Leve (2-5 días)</span>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <span>🔴</span> <span>Mora Grave (6+ días)</span>
+                            
+                            <div style={{ position: 'relative' }}>
+                                <input
+                                    type="text"
+                                    className="input"
+                                    placeholder="Nombre o DNI..."
+                                    value={searchTermLocal}
+                                    onChange={(e) => setSearchTermLocal(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        backgroundColor: '#f8fafc',
+                                        height: '2.4rem',
+                                        fontSize: '0.85rem',
+                                        paddingLeft: '2.5rem',
+                                        borderRadius: '0.85rem',
+                                        border: '1.5px solid #e2e8f0',
+                                        color: '#1e293b',
+                                        boxShadow: isMobile ? 'none' : 'inset 0 2px 4px rgba(0,0,0,0.02)'
+                                    }}
+                                />
+                                <div style={{ position: 'absolute', left: '0.9rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                                 </div>
                             </div>
                         </div>
 
-                        <div style={{ marginTop: '1rem' }}>
+                        <div style={{ marginTop: '0.75rem' }}>
 
                             {orderedLoans.length === 0 ? (
                                 <div className="card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
@@ -779,7 +809,7 @@ export default function DashboardPage() {
                                         items={filteredLoans.map(loan => String(loan.id))}
                                         strategy={verticalListSortingStrategy}
                                     >
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                                             {filteredLoans.map((loan, index) => (
                                                 <SortableMobileCard key={loan.id} loan={loan} index={index} />
                                             ))}
@@ -792,36 +822,31 @@ export default function DashboardPage() {
                                     collisionDetection={closestCenter}
                                     onDragEnd={handleDragEnd}
                                 >
-                                    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                            <thead style={{ backgroundColor: 'var(--bg-app)', textAlign: 'left' }}>
-                                                <tr>
-                                                    <th style={{ padding: '1rem' }}>Cliente</th>
-                                                    <th style={{ padding: '1rem' }}>Vigencia</th>
-                                                    <th style={{ padding: '1rem' }}>Detalle del Préstamo</th>
-                                                    <th style={{ padding: '1rem' }}>Pagado</th>
-                                                    <th style={{ padding: '1rem' }}>Estado</th>
-                                                    <th style={{ padding: '1rem' }}>Acción</th>
-                                                </tr>
-                                            </thead>
-                                            <SortableContext
-                                                items={filteredLoans.map(loan => String(loan.id))}
-                                                strategy={verticalListSortingStrategy}
-                                            >
-                                                <tbody>
-                                                    {filteredLoans.map((loan, index) => (
-                                                        <SortableTableRow key={loan.id} loan={loan} index={index} />
-                                                    ))}
-                                                </tbody>
-                                            </SortableContext>
-                                        </table>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1rem' }}>
+                                        {filteredLoans.map((loan, index) => (
+                                            <SortableMobileCard key={loan.id} loan={loan} index={index} />
+                                        ))}
                                     </div>
                                 </DndContext>
                             )}
+
+                            <DashboardFilterModal 
+                                isOpen={isFilterModalOpen}
+                                onClose={() => setIsFilterModalOpen(false)}
+                                companies={companies}
+                                collectors={collectors}
+                                selectedCompanyId={selectedCompanyId}
+                                onCompanyChange={setSelectedCompanyId}
+                                selectedUserId={selectedUserId}
+                                onUserChange={setSelectedUserId}
+                                onApply={() => loadDashboard(selectedUserId, selectedCompanyId)}
+                                isOwner={currentUser?.profile === 'OWNER'}
+                                isAdmin={currentUser?.profile === 'ADMIN' || currentUser?.profile === 'OWNER'}
+                            />
                         </div>
                     </div>
 
-                    {/* Modals */}
+                    {/* All Global Modals */}
                     <CreatePaymentModal
                         isOpen={isPaymentModalOpen}
                         onClose={() => setIsPaymentModalOpen(false)}
@@ -831,96 +856,153 @@ export default function DashboardPage() {
                         loan={selectedLoanForPayment}
                     />
 
-                    {
-                        selectedLoanForDetails && (
-                            <LoanDetailsModal
-                                isOpen={isDetailsModalOpen}
-                                onClose={() => setIsDetailsModalOpen(false)}
-                                loan={selectedLoanForDetails}
-                                shareRef={shareRef}
-                            />
-                        )
-                    }
-                    {isThermometerInfoOpen && (
-                        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
-                            <div className="card" style={{ width: '100%', maxWidth: '450px', backgroundColor: 'var(--bg-app)', borderRadius: '12px', padding: '1.5rem', position: 'relative' }}>
-                                <button onClick={() => setIsThermometerInfoOpen(false)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>&times;</button>
-                                <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem', color: 'var(--text-primary)' }}>Retorno de Capital</h2>
-                                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: '1.4' }}>
-                                    Este termómetro mide el porcentaje de Retorno de Inversión sobre el capital total prestado históricamente.
-                                </p>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                    <div style={{ padding: '0.75rem', backgroundColor: '#eff6ff', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                                            <span style={{ fontWeight: 'bold', color: '#1e3a8a', fontSize: '0.85rem' }}>Inversión Activa</span>
-                                            <span style={{ fontWeight: 'bold', color: '#3b82f6', fontSize: '0.85rem' }}>0% - 30%</span>
-                                        </div>
-                                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#475569' }}>El capital está recién colocado; enfoque en colocación sana.</p>
-                                    </div>
-                                    <div style={{ padding: '0.75rem', backgroundColor: '#fefce8', borderRadius: '8px', borderLeft: '4px solid #eab308' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                                            <span style={{ fontWeight: 'bold', color: '#854d0e', fontSize: '0.85rem' }}>Retorno de Capital</span>
-                                            <span style={{ fontWeight: 'bold', color: '#ca8a04', fontSize: '0.85rem' }}>31% - 70%</span>
-                                        </div>
-                                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#475569' }}>Etapa crítica de cobranza para asegurar el punto de equilibrio.</p>
-                                    </div>
-                                    <div style={{ padding: '0.75rem', backgroundColor: '#f0fdf4', borderRadius: '8px', borderLeft: '4px solid #22c55e' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                                            <span style={{ fontWeight: 'bold', color: '#166534', fontSize: '0.85rem' }}>Zona Segura</span>
-                                            <span style={{ fontWeight: 'bold', color: '#16a34a', fontSize: '0.85rem' }}>71% - 94%</span>
-                                        </div>
-                                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#475569' }}>Casi todo el capital inicial ha vuelto; los cobros restantes son mayormente utilidad.</p>
-                                    </div>
-                                    <div style={{ padding: '0.75rem', backgroundColor: '#dcfce7', borderRadius: '8px', borderLeft: '4px solid #16a34a' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                                            <span style={{ fontWeight: 'bold', color: '#14532d', fontSize: '0.85rem' }}>Éxito Total</span>
-                                            <span style={{ fontWeight: 'bold', color: '#15803d', fontSize: '0.85rem' }}>+95%</span>
-                                        </div>
-                                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#475569' }}>Has recuperado prácticamente todo lo invertido históricamente.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    <LoanDetailsModal
+                        isOpen={isDetailsModalOpen}
+                        onClose={() => setIsDetailsModalOpen(false)}
+                        loan={selectedLoanForDetails}
+                        shareRef={shareRef}
+                    />
 
-                    {isCreateModalOpen && (
-                        <CreateLoanModal
-                            isOpen={isCreateModalOpen}
-                            onClose={() => {
-                                setIsCreateModalOpen(false);
-                                setSelectedLoanForRenewal(null);
-                            }}
-                            onSuccess={() => loadDashboard(selectedUserId, selectedCompanyId)}
-                            loanToRenew={selectedLoanForRenewal}
-                        />
-                    )}
+                    <CreateLoanModal
+                        isOpen={isCreateModalOpen}
+                        onClose={() => {
+                            setIsCreateModalOpen(false);
+                            setSelectedLoanForRenewal(null); // Reset
+                        }}
+                        onSuccess={() => loadDashboard(selectedUserId, selectedCompanyId)}
+                        loanToRenew={selectedLoanForRenewal}
+                    />
 
-                    {isReassignModalOpen && selectedLoanForReassign && (
-                        <ReassignLoanModal
-                            isOpen={isReassignModalOpen}
-                            onClose={() => {
-                                setIsReassignModalOpen(false);
-                                setSelectedLoanForReassign(null);
-                            }}
-                            onSuccess={() => loadDashboard(selectedUserId, selectedCompanyId)}
-                            loan={selectedLoanForReassign}
-                        />
-                    )}
+                    <ReassignLoanModal
+                        isOpen={isReassignModalOpen}
+                        onClose={() => {
+                            setIsReassignModalOpen(false);
+                            setSelectedLoanForReassign(null);
+                        }}
+                        onSuccess={() => loadDashboard(selectedUserId, selectedCompanyId)}
+                        loan={selectedLoanForReassign}
+                    />
 
-                    {isDeleteModalOpen && selectedLoanForDelete && (
-                        <DeleteLoanConfirmModal
-                            isOpen={isDeleteModalOpen}
-                            onClose={() => {
-                                setIsDeleteModalOpen(false);
-                                setSelectedLoanForDelete(null);
-                            }}
-                            onSuccess={() => loadDashboard(selectedUserId, selectedCompanyId)}
-                            loan={selectedLoanForDelete}
-                        />
-                    )}
+                    <DeleteLoanConfirmModal
+                        isOpen={isDeleteModalOpen}
+                        onClose={() => {
+                            setIsDeleteModalOpen(false);
+                            setSelectedLoanForDelete(null);
+                        }}
+                        onSuccess={() => loadDashboard(selectedUserId, selectedCompanyId)}
+                        loan={selectedLoanForDelete}
+                    />
+
+                    <ThermometerInfoModal 
+                        isOpen={isThermometerInfoOpen} 
+                        onClose={() => setIsThermometerInfoOpen(false)} 
+                    />
+                    
+                    {/* Componente invisible para generar imágenes de compartir */}
+                    <LoanShareGenerator ref={shareRef} />
                 </>
             )}
-            <LoanShareGenerator ref={shareRef} />
+        </div>
+    );
+}
+
+function getThermometerColor(percentage: number) {
+    if (percentage <= 30) return '#3b82f6'; // Blue - Inversión Activa
+    if (percentage <= 70) return '#f59e0b'; // Yellow/Orange - Retorno de Capital
+    if (percentage <= 94) return '#22c55e'; // Green - Zona Segura
+    return '#10b981'; // Darker Green - Éxito Total
+}
+
+function getThermometerLabel(percentage: number) {
+    if (percentage <= 30) return 'Inversión Activa';
+    if (percentage <= 70) return 'Retorno de Capital';
+    if (percentage <= 94) return 'Zona Segura';
+    return 'Éxito Total';
+}
+
+function ThermometerInfoModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+    if (!isOpen) return null;
+    return (
+        <div style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            backgroundColor: 'rgba(0,0,0,0.6)', padding: '1.5rem',
+            backdropFilter: 'blur(4px)'
+        }}>
+            <div style={{
+                backgroundColor: 'white', borderRadius: '1.5rem', padding: '1.5rem',
+                maxWidth: '420px', width: '100%', boxShadow: '0 20px 50px rgba(0,0,0,0.2)',
+                position: 'relative'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: '#1e293b' }}>Retorno de Capital</h3>
+                    <button onClick={onClose} style={{ background: '#f1f5f9', border: 'none', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+                
+                <p style={{ color: '#64748b', fontSize: '0.9rem', lineHeight: 1.5, margin: '0 0 1.5rem 0' }}>
+                    Este termómetro mide el porcentaje de Retorno de Inversión sobre el capital total prestado históricamente.
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {/* Inversión Activa */}
+                    <div style={{ 
+                        padding: '0.85rem 1rem', borderRadius: '0.85rem', borderLeft: '4px solid #3b82f6', 
+                        backgroundColor: '#eff6ff', display: 'flex', flexDirection: 'column', gap: '0.2rem'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontWeight: 800, color: '#1e40af', fontSize: '0.9rem' }}>Inversión Activa</span>
+                            <span style={{ fontWeight: 700, color: '#3b82f6', fontSize: '0.85rem' }}>0% - 30%</span>
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#60a5fa', lineHeight: 1.4 }}>El capital está recién colocado; enfoque en colocación sana.</div>
+                    </div>
+
+                    {/* Retorno de Capital */}
+                    <div style={{ 
+                        padding: '0.85rem 1rem', borderRadius: '0.85rem', borderLeft: '4px solid #f59e0b', 
+                        backgroundColor: '#fffbeb', display: 'flex', flexDirection: 'column', gap: '0.2rem'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontWeight: 800, color: '#92400e', fontSize: '0.9rem' }}>Retorno de Capital</span>
+                            <span style={{ fontWeight: 700, color: '#d97706', fontSize: '0.85rem' }}>31% - 70%</span>
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#b45309', lineHeight: 1.4 }}>Etapa crítica de cobranza para asegurar el punto de equilibrio.</div>
+                    </div>
+
+                    {/* Zona Segura */}
+                    <div style={{ 
+                        padding: '0.85rem 1rem', borderRadius: '0.85rem', borderLeft: '4px solid #22c55e', 
+                        backgroundColor: '#f0fdf4', display: 'flex', flexDirection: 'column', gap: '0.2rem'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontWeight: 800, color: '#166534', fontSize: '0.9rem' }}>Zona Segura</span>
+                            <span style={{ fontWeight: 700, color: '#16a34a', fontSize: '0.85rem' }}>71% - 94%</span>
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#15803d', lineHeight: 1.4 }}>Casi todo el capital inicial ha vuelto; los cobros restantes son mayormente utilidad.</div>
+                    </div>
+
+                    {/* Éxito Total */}
+                    <div style={{ 
+                        padding: '0.85rem 1rem', borderRadius: '0.85rem', borderLeft: '4px solid #10b981', 
+                        backgroundColor: '#f0fdf9', display: 'flex', flexDirection: 'column', gap: '0.2rem'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontWeight: 800, color: '#065f46', fontSize: '0.9rem' }}>Éxito Total</span>
+                            <span style={{ fontWeight: 700, color: '#059669', fontSize: '0.85rem' }}>+95%</span>
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#047857', lineHeight: 1.4 }}>Has recuperado prácticamente todo lo invertido históricamente.</div>
+                    </div>
+                </div>
+
+                <button onClick={onClose} style={{
+                    width: '100%', marginTop: '1.25rem', padding: '0.85rem',
+                    backgroundColor: '#1e293b', color: 'white', borderRadius: '0.85rem',
+                    border: 'none', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer'
+                }}>
+                    Entendido
+                </button>
+            </div>
         </div>
     );
 }

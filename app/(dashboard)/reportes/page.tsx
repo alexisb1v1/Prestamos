@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { loanService } from '@/lib/loanService';
+import { getLoanReportUseCase, ReportData } from '@/app/features/loans';
 import { userService } from '@/lib/userService';
 import { companyService } from '@/lib/companyService';
 import { authService } from '@/lib/auth';
-import { ReportData, User, Company } from '@/lib/types';
+import { User, Company } from '@/lib/types';
 import DateRangePicker from '@/app/components/DateRangePicker';
 import { formatMoney } from '@/lib/loanUtils';
 
@@ -86,16 +86,20 @@ export default function ReportesPage() {
         try {
             setLoading(true);
             setError('');
-            const data = await loanService.getLoanReport(
+            const result = await getLoanReportUseCase.execute(
                 startDate,
                 endDate,
                 selectedCompanyId || undefined,
                 selectedUserId || undefined
             );
-            setReportData(data);
-        } catch (err) {
-            console.error('Error loading report:', err);
-            setError('Error al cargar el reporte');
+            
+            result.match(
+                (data) => setReportData(data),
+                (err) => {
+                    console.error('Error loading report:', err);
+                    setError('Error al cargar el reporte: ' + err.message);
+                }
+            );
         } finally {
             setLoading(false);
         }

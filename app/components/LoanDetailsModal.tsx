@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 
-import { loanService } from '@/lib/loanService';
+import { getLoanDetailsUseCase, deleteInstallmentUseCase } from '@/app/features/loans';
 import { authService } from '@/lib/auth';
-import { formatDateUTC } from '@/lib/loanUtils';
+import { formatDateUTC, formatMoney } from '@/lib/loanUtils';
 import { Loan, LoanDetails, InstallmentDetail } from '@/lib/types';
 import { format, parseISO, eachDayOfInterval, isSameDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addMonths, subMonths, isWithinInterval, getDay, addDays, subDays, differenceInCalendarDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -20,35 +20,6 @@ interface LoanDetailsModalProps {
     shareRef?: React.RefObject<LoanShareGeneratorRef | null>;
 }
 
-// ========== GLOBAL CACHE FOR CALENDAR DAYS ==========
-// Pre-calculate a large date range once and reuse it
-let cachedDays: Date[] | null = null;
-let cacheStartDate: Date | null = null;
-let cacheEndDate: Date | null = null;
-
-function getOrCreateCachedDays(requestedStart: Date, requestedEnd: Date): Date[] {
-    const now = new Date();
-    const cacheRangeStart = startOfWeek(subMonths(now, 2), { weekStartsOn: 1 });
-    const cacheRangeEnd = endOfWeek(addMonths(now, 2), { weekStartsOn: 1 });
-
-    // Check if we need to regenerate cache
-    const needsRegeneration =
-        !cachedDays ||
-        !cacheStartDate ||
-        !cacheEndDate ||
-        requestedStart < cacheStartDate ||
-        requestedEnd > cacheEndDate;
-
-    if (needsRegeneration) {
-        cacheStartDate = cacheRangeStart;
-        cacheEndDate = cacheRangeEnd;
-        cachedDays = eachDayOfInterval({ start: cacheStartDate, end: cacheEndDate });
-    }
-
-    // Filter cached days to the requested range
-    return cachedDays!.filter(day => day >= requestedStart && day <= requestedEnd);
-}
-// ====================================================
 
 function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalProps) {
     const [details, setDetails] = useState<LoanDetails | null>(null);
@@ -78,15 +49,19 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
     const handleDeletePayment = async () => {
         if (!paymentToDelete) return;
 
-        try {
-            await loanService.deleteInstallment(paymentToDelete);
-            loadDetails(); // Reload details
-            setIsConfirmOpen(false);
-            setPaymentToDelete(null);
-        } catch (err) {
-            console.error('Error deleting payment:', err);
-            alert('Error al eliminar el pago');
-        }
+        const result = await deleteInstallmentUseCase.execute(paymentToDelete);
+        
+        result.match(
+            () => {
+                loadDetails(); // Reload details
+                setIsConfirmOpen(false);
+                setPaymentToDelete(null);
+            },
+            (err) => {
+                console.error('Error deleting payment:', err);
+                alert('Error al eliminar el pago: ' + err.message);
+            }
+        );
     };
 
     // Move loadDetails function definition BEFORE useEffect to avoid dependency issues
@@ -94,15 +69,18 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
         if (!loan) return;
         setLoading(true);
         setError('');
-        try {
-            const data = await loanService.getDetails(loan.id);
-            setDetails(data);
-        } catch (err: any) {
-            console.error(err);
-            setError('Error al cargar los detalles del préstamo.');
-        } finally {
-            setLoading(false);
-        }
+        
+        const result = await getLoanDetailsUseCase.execute(loan.id.toString());
+        
+        result.match(
+            (data) => setDetails(data),
+            (err) => {
+                console.error(err);
+                setError('Error al cargar los detalles del préstamo.');
+            }
+        );
+        
+        setLoading(false);
     }, [loan]);
 
     useEffect(() => {
@@ -149,16 +127,13 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
         };
     }, [startDateStr, endDateStr, parseDateSafe]);
 
-    const calendarRange = useMemo(() => {
-        const start = startOfWeek(parsedDates.start, { weekStartsOn: 1 });
-        const end = endOfWeek(parsedDates.end, { weekStartsOn: 1 });
-        return { start, end };
-    }, [parsedDates.start, parsedDates.end]);
-
-    // Use cached days instead of recalculating every time
     const days = useMemo(() => {
-        return getOrCreateCachedDays(calendarRange.start, calendarRange.end);
-    }, [calendarRange.start, calendarRange.end]);
+        if (!parsedDates.start || !parsedDates.end) return [];
+        return eachDayOfInterval({ 
+            start: startOfWeek(parsedDates.start, { weekStartsOn: 1 }), 
+            end: endOfWeek(parsedDates.end, { weekStartsOn: 1 }) 
+        });
+    }, [parsedDates.start, parsedDates.end]);
 
     const monthLabel = useMemo(() => {
         if (format(parsedDates.start, 'MMM yyyy') === format(parsedDates.end, 'MMM yyyy')) {
@@ -226,39 +201,38 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                 <div className="card" style={{
                     width: '100%',
                     maxWidth: '600px',
-                    maxHeight: '90vh',
+                    maxHeight: '95vh',
                     overflow: 'hidden',
                     position: 'relative',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '1rem',
-                    padding: '1.25rem'
+                    gap: '0.6rem',
+                    padding: '1rem'
                 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '-0.25rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Detalle de Pagos</h2>
+                    {/* Modal Header */}
+                    <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center', 
+                        marginBottom: '0.4rem',
+                        padding: '0 0.25rem'
+                    }}>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>Detalle de Pagos</h2>
+                        <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
                             <button
                                 onClick={handleShare}
                                 disabled={isSharing}
                                 title="Compartir Ficha"
                                 style={{
-                                    padding: '0.25rem',
+                                    padding: '0.5rem',
                                     border: 'none',
                                     backgroundColor: 'transparent',
                                     cursor: isSharing ? 'wait' : 'pointer',
-                                    borderRadius: '0.375rem',
+                                    color: 'var(--text-secondary)',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    color: '#3b82f6',
-                                    opacity: isSharing ? 0.6 : 1,
                                     transition: 'all 0.2s'
-                                }}
-                                onMouseEnter={(e) => {
-                                    if(!isSharing) e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    if(!isSharing) e.currentTarget.style.backgroundColor = 'transparent';
                                 }}
                             >
                                 {isSharing ? (
@@ -268,59 +242,144 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                                         </circle>
                                     </svg>
                                 ) : (
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
-                                    </svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
                                 )}
                             </button>
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
+                            <button 
+                                onClick={onClose} 
+                                style={{ 
+                                    background: 'none', 
+                                    border: 'none', 
+                                    padding: '0.5rem',
+                                    cursor: 'pointer',
+                                    color: 'var(--text-secondary)',
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
                         </div>
                     </div>
 
+                    {/* Premium Summary Card */}
                     <div style={{
-                        padding: '0.75rem',
-                        backgroundColor: 'var(--bg-app)',
-                        borderRadius: 'var(--radius-md)',
-                        border: '1px solid var(--border-color)',
-                        fontSize: '0.9rem'
+                        padding: '0.85rem 1rem',
+                        background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                        borderRadius: '1rem',
+                        color: 'white',
+                        boxShadow: '0 8px 20px -5px rgba(99, 102, 241, 0.3)',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        marginBottom: '0.5rem'
                     }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
-                            <div style={{ fontWeight: 'bold', textTransform: 'capitalize' }}>Cliente: {loan.clientName?.toLowerCase() || 'SIN NOMBRE'}</div>
-                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', whiteSpace: 'nowrap', fontWeight: '500', marginTop: '0.1rem' }}>ID: #{loan.id}</div>
-                        </div>
-                        <div style={{ color: 'var(--color-primary)', fontWeight: 'bold', marginTop: '0.15rem', fontSize: '0.95rem' }}>
-                            {formatDateUTC(details?.startDate || loan.startDate)} - {formatDateUTC(details?.endDate || loan.endDate)}
-                        </div>
-                        <div style={{ display: 'flex', gap: '1rem', marginTop: '0.4rem' }}>
-                            <div><span style={{ color: 'var(--text-secondary)' }}>Monto:</span> S/ {Number(loan.amount).toFixed(2)}</div>
-                            <div><span style={{ color: 'var(--text-secondary)' }}>Cuota:</span> S/ {Number(loan.fee || 0).toFixed(2)}</div>
+                        {/* Decorative Circle */}
+                        <div style={{
+                            position: 'absolute',
+                            top: '-20%',
+                            right: '-10%',
+                            width: '150px',
+                            height: '150px',
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            borderRadius: '50%',
+                            zIndex: 0
+                        }} />
+
+                        <div style={{ position: 'relative', zIndex: 1 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                                <div>
+                                    <div style={{ fontSize: '0.65rem', fontWeight: 700, opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Cliente</div>
+                                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0', textTransform: 'capitalize' }}>
+                                        {loan.clientName?.toLowerCase() || 'SIN NOMBRE'}
+                                    </h3>
+                                    <div style={{ fontSize: '0.75rem', opacity: 0.9, fontWeight: 500 }}>ID: #{loan.id}</div>
+                                </div>
+                                <div style={{ 
+                                    backgroundColor: 'rgba(255, 255, 255, 0.2)', 
+                                    padding: '0.35rem 0.75rem', 
+                                    borderRadius: '2rem',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700,
+                                    backdropFilter: 'blur(10px)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.4rem',
+                                    border: '1px solid rgba(255, 255, 255, 0.3)'
+                                }}>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                    {formatDateUTC(details?.startDate || loan.startDate)} - {formatDateUTC(details?.endDate || loan.endDate)}
+                                </div>
+                            </div>
+
+                            <div style={{ 
+                                height: '1px', 
+                                background: 'rgba(255, 255, 255, 0.2)', 
+                                margin: '0.6rem 0' 
+                            }} />
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <div style={{ 
+                                        width: '32px', 
+                                        height: '32px', 
+                                        backgroundColor: 'rgba(255, 255, 255, 0.2)', 
+                                        borderRadius: '8px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.6rem', opacity: 0.8, fontWeight: 600 }}>Total</div>
+                                        <div style={{ fontSize: '0.9rem', fontWeight: 800 }}>{formatMoney(loan.amount + (loan.interest || 0))}</div>
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <div style={{ 
+                                        width: '32px', 
+                                        height: '32px', 
+                                        backgroundColor: 'rgba(255, 255, 255, 0.2)', 
+                                        borderRadius: '8px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                    }}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.6rem', opacity: 0.8, fontWeight: 600 }}>Cuota</div>
+                                        <div style={{ fontSize: '0.9rem', fontWeight: 800 }}>{formatMoney(loan.fee || 0)}</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Tabs */}
+                    {/* Tabs Segmented Picker */}
                     <div style={{
                         display: 'flex',
-                        gap: '0.5rem',
-                        padding: '0.25rem',
+                        gap: '4px',
+                        padding: '4px',
                         backgroundColor: 'var(--bg-app)',
-                        borderRadius: 'var(--radius-md)',
+                        borderRadius: '0.85rem',
                         border: '1px solid var(--border-color)',
-                        flexShrink: 0
+                        flexShrink: 0,
+                        marginBottom: '0.5rem'
                     }}>
                         <button
                             style={{
                                 flex: 1,
-                                padding: '0.5rem',
-                                borderRadius: 'calc(var(--radius-md) - 2px)',
+                                padding: '0.6rem',
+                                borderRadius: '0.65rem',
                                 border: 'none',
                                 cursor: 'pointer',
                                 fontSize: '0.9rem',
-                                fontWeight: '600',
+                                fontWeight: '700',
                                 backgroundColor: activeTab === 'calendar' ? 'white' : 'transparent',
-                                boxShadow: activeTab === 'calendar' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                                color: activeTab === 'calendar' ? 'var(--color-primary)' : 'var(--text-secondary)'
+                                boxShadow: activeTab === 'calendar' ? '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)' : 'none',
+                                color: activeTab === 'calendar' ? '#4f46e5' : 'var(--text-secondary)',
+                                transition: 'all 0.2s'
                             }}
                             onClick={() => setActiveTab('calendar')}
                         >
@@ -329,15 +388,16 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                         <button
                             style={{
                                 flex: 1,
-                                padding: '0.5rem',
-                                borderRadius: 'calc(var(--radius-md) - 2px)',
+                                padding: '0.6rem',
+                                borderRadius: '0.65rem',
                                 border: 'none',
                                 cursor: 'pointer',
                                 fontSize: '0.9rem',
-                                fontWeight: '600',
+                                fontWeight: '700',
                                 backgroundColor: activeTab === 'list' ? 'white' : 'transparent',
-                                boxShadow: activeTab === 'list' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                                color: activeTab === 'list' ? 'var(--color-primary)' : 'var(--text-secondary)'
+                                boxShadow: activeTab === 'list' ? '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)' : 'none',
+                                color: activeTab === 'list' ? '#4f46e5' : 'var(--text-secondary)',
+                                transition: 'all 0.2s'
                             }}
                             onClick={() => setActiveTab('list')}
                         >
@@ -352,7 +412,7 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                         paddingRight: '4px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '1rem'
+                        gap: '0.5rem'
                     }}>
                         {loading ? (
                             <LoadingSpinner message="Cargando detalles..." />
@@ -361,8 +421,8 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                         ) : activeTab === 'calendar' ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                                 {/* Calendar Header - Show range description */}
-                                <div style={{ textAlign: 'center', padding: '0', marginBottom: '0' }}>
-                                    <span style={{ fontWeight: 'bold', textTransform: 'capitalize', fontSize: '1.1rem' }}>
+                                <div style={{ textAlign: 'center', padding: '0.25rem 0', marginBottom: '0.25rem' }}>
+                                    <span style={{ fontWeight: 800, textTransform: 'capitalize', fontSize: '1.2rem', color: 'var(--text-primary)' }}>
                                         {monthLabel}
                                     </span>
                                 </div>
@@ -371,26 +431,20 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                                 <div style={{
                                     display: 'grid',
                                     gridTemplateColumns: 'repeat(7, 1fr)',
-                                    gap: '2px',
-                                    backgroundColor: 'var(--border-color)',
-                                    border: '1px solid var(--border-color)',
-                                    borderRadius: '0.5rem',
-                                    overflow: 'hidden',
-                                    position: 'relative'
+                                    gap: '6px',
+                                    backgroundColor: 'transparent',
+                                    position: 'relative',
+                                    padding: '0.25rem'
                                 }}>
-                                    {/* Days of week - Sticky Header */}
-                                    {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(d => (
+                                    {/* Days of week */}
+                                    {['LU', 'MA', 'MI', 'JU', 'VI', 'SÁ', 'DO'].map(d => (
                                         <div key={d} style={{
-                                            backgroundColor: 'var(--bg-app)',
-                                            padding: '0.5rem 0',
+                                            padding: '0.25rem 0',
                                             textAlign: 'center',
-                                            fontSize: '0.75rem',
-                                            fontWeight: 'bold',
+                                            fontSize: '0.65rem',
+                                            fontWeight: 800,
                                             color: 'var(--text-secondary)',
-                                            position: 'sticky',
-                                            top: 0,
-                                            zIndex: 10,
-                                            borderBottom: '1px solid var(--border-color)'
+                                            letterSpacing: '0.05em'
                                         }}>
                                             {d}
                                         </div>
@@ -410,299 +464,251 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                                         // Check if it's an overdue unpaid day (before today, no payment, within loan period)
                                         const today = new Date();
                                         today.setHours(0, 0, 0, 0);
-                                        const isOverdueUnpaid = isRelevant && day < today && !installment;
-
-                                        // Determine background color
-                                        let bgColor = 'white';
+                                        const isOverdueUnpaid = isRelevant && day < today && !installment;                                        // Determine background color and text colors
+                                        let bgColor = '#f8fafc'; // Neutral background for non-loan days
+                                        let textColor = 'var(--text-secondary)';
+                                        let amountColor = '#64748b';
+                                        
                                         if (installment) {
-                                            bgColor = '#63c581ff'; // Green for paid
+                                            bgColor = '#eff9f1'; // Light Green
+                                            textColor = '#16a34a';
+                                            amountColor = '#16a34a';
                                         } else if (isOverdueUnpaid) {
-                                            bgColor = '#fed7aa'; // Orange/yellow for overdue unpaid
+                                            bgColor = '#fff7ed'; // Light Orange
+                                            textColor = '#ea580c';
+                                            amountColor = '#ea580c';
                                         } else if (isTodayDate && isRelevant) {
-                                            bgColor = '#b7d5fdff'; // Darker blue for today
+                                            bgColor = '#ecf3ff'; // Light Blue/Indigo
+                                            textColor = '#4f46e5';
+                                            amountColor = '#4f46e5';
                                         } else if (isRelevant) {
-                                            bgColor = '#e0f0ff'; // Lighter blue for loan period
+                                            bgColor = '#f0f9ff'; // Very light blue
+                                            textColor = '#0369a1';
+                                            amountColor = '#0369a1';
+                                        }
+
+                                        if (isStart) {
+                                            bgColor = '#4f46e5';
+                                            textColor = 'white';
+                                            amountColor = 'white';
+                                        } else if (isEnd) {
+                                            bgColor = '#f43f5e';
+                                            textColor = 'white';
+                                            amountColor = 'white';
                                         }
 
                                         return (
                                             <div key={day.toISOString()} style={{
-                                                minHeight: isMobile ? '55px' : '80px',
-                                                padding: isMobile ? '2px' : '4px',
+                                                minHeight: isMobile ? '52px' : '85px',
+                                                padding: '6px 2px',
                                                 backgroundColor: bgColor,
+                                                borderRadius: '0.75rem',
                                                 position: 'relative',
-                                                border: isTodayDate && isRelevant ? '2px solid #3b82f6' : (isRelevant ? '1px solid #bfdbfe' : 'none'),
                                                 display: 'flex',
                                                 flexDirection: 'column',
-                                                justifyContent: 'space-between'
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                transition: 'transform 0.2s',
+                                                boxShadow: (isStart || isEnd) ? '0 4px 6px -1px rgba(0,0,0,0.1)' : 'none',
+                                                border: (isTodayDate && isRelevant && !isStart && !isEnd) ? '1px solid #4f46e5' : 'none'
                                             }}>
                                                 <div style={{
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'start',
+                                                    fontSize: isMobile ? '0.9rem' : '1rem',
+                                                    fontWeight: 800,
+                                                    color: textColor,
                                                     marginBottom: '2px'
                                                 }}>
-                                                    <span style={{
-                                                        fontSize: isMobile ? '0.55rem' : '0.6rem',
-                                                        color: 'var(--text-secondary)',
-                                                        textTransform: 'uppercase',
-                                                        fontWeight: 'bold',
-                                                        letterSpacing: '-0.02em',
-                                                    }}>
-                                                        {isFirstOfMonth ? format(day, 'MMM', { locale: es }) : ''}
-                                                    </span>
-                                                    <span style={{
-                                                        fontSize: isMobile ? '0.65rem' : '0.7rem',
-                                                        fontWeight: isStart || isEnd ? 'bold' : 'normal',
-                                                        color: isStart || isEnd ? 'var(--color-primary)' : 'inherit',
-                                                    }}>
-                                                        {format(day, 'd')}
-                                                    </span>
+                                                    {format(day, 'd')}
                                                 </div>
 
-                                                {isStart && (
+                                                {(isStart || isEnd) && (
                                                     <div style={{
-                                                        fontSize: isMobile ? '0.55rem' : '0.65rem',
-                                                        backgroundColor: '#8b5cf6',
-                                                        color: 'white',
-                                                        padding: isMobile ? '2px 1px' : '3px 4px',
-                                                        borderRadius: '3px',
-                                                        marginBottom: '2px',
-                                                        textAlign: 'center',
-                                                        fontWeight: 'bold',
-                                                        boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                                                        letterSpacing: isMobile ? '-0.03em' : 'normal'
-                                                    }}>INICIO</div>
-                                                )}
-
-                                                {isEnd && (
-                                                    <div style={{
-                                                        fontSize: isMobile ? '0.55rem' : '0.65rem',
-                                                        backgroundColor: '#ef4444',
-                                                        color: 'white',
-                                                        padding: isMobile ? '2px 1px' : '3px 4px',
-                                                        borderRadius: '3px',
-                                                        marginBottom: '2px',
-                                                        textAlign: 'center',
-                                                        fontWeight: 'bold',
-                                                        boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
-                                                    }}>FIN</div>
-                                                )}
-
-                                                {installment && (
-                                                    <div style={{
-                                                        marginTop: 'auto',
-                                                        padding: isMobile ? '4px 1px' : '6px 2px',
-                                                        backgroundColor: '#63c581ff',
-                                                        borderRadius: '4px',
-                                                        border: '1px solid #1c9641ff',
-                                                        textAlign: 'center',
-                                                        wordBreak: 'break-word',
-                                                        overflowWrap: 'break-word'
+                                                        fontSize: '0.55rem',
+                                                        fontWeight: 800,
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: '0.05em',
+                                                        marginTop: '-2px',
+                                                        marginBottom: '2px'
                                                     }}>
-                                                        <div style={{ 
-                                                            fontSize: isMobile ? '0.65rem' : '0.95rem', 
-                                                            fontWeight: 'bold', 
-                                                            color: '#ffffffff', 
-                                                            lineHeight: '1.1',
-                                                            letterSpacing: isMobile ? '-0.03em' : 'normal'
-                                                        }}>
-                                                            {isMobile ? installment.amount : `S/ ${installment.amount}`}
-                                                        </div>
+                                                        {isStart ? 'Inicio' : 'Fin'}
                                                     </div>
+                                                )}
+
+                                                <div style={{ 
+                                                    fontSize: isMobile ? '0.6rem' : '0.75rem', 
+                                                    fontWeight: 700, 
+                                                    color: amountColor,
+                                                    opacity: (isStart || isEnd) ? 1 : 0.9
+                                                }}>
+                                                    {isRelevant ? (isMobile ? (loan.fee || 0).toFixed(0) : (loan.fee || 0).toFixed(0)) : ''}
+                                                </div>
+
+                                                {isTodayDate && isRelevant && !isStart && !isEnd && (
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        top: '4px',
+                                                        right: '4px',
+                                                        width: '5px',
+                                                        height: '5px',
+                                                        borderRadius: '50%',
+                                                        backgroundColor: '#4f46e5'
+                                                    }} />
                                                 )}
                                             </div>
                                         );
                                     })}
                                 </div>
 
-                                <div style={{ marginTop: '0', display: 'flex', gap: '0.75rem', fontSize: '0.8rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                        <div style={{ width: '12px', height: '12px', backgroundColor: '#63c581ff', border: '1px solid #1c9641ff', borderRadius: '2px' }}></div>
-                                        <span>Pago Registrado</span>
+                                <div style={{ 
+                                    marginTop: '0.5rem', 
+                                    display: 'grid', 
+                                    gridTemplateColumns: '1fr 1fr',
+                                    gap: '0.5rem 1rem', 
+                                    fontSize: '0.7rem', 
+                                    padding: '0 0.5rem'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <div style={{ width: '10px', height: '10px', backgroundColor: '#22c55e', borderRadius: '50%' }}></div>
+                                        <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Pago Registrado</span>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                        <div style={{ width: '12px', height: '12px', backgroundColor: '#fed7aa', border: '1px solid #fb923c', borderRadius: '2px' }}></div>
-                                        <span>Sin Pago (Vencido)</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <div style={{ width: '10px', height: '10px', backgroundColor: '#f97316', borderRadius: '50%' }}></div>
+                                        <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Sin Pago (Vencido)</span>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                        <div style={{ width: '12px', height: '12px', backgroundColor: '#e0f0ff', border: '1px solid #bfdbfe', borderRadius: '2px' }}></div>
-                                        <span>Periodo de Préstamo</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <div style={{ width: '10px', height: '10px', backgroundColor: '#6366f1', borderRadius: '50%' }}></div>
+                                        <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Próximo / Inicio</span>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                        <div style={{ width: '12px', height: '12px', backgroundColor: '#b7d5fdff', border: '2px solid #3b82f6', borderRadius: '2px' }}></div>
-                                        <span>Hoy</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <div style={{ width: '10px', height: '10px', backgroundColor: '#cbd5e1', borderRadius: '50%' }}></div>
+                                        <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Sin Cuota</span>
                                     </div>
                                 </div>
                             </div>
                         ) : (
-                            /* List View */
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            /* Modern List View */
+                            <div style={{ padding: '0 0.5rem' }}>
                                 {!details?.installments.length ? (
-                                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                                    <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)', opacity: 0.7 }}>
                                         No hay pagos registrados.
                                     </div>
-                                ) : isMobile ? (
-                                    /* Mobile List View */
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                ) : (
+                                    <div style={{ 
+                                        display: 'flex', 
+                                        flexDirection: 'column', 
+                                        gap: '1rem',
+                                        maxHeight: '450px',
+                                        overflowY: 'auto',
+                                        paddingRight: '4px'
+                                    }}>
                                         {[...details.installments]
                                             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                                            .map((inst, idx) => (
-                                                <div key={idx} style={{
-                                                    padding: '0.85rem',
-                                                    backgroundColor: 'white',
-                                                    borderRadius: 'var(--radius-md)',
-                                                    border: '1px solid var(--border-color)',
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'center',
-                                                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-                                                }}>
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                                                        <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                                                            {formatDateTimePE(inst.date)}
+                                            .map((inst, idx) => {
+                                                const canDelete = isPaymentDeleteable(inst.date, inst.registeredByUserId);
+                                                return (
+                                                    <div key={idx} style={{
+                                                        padding: '1.25rem',
+                                                        backgroundColor: 'var(--bg-app)',
+                                                        borderRadius: '1.25rem',
+                                                        border: '1px solid var(--border-color)',
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                                                    }}>
+                                                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                                            <div style={{
+                                                                width: '44px',
+                                                                height: '44px',
+                                                                borderRadius: '14px',
+                                                                backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                                                                color: '#22c55e',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center'
+                                                            }}>
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                            </div>
+                                                            <div>
+                                                                <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                                                    {formatMoney(inst.amount)}
+                                                                </div>
+                                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                                    <span>{formatDateTimePE(inst.date)}</span>
+                                                                    <span style={{ opacity: 0.8 }}>Cobrador: {inst.registeredBy}</span>
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                        <div style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--color-primary)' }}>
-                                                            S/ {Number(inst.amount).toFixed(2)}
-                                                        </div>
-                                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                                                            Cobrador: {inst.registeredBy}
-                                                        </div>
-                                                    </div>
-                                                    {(user?.profile === 'ADMIN' || user?.profile === 'OWNER' || user?.profile === 'COBRADOR') && (
-                                                        <div style={{ marginLeft: '0.5rem' }}>
-                                                            {isPaymentDeleteable(inst.date, inst.registeredByUserId) ? (
-                                                                <button
-                                                                    onClick={() => openConfirmDelete(inst.id)}
-                                                                    title="Eliminar Pago"
-                                                                    style={{
-                                                                        border: 'none',
-                                                                        backgroundColor: '#fee2e2',
-                                                                        cursor: 'pointer',
-                                                                        color: '#ef4444',
-                                                                        padding: '0.6rem',
-                                                                        borderRadius: '0.5rem',
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        justifyContent: 'center'
-                                                                    }}
-                                                                >
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                                                                    </svg>
-                                                                </button>
-                                                            ) : (
-                                                                <button
-                                                                    disabled
-                                                                    title={user?.profile === 'COBRADOR' ? "Solo pagos del día" : "Periodo expirado"}
-                                                                    style={{
-                                                                        border: 'none',
-                                                                        backgroundColor: '#f1f5f9',
-                                                                        cursor: 'not-allowed',
+                                                        
+                                                        {(user?.profile === 'ADMIN' || user?.profile === 'OWNER' || user?.profile === 'COBRADOR') && (
+                                                            <div>
+                                                                {canDelete ? (
+                                                                    <button
+                                                                        onClick={() => openConfirmDelete(inst.id)}
+                                                                        title="Eliminar Pago"
+                                                                        style={{
+                                                                            padding: '0.75rem',
+                                                                            borderRadius: '0.75rem',
+                                                                            border: 'none',
+                                                                            backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                                                                            color: '#ef4444',
+                                                                            cursor: 'pointer',
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            transition: 'all 0.2s'
+                                                                        }}
+                                                                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
+                                                                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)')}
+                                                                    >
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                                                                    </button>
+                                                                ) : (
+                                                                    <div title={user?.profile === 'COBRADOR' ? "Solo pagos del día" : "Periodo expirado"} style={{
+                                                                        padding: '0.75rem',
                                                                         color: '#cbd5e1',
-                                                                        padding: '0.6rem',
-                                                                        borderRadius: '0.5rem',
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        justifyContent: 'center'
-                                                                    }}
-                                                                >
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                                                                    </svg>
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
-                                    </div>
-                                ) : (
-                                    <div style={{
-                                        border: '1px solid var(--border-color)',
-                                        borderRadius: 'var(--radius-md)',
-                                        overflow: 'hidden'
-                                    }}>
-                                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-                                            <thead style={{ backgroundColor: 'var(--bg-app)', borderBottom: '1px solid var(--border-color)' }}>
-                                                <tr>
-                                                    <th style={{ padding: '0.75rem', textAlign: 'left' }}>Fecha y Hora</th>
-                                                    <th style={{ padding: '0.75rem', textAlign: 'right' }}>Monto</th>
-                                                    <th style={{ padding: '0.75rem', textAlign: 'right' }}>Cobrador</th>
-                                                    {(user?.profile === 'ADMIN' || user?.profile === 'OWNER' || user?.profile === 'COBRADOR') && (
-                                                        <th style={{ padding: '0.75rem', textAlign: 'center' }}>Acción</th>
-                                                    )}
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {[...details.installments]
-                                                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                                                    .map((inst, idx) => (
-                                                        <tr key={idx} style={{ borderBottom: idx < details.installments.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
-                                                            <td style={{ padding: '0.75rem' }}>{formatDateTimePE(inst.date)}</td>
-                                                            <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: 'bold', color: 'var(--color-primary)' }}>
-                                                                S/ {Number(inst.amount).toFixed(2)}
-                                                            </td>
-                                                            <td style={{ padding: '0.75rem', textAlign: 'right', color: 'var(--text-secondary)' }}>{inst.registeredBy}</td>
-                                                            {(user?.profile === 'ADMIN' || user?.profile === 'OWNER' || user?.profile === 'COBRADOR') && (
-                                                                <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                                                                    {isPaymentDeleteable(inst.date, inst.registeredByUserId) ? (
-                                                                        <button
-                                                                            onClick={() => openConfirmDelete(inst.id)}
-                                                                            title="Eliminar Pago"
-                                                                            style={{
-                                                                                border: 'none',
-                                                                                background: 'transparent',
-                                                                                cursor: 'pointer',
-                                                                                color: '#ef4444',
-                                                                                padding: '0.25rem',
-                                                                                borderRadius: '4px',
-                                                                                display: 'inline-flex',
-                                                                                alignItems: 'center',
-                                                                                justifyContent: 'center'
-                                                                            }}
-                                                                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
-                                                                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                                                                        >
-                                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="18" height="18">
-                                                                                <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                                                                            </svg>
-                                                                        </button>
-                                                                    ) : (
-                                                                        <button
-                                                                            disabled
-                                                                            title={user?.profile === 'COBRADOR' ? "Solo se pueden eliminar pagos del mismo día" : "El periodo de eliminación ha expirado (máx 2 días)"}
-                                                                            style={{
-                                                                                border: 'none',
-                                                                                background: 'transparent',
-                                                                                cursor: 'not-allowed',
-                                                                                color: '#cbd5e1', // Gray color for disabled state
-                                                                                padding: '0.25rem',
-                                                                                borderRadius: '4px',
-                                                                                display: 'inline-flex',
-                                                                                alignItems: 'center',
-                                                                                justifyContent: 'center'
-                                                                            }}
-                                                                        >
-                                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="18" height="18">
-                                                                                <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                                                                            </svg>
-                                                                        </button>
-                                                                    )}
-                                                                </td>
-                                                            )}
-                                                        </tr>
-                                                    ))}
-                                            </tbody>
-                                        </table>
+                                                                        opacity: 0.5
+                                                                    }}>
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
                                     </div>
                                 )}
                             </div>
                         )}
                     </div>
 
-                    <div style={{ marginTop: 'auto', paddingTop: '0.25rem', flexShrink: 0 }}>
-                        <button className="btn" style={{ width: '100%', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)' }} onClick={onClose}>
-                            Cerrar
+                    <div style={{ marginTop: 'auto', padding: '0.5rem 0.5rem 0' }}>
+                        <button
+                            onClick={onClose}
+                            style={{
+                                width: '100%',
+                                padding: '1rem',
+                                borderRadius: '1rem',
+                                border: '2px solid var(--border-color)',
+                                backgroundColor: 'transparent',
+                                color: 'var(--text-secondary)',
+                                fontSize: '0.95rem',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                textAlign: 'center'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = 'var(--bg-app)';
+                                e.currentTarget.style.borderColor = 'var(--text-secondary)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                                e.currentTarget.style.borderColor = 'var(--border-color)';
+                            }}
+                        >
+                            Cerrar Detalle
                         </button>
                     </div>
                 </div>

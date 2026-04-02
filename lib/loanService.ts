@@ -15,8 +15,8 @@ export const loanService = {
         return api.get<Loan[]>(`/loans${queryString ? `?${queryString}` : ''}`);
     },
 
-    async create(loan: { idPeople: number; amount: number; userId: number; address: string; days: number }): Promise<Loan> {
-        return api.post<Loan>('/loans', loan);
+    async create(loan: { idPeople: string; amount: number; userId: string; address: string; days: number }): Promise<{ success: boolean; loanId: string }> {
+        return api.post<{ success: boolean; loanId: string }>('/loans', loan);
     },
 
     /**
@@ -29,15 +29,15 @@ export const loanService = {
     /**
      * Reassign a loan to a new collector
      */
-    async reassign(loanId: string, newUserId: number): Promise<void> {
+    async reassign(loanId: string, newUserId: string): Promise<void> {
         return api.patch(`/loans/${loanId}/reassign`, { newUserId });
     },
 
     /**
      * Delete a loan
      */
-    async delete(loanId: string): Promise<void> {
-        return api.delete(`/loans/${loanId}`);
+    async delete(loanId: string): Promise<{ success: boolean; message: string }> {
+        return api.delete<{ success: boolean; message: string }>(`/loans/${loanId}`);
     },
 
     deleteInstallment: async (installmentId: string) => {
@@ -45,11 +45,18 @@ export const loanService = {
     },
 
     /**
+     * Register a new installment (payment)
+     */
+    async registerInstallment(data: { loanId: string; amount: number; userId: string; paymentType: string }): Promise<{ id: string }> {
+        return api.post<{ id: string }>('/loans/installments', data);
+    },
+
+    /**
      * Get dashboard summary data
      */
-    async getDashboardData(userId?: string | number, companyId?: string): Promise<any> {
+    async getDashboardData(userId?: string, companyId?: string): Promise<any> {
         const params = new URLSearchParams();
-        if (userId) params.append('userId', userId.toString());
+        if (userId) params.append('userId', userId);
         if (companyId) params.append('companyId', companyId);
 
         const queryString = params.toString();

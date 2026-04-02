@@ -48,137 +48,138 @@ export default function LoanMobileCard({
             style={{ 
                 padding: '0rem',
                 opacity: isDragging ? 0.7 : 1,
-                boxShadow: isDragging ? '0 8px 16px rgba(0,0,0,0.15)' : 'none',
+                boxShadow: isDragging ? '0 10px 20px rgba(0,0,0,0.1)' : 'var(--shadow-sm)',
                 transition: 'all 0.2s ease',
-                marginBottom: '0.5rem'
+                marginBottom: '1rem',
+                border: '1px solid var(--border-color)',
+                overflow: 'hidden'
             }}
         >
-            <div style={{ padding: '1rem 1rem 0.25rem 1rem' }}>
-                {/* Header: Draggable + Index + Client Info + Status */}
+            <div style={{ padding: '1.25rem 1.25rem 1rem 1.25rem' }}>
+                {/* Header: Client Info + Status Indicator */}
                 <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'start',
-                    paddingBottom: '0.75rem',
-                    marginBottom: '0.75rem',
-                    borderBottom: '1px solid var(--border-color)'
+                    alignItems: 'flex-start',
+                    marginBottom: '1.25rem'
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'start', gap: '0.5rem', flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         {showDragHandle && dragHandleProps && (
-                            <div
-                                {...dragHandleProps}
-                                style={{
-                                    cursor: isDragging ? 'grabbing' : 'grab',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    color: 'var(--text-secondary)',
-                                    paddingTop: '0.25rem',
-                                    touchAction: 'none'
-                                }}
-                                title="Arrastra para reordenar"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                                </svg>
+                            <div {...dragHandleProps} style={{ color: 'var(--text-secondary)', cursor: 'grab' }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                             </div>
                         )}
-                        
-                        {typeof index === 'number' && (
-                            <div style={{
-                                minWidth: '30px',
-                                height: '30px',
-                                borderRadius: '50%',
-                                backgroundColor: 'var(--color-primary)',
-                                color: 'white',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontWeight: 'bold',
-                                fontSize: '1rem',
-                                flexShrink: 0
-                            }}>
-                                {index + 1}
-                            </div>
-                        )}
-                        
                         <div>
-                            <div style={{ fontWeight: 700, fontSize: '1rem', textTransform: 'capitalize' }}>
-                                {loan.clientName?.toLowerCase() || 'SIN NOMBRE'}
+                            <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-primary)', marginBottom: '0.1rem' }}>
+                                {loan.clientName}
                             </div>
-                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                                {loan.documentNumber || 'S/D'}
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', letterSpacing: '0.02em' }}>
+                                {loan.documentNumber || 'Sin Documento'}
                             </div>
                         </div>
                     </div>
-                    
-                    <span style={{ fontSize: '1.25rem', lineHeight: 1 }} title={status.label}>
-                        {status.icon}
-                    </span>
+                    <span style={{ fontSize: '0.75rem' }} title={status.label}>{status.icon}</span>
                 </div>
 
-                {/* Main Data Section (Horizontal Layout) */}
+                {/* Main Content: Plan de Pago vs Pendiente */}
                 <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'flex-end',
-                    marginBottom: '0.75rem',
-                    backgroundColor: 'var(--bg-app)',
-                    padding: '0.75rem',
-                    borderRadius: '0.5rem',
-                    border: '1px solid var(--border-color)'
+                    alignItems: 'center',
+                    marginBottom: '1.25rem',
+                    padding: '0 0.25rem'
                 }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.85rem' }}>
-                        <div><span style={{ color: 'var(--text-secondary)' }}>Monto:</span> <strong>{formatMoney(loan.amount)}</strong></div>
-                        <div><span style={{ color: 'var(--text-secondary)' }}>Interés:</span> <strong>{formatMoney(loan.interest)}</strong></div>
-                        <div>
-                            <span style={{ color: 'var(--text-secondary)' }}>Días:</span> <strong>{loan.days}</strong>
-                            <span style={{ margin: '0 0.35rem', color: '#cbd5e1' }}>|</span>
-                            <span style={{ color: 'var(--text-secondary)' }}>Cuota:</span> <strong>{formatMoney(loan.fee)}</strong>
+                    <div>
+                        <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem' }}>
+                            Plan de Pago
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
+                            <span style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>{formatMoney(loan.amount + loan.interest)}</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Total</span>
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                            {loan.days} días <span style={{ margin: '0 0.25rem', color: 'var(--border-color)' }}>|</span> {formatMoney(loan.fee)} c/u
                         </div>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.2rem' }}>
-                        <div style={{ fontSize: '0.8rem' }}>
-                            <span style={{ color: 'var(--text-secondary)' }}>Total:</span> <strong>{formatMoney(loan.amount + loan.interest)}</strong>
+
+                    <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem' }}>
+                            Pendiente
                         </div>
-                        <div style={{ 
-                            marginTop: '0.15rem',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'flex-end'
-                        }}>
-                            <span style={{ color: '#ef4444', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em' }}>Restante</span>
-                            <span style={{ fontWeight: 900, color: '#b91c1c', fontSize: '1.3rem', lineHeight: 1 }}>
-                                {formatMoney((loan as any).remainingAmount || 0)}
-                            </span>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#b91c1c', letterSpacing: '-0.02em' }}>
+                            {formatMoney((loan as any).remainingAmount || 0)}
                         </div>
                     </div>
                 </div>
 
-                {/* Footer Info: Address + Validity */}
+                {/* Metadata: Address & Validity */}
                 <div style={{
-                    fontSize: '0.85rem',
-                    color: 'var(--text-secondary)',
-                    paddingBottom: '1rem',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '0.4rem'
+                    gap: '0.6rem',
+                    marginBottom: '0.5rem',
+                    borderTop: '1px solid var(--border-color)',
+                    paddingTop: '1rem'
                 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
-                        <span style={{ whiteSpace: 'nowrap' }}>Dirección:</span>
-                        <span style={{ textAlign: 'right', color: 'var(--text-primary)' }}>{loan.address}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{loan.address}</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <span>Vigencia:</span>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--color-primary)', textAlign: 'right' }}>
-                            <div style={{ fontWeight: 600, marginBottom: '0.1rem' }}>
-                                {formatDateUTC(loan.startDate)} - {formatDateUTC(loan.endDate)}
-                            </div>
-                        </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        <span>{formatDateUTC(loan.startDate)} - {formatDateUTC(loan.endDate)}</span>
                     </div>
                 </div>
+            </div>
 
-                {/* Actions Section */}
-                <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.5rem', justifyContent: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '0.25rem' }}>
+            {/* Bottom Actions Footer */}
+            <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '1fr 1fr 48px', 
+                borderTop: '1px solid var(--border-color)',
+                backgroundColor: 'var(--bg-app)'
+            }}>
+                <button 
+                    onClick={() => onPay(loan)}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        padding: '0.85rem 0',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        borderRight: '1px solid var(--border-color)',
+                        color: 'var(--color-success)',
+                        fontWeight: '600',
+                        fontSize: '0.9rem',
+                        cursor: 'pointer'
+                    }}
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h0M2 9.5h20"/></svg>
+                    Pagar
+                </button>
+                <button 
+                    onClick={() => onDetails(loan)}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        padding: '0.85rem 0',
+                        backgroundColor: 'transparent',
+                        border: 'none',
+                        borderRight: '1px solid var(--border-color)',
+                        color: 'var(--color-primary)',
+                        fontWeight: '600',
+                        fontSize: '0.9rem',
+                        cursor: 'pointer'
+                    }}
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    Detalles
+                </button>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <LoanActions
                         loan={loan}
                         currentUser={currentUser}
@@ -190,6 +191,7 @@ export default function LoanMobileCard({
                         onReassign={onReassign}
                         onDelete={onDelete}
                         shareRef={shareRef}
+                        minimal={true}
                     />
                 </div>
             </div>

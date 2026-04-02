@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import html2canvas from 'html2canvas';
-import { loanService } from '@/lib/loanService';
+import { getDashboardDataUseCase } from '@/app/features/loans';
 import { userService } from '@/lib/userService';
 import { authService } from '@/lib/auth';
 import { formatMoney } from '@/lib/loanUtils';
@@ -67,17 +67,24 @@ export default function FabMenu() {
                 userIdFilter = String(currentUser.id);
             }
 
-            const data = await loanService.getDashboardData(userIdFilter);
+            const result = await getDashboardDataUseCase.execute(userIdFilter);
 
             // 2. Update stats state
-            setStats({
-                lent: data.totalLentToday || 0,
-                collected: data.collectedToday || 0,
-                expenses: data.totalExpensesToday || 0,
-                activeClients: data.activeClients || 0,
-                user: currentUser.firstName || currentUser.username,
-                detailCollected: data.detailCollectedToday
-            });
+            result.match(
+                (data) => {
+                    setStats({
+                        lent: data.totalLentToday || 0,
+                        collected: data.collectedToday || 0,
+                        expenses: data.totalExpensesToday || 0,
+                        activeClients: data.activeClients || 0,
+                        user: currentUser.firstName || currentUser.username,
+                        detailCollected: data.detailCollectedToday
+                    });
+                },
+                (err) => {
+                    throw new Error(err.message);
+                }
+            );
 
             // Wait for render
             await new Promise(resolve => setTimeout(resolve, 100));

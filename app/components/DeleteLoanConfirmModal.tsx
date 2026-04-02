@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { loanService } from '@/lib/loanService';
+import { deleteLoanUseCase } from '@/app/features/loans';
 import { Loan } from '@/lib/types';
 
 interface DeleteLoanConfirmModalProps {
@@ -40,18 +40,22 @@ export default function DeleteLoanConfirmModal({ isOpen, onClose, onSuccess, loa
 
         setSubmitting(true);
         setError('');
-        try {
-            await loanService.delete(loan.id);
-            onSuccess();
-            onClose();
-        } catch (err: any) {
-            console.error('Error deleting loan:', err);
-            setError(err.message || 'Error al eliminar el préstamo.');
-            generateCode(); // Change code on error
-            setUserInput('');
-        } finally {
-            setSubmitting(false);
-        }
+        const result = await deleteLoanUseCase.execute(loan.id.toString());
+        
+        result.match(
+            () => {
+                onSuccess();
+                onClose();
+            },
+            (err) => {
+                console.error('Error deleting loan:', err);
+                setError(err.message || 'Error al eliminar el préstamo.');
+                generateCode(); // Change code on error
+                setUserInput('');
+            }
+        );
+        
+        setSubmitting(false);
     };
 
     if (!isOpen || !loan) return null;

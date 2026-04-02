@@ -1,17 +1,31 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { userService } from '@/lib/userService';
+import { createUserUseCase, updateUserUseCase, searchPersonUseCase } from '@/app/features/users';
+import { User as UserModel } from '@/app/features/users/models/user.model';
 import { companyService } from '@/lib/companyService';
 import { authService } from '@/lib/auth';
-import { CreateUserRequest, User, UpdateUserRequest, Company } from '@/lib/types';
+import { User, Company } from '@/lib/types';
 import styles from './CreateUserModal.module.css';
 
 interface CreateUserModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
-    userToEdit?: User | null;
+    userToEdit?: UserModel | null;
+}
+
+interface CreateUserFormData {
+    username: string;
+    password?: string;
+    profile: string;
+    documentType: string;
+    documentNumber: string;
+    firstName: string;
+    lastName: string;
+    birthday?: string | null;
+    status: 'ACTIVE' | 'INACTIVE';
+    idCompany?: string;
 }
 
 export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit }: CreateUserModalProps) {
@@ -19,7 +33,7 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit
     const [error, setError] = useState('');
 
     // Initial state
-    const initialFormState: CreateUserRequest & { status: 'ACTIVE' | 'INACTIVE' } = {
+    const initialFormState: CreateUserFormData = {
         username: '',
         password: '',
         profile: 'COBRADOR',
@@ -31,7 +45,7 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit
         status: 'ACTIVE'
     };
 
-    const [formData, setFormData] = useState(initialFormState);
+    const [formData, setFormData] = useState<CreateUserFormData>(initialFormState);
     const [companies, setCompanies] = useState<Company[]>([]);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
 
@@ -48,11 +62,6 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit
                     try {
                         const data = await companyService.getAll();
                         setCompanies(data);
-                        // If creating new user and no company selected, select first one?
-                        // Or maybe we don't force it yet? 
-                        // But if we are OWNER, we likely want to assign to one of our companies.
-                        // Actually, backend might default to owner's company if not sent?
-                        // But getting granular control is better.
                     } catch (e) {
                         console.error("Error fetching companies", e);
                     }
@@ -63,13 +72,13 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit
             if (userToEdit) {
                 setFormData({
                     username: userToEdit.username,
-                    password: '', // Password not editable directly here, or handled separately
-                    profile: userToEdit.profile as any, // Cast to avoid TS error if profile is OWNER (legacy)
-                    documentType: userToEdit.documentType || 'DNI',
-                    documentNumber: userToEdit.documentNumber || '',
-                    firstName: userToEdit.firstName || '',
-                    lastName: userToEdit.lastName || '',
-                    birthday: userToEdit.birthday ? new Date(userToEdit.birthday).toISOString().split('T')[0] : '',
+                    password: '', 
+                    profile: userToEdit.profile,
+                    documentType: userToEdit.documentType,
+                    documentNumber: userToEdit.documentNumber,
+                    firstName: userToEdit.firstName,
+                    lastName: userToEdit.lastName,
+                    birthday: '',
                     status: userToEdit.status,
                     idCompany: userToEdit.idCompany
                 });
@@ -86,76 +95,55 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    // Re-implementation of search logic inside hook for safety and simplicity
+    // Re-implementation of search logic
     useEffect(() => {
-        // Don't search if empty or too short
-        if (!isOpen) return; // Don't search if closed
+        if (!isOpen) return;
         if (!formData.documentNumber || formData.documentNumber.length < 8) return;
 
         const timer = setTimeout(async () => {
             setSearchingPerson(true);
             setError('');
-            try {
-                const person = await userService.searchPerson(formData.documentType, formData.documentNumber);
-                if (person) {
+            
+            const result = await searchPersonUseCase.execute(formData.documentType, formData.documentNumber);
+            
+            result.match(
+                (person) => {
                     setFormData(prev => ({
                         ...prev,
                         firstName: person.firstName,
                         lastName: person.lastName,
-                        birthday: '' // Hide birthday, send null later
                     }));
-                } else {
-                    // This block might not be reached if API throws 404, but in case it returns null/200 OK without data:
-                    setFormData(prev => ({ ...prev, firstName: '', lastName: '', birthday: '' }));
-                    setError('Persona no encontrada. Puede ingresar los datos manualmente.');
+                },
+                (err) => {
+                    setFormData(prev => ({ ...prev, firstName: '', lastName: '' }));
+                    if (err.code === '404') {
+                        setError('Persona no registrada. Ingrese los datos manualmente.');
+                    } else {
+                        console.error('Error searching person:', err);
+                        setError('Error al realizar la búsqueda.');
+                    }
                 }
-            } catch (err: any) {
-                // Clear fields always on error/not found
-                setFormData(prev => ({
-                    ...prev,
-                    firstName: '',
-                    lastName: '',
-                    birthday: ''
-                }));
-
-                if (err.statusCode === 404) {
-                    // 404 means person not found, which is expected flow for new users
-                    // We display a friendly message, maybe not even an error?
-                    // User said: "no hay que tomarlo como error".
-                    // We will set a 'warning' or just a specific message.
-                    setError('Persona no registrada. Ingrese los datos manualmente.');
-                } else {
-                    console.error('Error searching person:', err);
-                    setError('Error al realizar la búsqueda.');
-                }
-            } finally {
-                setSearchingPerson(false);
-            }
-        }, 1000); // 1 second debounce
+            );
+            setSearchingPerson(false);
+        }, 1000);
 
         return () => clearTimeout(timer);
     }, [formData.documentNumber, formData.documentType, isOpen]);
 
-    // Auto-generate username
+    // Auto-generate username logic (kept as is)
     useEffect(() => {
-        if (!isOpen || userToEdit) return; // Only for new users
+        if (!isOpen || userToEdit) return;
 
-        // Determine effective companyId: 
-        // 1. From form data (if OWNER selected one)
-        // 2. From current user session (if ADMIN/COBRADOR)
-        // 3. Fallback to empty
         const effectiveCompanyId = formData.idCompany || currentUser?.idCompany || '';
 
         if (effectiveCompanyId) {
             let newUsername = '';
 
             if (formData.profile === 'ADMIN' && formData.firstName && formData.lastName) {
-                // Format: idCompany:firstLetterName+firstLastName (e.g., 34-mramirez)
                 const firstLetter = formData.firstName.charAt(0).toLowerCase();
                 const firstLastName = formData.lastName.split(' ')[0].toLowerCase();
                 newUsername = `${effectiveCompanyId}:${firstLetter}${firstLastName}`;
             } else if (formData.profile === 'COBRADOR' && formData.documentNumber) {
-                // Format: idCompany:documentNumber (e.g., 34:12345678)
                 newUsername = `${effectiveCompanyId}:${formData.documentNumber}`;
             }
 
@@ -170,36 +158,26 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit
 
     if (!isOpen) return null;
 
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         setLoading(true);
 
-        try {
-            if (userToEdit) {
-                await userService.update(userToEdit.id, {
-                    profile: formData.profile,
-                    status: formData.status,
-                    documentType: formData.documentType,
-                    documentNumber: formData.documentNumber,
-                    firstName: formData.firstName,
-                    lastName: formData.lastName,
-                    birthday: formData.birthday,
-                    idCompany: formData.idCompany
-                });
-            } else {
-                await userService.create({ ...formData, birthday: null });
+        const result = userToEdit
+            ? await updateUserUseCase.execute(userToEdit.id, formData)
+            : await createUserUseCase.execute({ ...formData, birthday: formData.birthday || null });
+
+        result.match(
+            () => {
+                onSuccess();
+                onClose();
+            },
+            (err) => {
+                console.error('Error saving user:', err);
+                setError(err.message || (userToEdit ? 'Error al actualizar usuario.' : 'Error al crear usuario.'));
             }
-            onSuccess();
-            onClose();
-        } catch (err: any) {
-            console.error('Error saving user:', err);
-            const msg = userToEdit ? 'Error al actualizar usuario.' : 'Error al crear usuario.';
-            setError(err.message || msg);
-        } finally {
-            setLoading(false);
-        }
+        );
+        setLoading(false);
     };
 
     return (
@@ -302,7 +280,16 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit
                         </div>
                     </div>
 
-
+                    <div>
+                        <label className="label">Fecha de Nacimiento</label>
+                        <input
+                            type="date"
+                            className="input"
+                            name="birthday"
+                            value={formData.birthday || ''}
+                            onChange={handleChange}
+                        />
+                    </div>
 
                     <hr style={{ borderColor: 'var(--border-color)', margin: '0.5rem 0' }} />
 

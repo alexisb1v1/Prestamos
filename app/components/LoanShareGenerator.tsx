@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useImperativeHandle, forwardRef, useRef, useEffect } from 'react';
-import { loanService } from '@/lib/loanService';
+import { getLoanDetailsUseCase } from '@/app/features/loans';
 import { formatDateUTC } from '@/lib/loanUtils';
 import { Loan, LoanDetails } from '@/lib/types';
 import { format, parseISO, eachDayOfInterval, isSameDay, startOfWeek, endOfWeek, isWithinInterval, getDay, subMonths, addMonths } from 'date-fns';
@@ -46,18 +46,26 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, {}>((_, ref) => {
             try {
                 setGenerating(true);
                 // 1. Fetch Details
-                const details = await loanService.getDetails(loan.id);
-                setAuditData({ loan, details });
-                setReadyToCapture(true); // Signal that data is ready for render & capture
+                const result = await getLoanDetailsUseCase.execute(loan.id.toString());
+                
+                result.match(
+                    (details) => {
+                        setAuditData({ loan, details });
+                        setReadyToCapture(true); // Signal that data is ready for render & capture
+                    },
+                    (err) => {
+                        console.error("Error fetching details for share", err);
+                        setGenerating(false);
+                        setAuditData(null);
+                    }
+                );
             } catch (err) {
-                console.error("Error fetching details for share", err);
+                console.error("Unexpected error fetching details", err);
                 setGenerating(false);
                 setAuditData(null);
             }
         }
     }));
-
-    // Effect to trigger capture once data is rendered
     useEffect(() => {
         if (!readyToCapture || !auditData) return;
 

@@ -16,7 +16,7 @@ export interface User {
     idCompany?: string;
     companyStatus?: string;
     // Person (flattened)
-    idPeople?: number;
+    idPeople?: string;
     documentType?: string;
     documentNumber?: string;
     firstName?: string;
@@ -24,6 +24,7 @@ export interface User {
     birthday?: string;
     person?: Person;
     permissions?: UserPermissions;
+    collectionOrder?: string[];
 }
 
 export interface UserPermissions {
@@ -41,6 +42,7 @@ export interface UserPermissions {
 export interface LoginRequest {
     username: string;
     password: string;
+    fingerprint?: string;
 }
 
 export interface LoginResponse {
@@ -53,7 +55,9 @@ export interface LoginResponse {
 
 export interface ErrorResponse {
     statusCode: number;
+    errorCode: string;
     message: string;
+    timestamp: string;
 }
 
 export interface Loan {
@@ -73,9 +77,10 @@ export interface Loan {
     paidToday: number;
     inIntervalPayment: number;
     remainingAmount?: number;
-    personId?: string | number;
-    collectorId?: string | number;
-    companyId?: string | number;
+    personId?: string;
+    collectorId?: string;
+    companyId?: string;
+    userId?: string;
 }
 
 export interface Cobrador {
@@ -153,7 +158,7 @@ export interface GetUserResponse {
         username: string;
         profile: 'ADMIN' | 'OWNER' | 'COBRADOR';
         status: 'ACTIVE' | 'INACTIVE';
-        idPeople: number;
+        idPeople: string;
         isDayClosed: boolean;
         idCompany: string;
     };
@@ -183,9 +188,9 @@ export interface Payment {
 }
 
 export interface CreatePaymentRequest {
-    loanId: number; // API uses number usually
+    loanId: string;
     amount: number;
-    userId: number; // Collector ID
+    userId: string; // Collector ID
 }
 
 export interface CreatePaymentResponse {
@@ -196,7 +201,7 @@ export interface CreatePaymentResponse {
 export interface CreateInstallmentRequest {
     loanId: string;
     amount: number;
-    userId: number;
+    userId: string;
     paymentType?: 'EFECTIVO' | 'YAPE';
 }
 

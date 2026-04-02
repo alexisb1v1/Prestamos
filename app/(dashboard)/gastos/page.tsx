@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { expenseService } from '@/lib/expenseService';
+import { getExpensesUseCase } from '@/app/features/expenses';
 import { userService } from '@/lib/userService';
 import { companyService } from '@/lib/companyService';
 import { authService } from '@/lib/auth';
@@ -91,10 +91,13 @@ export default function ExpensesPage() {
                 (user?.profile === 'OWNER' ? selectedCompanyId : user?.idCompany);
 
 
-            const data = await expenseService.getAll(date, userIdParam, companyIdFilter);
-            setExpenses(data);
+            const result = await getExpensesUseCase.execute(date, userIdParam, companyIdFilter);
+            result.match(
+                (data) => setExpenses(data),
+                (err) => console.error('Error loading expenses:', err)
+            );
         } catch (error) {
-            console.error('Error loading expenses:', error);
+            console.error('Unexpected error loading expenses:', error);
         } finally {
             setLoading(false);
         }

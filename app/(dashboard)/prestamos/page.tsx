@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { loanService } from '@/lib/loanService';
+import { getAllLoansUseCase, Loan } from '@/app/features/loans';
 import { userService } from '@/lib/userService';
 import { companyService } from '@/lib/companyService';
 import { authService } from '@/lib/auth';
-import { Loan, User, Company } from '@/lib/types';
+import { User, Company } from '@/lib/types';
 import { getLoanStatus, formatDateUTC, formatMoney } from '@/lib/loanUtils';
 import CreateLoanModal from '../../components/CreateLoanModal';
 import CreatePaymentModal from '../../components/CreatePaymentModal';
@@ -16,6 +16,7 @@ import LoanShareGenerator, { LoanShareGeneratorRef } from '../../components/Loan
 import LoanActions from '../../components/LoanActions';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import LoanMobileCard from '../../components/LoanMobileCard';
+import StatusLegendModal from '../../components/StatusLegendModal';
 
 // formatMoney and formatDateUTC are now imported from lib/loanUtils above
 
@@ -28,7 +29,8 @@ export default function PrestamosPage() {
     const today = new Date();
 
     // Filters
-    const [documentNumber, setDocumentNumber] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isLiquidated, setIsLiquidated] = useState(false);
     const [selectedCollector, setSelectedCollector] = useState('');
     const [collectors, setCollectors] = useState<User[]>([]);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -39,6 +41,7 @@ export default function PrestamosPage() {
 
     // Modal state
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isLegendOpen, setIsLegendOpen] = useState(false);
     const [selectedLoanForRenewal, setSelectedLoanForRenewal] = useState<Loan | null>(null);
 
     // Payment Modal State
@@ -138,18 +141,20 @@ export default function PrestamosPage() {
         const val = e.target.value;
         setSelectedCompanyId(val);
         // Refresh data
-        loadLoans(currentUser, val);
+        loadLoans(currentUser, val, isLiquidated, ''); // Reset collector when company changes for data consistency
         loadCollectors(val);
     };
 
-    const loadLoans = async (userContext?: User | null, companyId?: string) => {
+    const loadLoans = async (userContext?: User | null, companyId?: string, liquidatedFilter?: boolean, collectorId?: string) => {
         const user = userContext || currentUser;
-        const compId = companyId !== undefined ? companyId : selectedCompanyId; // Use passed or state
+        const compId = companyId !== undefined ? companyId : selectedCompanyId;
+        const liquidated = liquidatedFilter !== undefined ? liquidatedFilter : isLiquidated;
+        const colId = collectorId !== undefined ? collectorId : selectedCollector;
 
         try {
             setLoading(true);
 
-            let userIdFilter = selectedCollector;
+            let userIdFilter = colId;
 
             // If user is COBRADOR, force their ID
             if (user?.profile === 'COBRADOR') {
@@ -164,11 +169,15 @@ export default function PrestamosPage() {
             // If user is NOT owner, companyId should be their own.
             // But we set selectedCompanyId in init for everyone.
 
-            const data = await loanService.getAll(userIdFilter, documentNumber, compId);
-            setLoans(data);
-        } catch (err) {
-            console.error('Error loading loans:', err);
-            setError('Error al cargar la lista de préstamos.');
+            const result = await getAllLoansUseCase.execute(userIdFilter, searchQuery, compId, liquidated);
+            
+            result.match(
+                (data) => setLoans(data),
+                (err) => {
+                    console.error('Error loading loans:', err);
+                    setError('Error al cargar la lista de préstamos: ' + err.message);
+                }
+            );
         } finally {
             setLoading(false);
         }
@@ -210,7 +219,7 @@ export default function PrestamosPage() {
             {/* Sticky Header Section for Mobile */}
             <div style={{
                 position: isMobile ? 'sticky' : 'static',
-                top: isMobile ? '0' : 'auto', // Stick at top of viewport
+                top: isMobile ? '4rem' : 'auto', // Stick below the app header (4rem)
                 zIndex: isMobile ? 30 : 'auto',
                 backgroundColor: isMobile ? 'var(--bg-app)' : 'transparent',
                 margin: isMobile ? '0 -2rem 1rem -2rem' : '0 0 2rem 0', // Removed negative margin-top
@@ -223,18 +232,95 @@ export default function PrestamosPage() {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginBottom: isMobile ? '1rem' : '2rem'
+                    flexDirection: 'row',
+                    gap: isMobile ? '0.5rem' : '1rem',
+                    marginBottom: isMobile ? '0.75rem' : '2rem'
                 }}>
-                    <div>
-                        <h1 style={{ fontSize: isMobile ? '1.5rem' : '1.875rem', fontWeight: 'bold' }}>Préstamos</h1>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', flexShrink: 0 }}>
+                        <h1 style={{ fontSize: isMobile ? '1.25rem' : '1.875rem', fontWeight: 'bold' }}>Préstamos</h1>
+                        {!loading && (
+                            <span style={{ 
+                                fontSize: isMobile ? '0.75rem' : '0.85rem', 
+                                color: 'var(--text-secondary)',
+                                fontWeight: '500',
+                                opacity: 0.8
+                            }}>
+                                ({loans.length})
+                            </span>
+                        )}
                     </div>
-                    <button
-                        className="btn btn-primary"
-                        onClick={() => setIsCreateModalOpen(true)}
-                        style={{ width: 'auto', whiteSpace: 'nowrap', padding: isMobile ? '0.5rem 0.75rem' : '0.5rem 1rem', fontSize: isMobile ? '0.85rem' : '1rem' }}
-                    >
-                        + Nuevo {isMobile ? '' : 'Préstamo'}
-                    </button>
+                    <div style={{ 
+                        display: 'flex', 
+                        gap: '0.5rem', 
+                        alignItems: 'center',
+                        justifyContent: 'flex-end',
+                        flex: 1
+                    }}>
+                        <div style={{
+                            display: 'flex',
+                            backgroundColor: 'var(--bg-card)',
+                            padding: '0.2rem',
+                            borderRadius: 'var(--radius-md)',
+                            border: '1px solid var(--border-color)',
+                            fontSize: '0.8rem'
+                        }}>
+                            <button
+                                onClick={() => {
+                                    setIsLiquidated(false);
+                                    loadLoans(currentUser, selectedCompanyId, false);
+                                }}
+                                style={{
+                                    padding: isMobile ? '0.35rem 0.6rem' : '0.4rem 1rem',
+                                    borderRadius: 'var(--radius-sm)',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    backgroundColor: !isLiquidated ? 'var(--color-primary)' : 'transparent',
+                                    color: !isLiquidated ? 'white' : 'var(--text-secondary)',
+                                    fontWeight: !isLiquidated ? '600' : '400',
+                                    fontSize: isMobile ? '0.75rem' : '0.85rem',
+                                    transition: 'all 0.2s',
+                                    whiteSpace: 'nowrap'
+                                }}
+                            >
+                                Activos
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setIsLiquidated(true);
+                                    loadLoans(currentUser, selectedCompanyId, true);
+                                }}
+                                style={{
+                                    padding: isMobile ? '0.35rem 0.6rem' : '0.4rem 1rem',
+                                    borderRadius: 'var(--radius-sm)',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    backgroundColor: isLiquidated ? 'var(--color-primary)' : 'transparent',
+                                    color: isLiquidated ? 'white' : 'var(--text-secondary)',
+                                    fontWeight: isLiquidated ? '600' : '400',
+                                    fontSize: isMobile ? '0.75rem' : '0.85rem',
+                                    transition: 'all 0.2s',
+                                    whiteSpace: 'nowrap'
+                                }}
+                            >
+                                Liquidados
+                            </button>
+                        </div>
+                        {!isMobile && (
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => setIsCreateModalOpen(true)}
+                                style={{ 
+                                    width: 'auto', 
+                                    whiteSpace: 'nowrap', 
+                                    padding: '0.5rem 1rem', 
+                                    fontSize: '1rem',
+                                    fontWeight: '600'
+                                }}
+                            >
+                                + Nuevo Préstamo
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Search / Filters - Part of Sticky Header */}
@@ -251,19 +337,43 @@ export default function PrestamosPage() {
                         flexWrap: 'wrap',
                         alignItems: 'center' // Changed from end to center since no labels
                     }}>
-                        <div style={{ width: isMobile ? '100%' : 'auto' }}>
+                        <div style={{ 
+                            width: isMobile ? '100%' : 'auto',
+                            position: 'relative',
+                            display: 'flex',
+                            alignItems: 'center'
+                        }}>
                             <input
                                 type="text"
                                 className="input"
-                                placeholder="DNI del Cliente..."
-                                value={documentNumber}
-                                onChange={(e) => setDocumentNumber(e.target.value)}
+                                placeholder="Nombre o DNI..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
                                 style={{
                                     width: '100%',
                                     maxWidth: isMobile ? 'none' : '200px',
-                                    backgroundColor: isMobile ? 'var(--bg-card)' : 'var(--bg-app)'
+                                    backgroundColor: isMobile ? 'var(--bg-card)' : 'var(--bg-app)',
+                                    paddingRight: '2.5rem'
                                 }}
                             />
+                            <button 
+                                type="submit" 
+                                style={{
+                                    position: 'absolute',
+                                    right: '5px',
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: 'var(--color-primary)',
+                                    padding: '5px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
+                                aria-label="Buscar"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            </button>
                         </div>
 
                         {(currentUser?.profile === 'ADMIN' || currentUser?.profile === 'OWNER') && (
@@ -293,7 +403,11 @@ export default function PrestamosPage() {
                                     <select
                                         className="input"
                                         value={selectedCollector}
-                                        onChange={(e) => setSelectedCollector(e.target.value)}
+                                        onChange={(e) => {
+                                            const newCollector = e.target.value;
+                                            setSelectedCollector(newCollector);
+                                            loadLoans(currentUser, selectedCompanyId, isLiquidated, newCollector);
+                                        }}
                                         style={{
                                             width: '100%',
                                             maxWidth: isMobile ? 'none' : '250px',
@@ -311,61 +425,56 @@ export default function PrestamosPage() {
                             </>
                         )}
 
-                        <div style={{ display: 'flex', gap: '0.5rem', width: isMobile ? '100%' : 'auto' }}>
-                            <button type="submit" className="btn btn-primary" style={{ flex: isMobile ? 1 : 'initial' }}>
-                                Buscar
-                            </button>
-                            {(documentNumber || selectedCollector) && (
+                        { (searchQuery || selectedCollector) && (
+                            <div style={{ width: isMobile ? '100%' : 'auto' }}>
                                 <button
                                     type="button"
                                     className="btn"
                                     onClick={() => {
-                                        setDocumentNumber('');
+                                        setSearchQuery('');
                                         setSelectedCollector('');
-                                        loadLoans(currentUser);
+                                        loadLoans(currentUser, selectedCompanyId, isLiquidated);
                                     }}
                                     style={{
                                         border: '1px solid var(--border-color)',
-                                        flex: isMobile ? 1 : 'initial',
-                                        backgroundColor: 'var(--bg-card)'
+                                        width: isMobile ? '100%' : 'initial',
+                                        backgroundColor: 'var(--bg-card)',
+                                        padding: '0.4rem 1rem'
                                     }}
                                 >
                                     Limpiar
                                 </button>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </form>
+                    
+                    <div style={{ padding: '0 0.5rem', marginTop: '0.5rem' }}>
+                        <button 
+                            onClick={() => setIsLegendOpen(true)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.4rem',
+                                background: 'none',
+                                border: 'none',
+                                padding: '0.3rem 0',
+                                cursor: 'pointer',
+                                color: 'var(--text-secondary)',
+                                fontSize: '0.85rem',
+                                fontWeight: '500'
+                            }}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--color-primary)' }}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            Ver estados de cobro
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            {/* Status Legend */}
-            <div style={{
-                display: 'flex',
-                gap: '1rem',
-                fontSize: '0.8rem',
-                color: 'var(--text-secondary)',
-                marginBottom: '1rem',
-                flexWrap: 'wrap',
-                backgroundColor: 'var(--bg-card)',
-                padding: '0.5rem 1rem',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-color)',
-                boxShadow: 'var(--shadow-sm)',
-                width: 'fit-content'
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <span>🟢</span> <span>Al día (0-1 días)</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <span>🟡</span> <span>Mora Leve (2-5 días)</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <span>🔴</span> <span>Mora Grave (6+ días)</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <span>🔵</span> <span>Liquidado</span>
-                </div>
-            </div>
+            <StatusLegendModal 
+                isOpen={isLegendOpen} 
+                onClose={() => setIsLegendOpen(false)} 
+            />
 
             {error && (
                 <div style={{

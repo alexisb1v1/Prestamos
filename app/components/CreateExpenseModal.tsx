@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { expenseService } from '@/lib/expenseService';
+import { createExpenseUseCase } from '@/app/features/expenses';
 import { authService } from '@/lib/auth';
 import styles from './CreateExpenseModal.module.css';
 
@@ -25,21 +25,29 @@ export default function CreateExpenseModal({ isOpen, onClose, onSuccess }: Creat
             const user = authService.getUser();
             if (!user) throw new Error('No user found');
 
-            await expenseService.create({
+            const result = await createExpenseUseCase.execute({
                 description,
                 amount: parseFloat(amount),
                 userId: user.id
             });
 
-            // Reset form
-            setDescription('');
-            setAmount('');
+            result.match(
+                () => {
+                    // Reset form
+                    setDescription('');
+                    setAmount('');
 
-            onSuccess();
-            onClose();
+                    onSuccess();
+                    onClose();
+                },
+                (err) => {
+                    console.error('Error creating expense:', err);
+                    alert(`Error al registrar el gasto: ${err.message}`);
+                }
+            );
         } catch (error) {
-            console.error('Error creating expense:', error);
-            alert('Error al registrar el gasto');
+            console.error('Unexpected error creating expense:', error);
+            alert('Error inesperado al registrar el gasto');
         } finally {
             setLoading(false);
         }

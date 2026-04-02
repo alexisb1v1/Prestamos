@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { userService } from '@/lib/userService';
+import { getAllUsersUseCase, getUserByIdUseCase, deleteUserUseCase, toggleDayStatusUseCase } from '@/app/features/users';
+import { User as UserModel } from '@/app/features/users/models/user.model';
 import { authService } from '@/lib/auth';
 import { companyService } from '@/lib/companyService';
 import { User, Company } from '@/lib/types';
@@ -10,7 +11,7 @@ import ConfirmModal from '@/app/components/ConfirmModal';
 import LoadingSpinner from '@/app/components/LoadingSpinner';
 
 export default function CobradoresPage() {
-    const [users, setUsers] = useState<User[]>([]);
+    const [users, setUsers] = useState<UserModel[]>([]);
     const [companies, setCompanies] = useState<Company[]>([]);
     const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
     const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -18,11 +19,11 @@ export default function CobradoresPage() {
     const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingUser, setEditingUser] = useState<User | null>(null);
+    const [editingUser, setEditingUser] = useState<UserModel | null>(null);
     const [confirmation, setConfirmation] = useState<{
         isOpen: boolean;
         action: 'DELETE' | 'TOGGLE_DAY' | null;
-        user: User | null;
+        user: UserModel | null;
     }>({ isOpen: false, action: null, user: null });
     const [isMobile, setIsMobile] = useState(false);
 
@@ -65,18 +66,19 @@ export default function CobradoresPage() {
 
     const loadUsers = async (companyId?: string) => {
         const compId = companyId !== undefined ? companyId : selectedCompanyId;
-        try {
-            setLoading(true);
-            // forceRefresh: true ensures we always get fresh data from API
-            // This is critical for the users list page to show updates immediately
-            const data = await userService.getAll(searchTerm, true, compId);
-            setUsers(data);
-        } catch (err) {
-            console.error('Error loading users:', err);
-            setError('Error al cargar la lista de usuarios.');
-        } finally {
-            setLoading(false);
-        }
+        setLoading(true);
+        setError('');
+
+        const result = await getAllUsersUseCase.execute(searchTerm, compId);
+        
+        result.match(
+            (data) => setUsers(data),
+            (err) => {
+                console.error('Error loading users:', err);
+                setError(err.message || 'Error al cargar la lista de usuarios.');
+            }
+        );
+        setLoading(false);
     };
 
     const handleSearch = (e: React.FormEvent) => {
@@ -84,18 +86,23 @@ export default function CobradoresPage() {
         loadUsers();
     };
 
-    const handleEdit = async (user: User) => {
-        try {
-            setLoading(true);
-            const freshUser = await userService.getById(user.id);
-            setEditingUser(freshUser);
-            setIsModalOpen(true);
-        } catch (err) {
-            console.error('Error fetching fresh user data:', err);
-            setError('Error al cargar los datos del usuario.');
-        } finally {
-            setLoading(false);
-        }
+    const handleEdit = async (user: UserModel) => {
+        setLoading(true);
+        setError('');
+
+        const result = await getUserByIdUseCase.execute(user.id);
+
+        result.match(
+            (freshUser) => {
+                setEditingUser(freshUser);
+                setIsModalOpen(true);
+            },
+            (err) => {
+                console.error('Error fetching fresh user data:', err);
+                setError(err.message || 'Error al cargar los datos del usuario.');
+            }
+        );
+        setLoading(false);
     };
 
     const handleCloseModal = () => {
@@ -110,30 +117,32 @@ export default function CobradoresPage() {
         }
     };
 
-    const handleToggleDayStatus = (user: User) => {
+    const handleToggleDayStatus = (user: UserModel) => {
         setConfirmation({ isOpen: true, action: 'TOGGLE_DAY', user });
     };
 
     const executeAction = async () => {
         if (!confirmation.user || !confirmation.action) return;
 
-        try {
-            setLoading(true);
+        setLoading(true);
+        setError('');
 
-            if (confirmation.action === 'DELETE') {
-                await userService.delete(confirmation.user.id);
-            } else if (confirmation.action === 'TOGGLE_DAY') {
-                await userService.toggleDayStatus(confirmation.user.id, !confirmation.user.isDayClosed);
+        const actionResult = confirmation.action === 'DELETE'
+            ? await deleteUserUseCase.execute(confirmation.user.id)
+            : await toggleDayStatusUseCase.execute(confirmation.user.id, !confirmation.user.isDayClosed);
+
+        actionResult.match(
+            () => {
+                loadUsers();
+                setConfirmation({ isOpen: false, action: null, user: null });
+            },
+            (err) => {
+                console.error('Error executing action:', err);
+                setError(err.message || 'Error al procesar la acción.');
+                setLoading(false);
+                setConfirmation({ isOpen: false, action: null, user: null });
             }
-
-            loadUsers();
-            setConfirmation({ isOpen: false, action: null, user: null });
-        } catch (err) {
-            console.error('Error executing action:', err);
-            setError('Error al procesar la acción.');
-            setLoading(false);
-            setConfirmation({ isOpen: false, action: null, user: null });
-        }
+        );
     };
 
     return (

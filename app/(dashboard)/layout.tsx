@@ -70,31 +70,26 @@ export default function DashboardLayout({
                     justifyContent: 'space-between',
                     padding: '0 1rem'
                 }}>
-                    <div style={{ width: '40px' }}></div> {/* Espaciador invisible para balancear y mantener centrado el título frente a menú hamburguesa */}
+                    <div style={{ width: '40px' }}></div> {/* Espacio para el botón de menú que es fixed */}
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ fontSize: '1.35rem', fontWeight: '800', letterSpacing: '-0.025em', lineHeight: '1.2' }}>
-                            Neo<span style={{ color: 'var(--color-primary)' }}>Cobros</span>
+                        <span style={{ fontSize: '1.25rem', fontWeight: '800', letterSpacing: '-0.025em', lineHeight: '1.1', color: '#1e293b' }}>
+                            Neo<span style={{ color: '#4f46e5' }}>Cobros</span>
                         </span>
-                        <span style={{ fontSize: '0.65rem', color: 'var(--color-primary)', fontWeight: 600, letterSpacing: '0.02em', marginTop: '0.15rem' }}>
-                            {format(new Date(), "d 'de' MMMM 'del' yyyy", { locale: es })}
+                        <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, letterSpacing: '0.02em', marginTop: '0.1rem', textTransform: 'uppercase' }}>
+                            {format(new Date(), "EEEE, d 'de' MMMM", { locale: es })}
                         </span>
                     </div>
                     <button 
-                        onClick={() => {
-                            authService.logout();
-                            router.push('/login');
-                        }}
-                        style={{
-                            width: '36px', height: '36px', borderRadius: '50%',
-                            background: '#fee2e2', border: 'none',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: 'pointer', color: '#ef4444'
-                        }}
-                        title="Cerrar Sesión"
+                         onClick={() => authService.logout()}
+                         style={{
+                             width: '38px', height: '38px', borderRadius: '0.8rem',
+                             background: '#fee2e2', border: 'none',
+                             display: 'flex', alignItems: 'center', justifyContent: 'center',
+                             cursor: 'pointer', color: '#ef4444'
+                         }}
+                         title="Cerrar Sesión"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" width="18" height="18">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9" />
-                        </svg>
+                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                     </button>
                 </div>
             )}

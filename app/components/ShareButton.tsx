@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import html2canvas from 'html2canvas';
-import { loanService } from '@/lib/loanService';
+import { getDashboardDataUseCase } from '@/app/features/loans';
 import { authService } from '@/lib/auth';
 import { formatMoney } from '@/lib/loanUtils';
 import styles from './ShareButton.module.css';
@@ -37,16 +37,23 @@ export default function ShareButton() {
                 userIdFilter = String(currentUser.id);
             }
 
-            const data = await loanService.getDashboardData(userIdFilter);
+            const result = await getDashboardDataUseCase.execute(userIdFilter);
 
             // 2. Update stats state to render the hidden card
-            setStats({
-                lent: data.totalLentToday || 0,
-                collected: data.collectedToday || 0,
-                activeClients: data.activeClients || 0,
-                user: currentUser.firstName || currentUser.username,
-                detailCollected: data.detailCollectedToday
-            });
+            result.match(
+                (data) => {
+                    setStats({
+                        lent: data.totalLentToday || 0,
+                        collected: data.collectedToday || 0,
+                        activeClients: data.activeClients || 0,
+                        user: currentUser.firstName || currentUser.username,
+                        detailCollected: data.detailCollectedToday
+                    });
+                },
+                (err) => {
+                    throw new Error(err.message);
+                }
+            );
 
             // Wait for render (short timeout to ensure DOM is updated with new stats)
             await new Promise(resolve => setTimeout(resolve, 100));

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { userService } from '@/lib/userService';
 import { personService } from '@/lib/personService';
-import { loanService } from '@/lib/loanService';
+import { createLoanUseCase } from '@/app/features/loans';
 import { authService } from '@/lib/auth';
 import { Person, User, CreatePersonRequest } from '@/lib/types';
 import { startOfDay } from 'date-fns';
@@ -160,21 +160,26 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
             return;
         }
 
-        try {
-            await loanService.create({
-                idPeople: Number(person.id),
-                amount: Number(amount),
-                userId: Number(currentUser.id),
-                address: address,
-                days: Number(days)
-            });
-            onSuccess();
-            onClose();
-        } catch (err: any) {
-            setError(err.message || 'Error al crear el préstamo.');
-        } finally {
-            setLoading(false);
-        }
+        const payload = {
+            idPeople: String(person.id),
+            amount: Number(amount),
+            userId: String(currentUser.id),
+            address: address,
+            days: Number(days)
+        };
+
+        const result = await createLoanUseCase.execute(payload);
+        
+        result.match(
+            () => {
+                onSuccess();
+                onClose();
+            },
+            (err) => {
+                setError(err.message || 'Error al crear el préstamo.');
+            }
+        );
+        setLoading(false);
     };
 
     const calculateLoan = () => {
