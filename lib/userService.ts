@@ -97,6 +97,10 @@ export const userService = {
     /**
      * Toggle Day Closed status for a user
      */
+    async toggleDayStatus(id: string, isDayClosed: boolean): Promise<void> {
+        return api.patch<void>(`/users/${id}/toggle-day-status`, { isDayClosed });
+    },
+
     /**
      * Update collection order for the current user
      */

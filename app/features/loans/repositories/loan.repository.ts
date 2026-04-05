@@ -16,6 +16,7 @@ export abstract class LoanRepository {
     abstract reassign(loanId: string, newUserId: string): ResultAsync<void, DomainError>;
     abstract delete(loanId: string): ResultAsync<void, DomainError>;
     abstract deleteInstallment(installmentId: string): ResultAsync<void, DomainError>;
+    abstract getDashboardData(userId?: string, companyId?: string): ResultAsync<DashboardData, DomainError>;
     abstract getLoanReport(startDate: string, endDate: string, companyId?: string, userId?: string): ResultAsync<ReportData, DomainError>;
     abstract updateInfo(loanId: string, info: UpdateLoanInfoRequestDto): ResultAsync<void, DomainError>;
 }
