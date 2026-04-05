@@ -8,10 +8,10 @@ export const metadata: Metadata = {
   applicationName: 'NeoCobros',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'default',
+    statusBarStyle: 'black-translucent',
     title: 'NeoCobros',
   },
-  manifest: '/manifest.json',
+  manifest: '/manifest.json?v=2',
   formatDetection: {
     telephone: false,
   },

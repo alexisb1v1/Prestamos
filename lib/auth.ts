@@ -44,17 +44,26 @@ export const authService = {
     },
 
     /**
-     * Logout user and clear stored credentials
+     * Logout user and clear all session data
      */
     logout() {
+        // 1. Clear Auth Cookie
         Cookies.remove(TOKEN_KEY);
-        localStorage.removeItem(USER_KEY);
         
-        // Clear fingerprint from any possible storage
-        sessionStorage.removeItem('fingerprint');
-        localStorage.removeItem('fingerprint');
+        // 2. Deep clean LocalStorage
+        if (typeof window !== 'undefined') {
+            const keysToKeep = ['remembered_username'];
+            Object.keys(localStorage).forEach(key => {
+                if (!keysToKeep.includes(key)) {
+                    localStorage.removeItem(key);
+                }
+            });
+            
+            // 3. Clear all SessionStorage
+            sessionStorage.clear();
+        }
         
-        // Clear user cache to prevent stale data
+        // 4. Clear memory cache
         userCache.clear();
     },
 
