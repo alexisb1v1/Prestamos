@@ -222,8 +222,8 @@ export default function PrestamosPage() {
                 top: isMobile ? '4rem' : 'auto', // Stick below the app header (4rem)
                 zIndex: isMobile ? 30 : 'auto',
                 backgroundColor: isMobile ? 'var(--bg-app)' : 'transparent',
-                margin: isMobile ? '0 -2rem 1rem -2rem' : '0 0 2rem 0', // Removed negative margin-top
-                padding: isMobile ? '0.75rem 2rem 1rem 2rem' : '0', // More compact top padding
+                margin: isMobile ? '0 -1rem 1rem -1rem' : '0 0 2rem 0', // Changed from -2rem to -1rem to match layout padding
+                padding: isMobile ? '0.75rem 1rem 1rem 1rem' : '0', // Changed from 2rem to 1rem
                 borderBottom: isMobile ? '1px solid var(--border-color)' : 'none',
                 boxShadow: isMobile ? 'var(--shadow-md)' : 'none',
                 transition: 'all 0.3s ease'

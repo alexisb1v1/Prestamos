@@ -508,6 +508,7 @@ export default function DashboardPage() {
                     onPay={handleOpenPayment}
                     onDetails={handleOpenDetails}
                     onUpdateInfo={handleOpenUpdateInfo}
+                    shareRef={shareRef}
                     showDragHandle={!searchTermLocal.trim()}
                     dragHandleProps={{ ...attributes, ...listeners }}
                     isDragging={isDragging}
