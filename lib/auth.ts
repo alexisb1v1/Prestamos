@@ -2,6 +2,7 @@ import Cookies from 'js-cookie';
 import { api } from './api';
 import { LoginResponse, User } from './types';
 import { userCache } from './userCache';
+import { saveCollectionOrder } from './collectionOrderStorage';
 
 /**
  * Authentication Service
@@ -33,6 +34,12 @@ export const authService = {
         // Store user info in localStorage (for UI display)
         if (response.user) {
             localStorage.setItem(USER_KEY, JSON.stringify(response.user));
+            
+            // 💡 Proactive Init: Initialize collection order cache from backend data
+            if (response.user.collectionOrder && response.user.collectionOrder.length > 0) {
+                saveCollectionOrder(response.user.id, response.user.collectionOrder);
+            }
+
             // Ensure fingerprint is in the correct storage for API headers
             const storage = this.getStorage();
             if (storage) {

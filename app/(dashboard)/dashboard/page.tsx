@@ -168,6 +168,8 @@ export default function DashboardPage() {
 
     const loadDashboard = async (userIdFilter?: string, companyId?: string) => {
         const compId = companyId !== undefined ? companyId : selectedCompanyId;
+        const freshUser = authService.getUser(); // Obtener usuario fresco para evitar carreras de estado
+        
         try {
             setLoading(true);
             const result = await getDashboardDataUseCase.execute(userIdFilter, compId);
@@ -178,8 +180,8 @@ export default function DashboardPage() {
                     // Apply saved order: Priority 1: LocalStorage, Priority 2: User profile (Backend)
                     let savedOrder = getCollectionOrder(userIdFilter || 'all');
                     
-                    if (!savedOrder && currentUser?.collectionOrder) {
-                        savedOrder = currentUser.collectionOrder;
+                    if (!savedOrder && freshUser?.collectionOrder) {
+                        savedOrder = freshUser.collectionOrder;
                     }
 
                     const ordered = applySavedOrder<Loan>(data.pendingLoans, savedOrder);
