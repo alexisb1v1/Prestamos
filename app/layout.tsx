@@ -3,13 +3,13 @@ import './globals.css';
 import InstallPrompt from './components/InstallPrompt';
 
 export const metadata: Metadata = {
-  title: 'Prestamos App',
-  description: 'Sistema de Gestion de Prestamos',
-  applicationName: 'Prestamos App',
+  title: 'NeoCobros',
+  description: 'Sistema de Gestión de Recaudación y Préstamos',
+  applicationName: 'NeoCobros',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Prestamos App',
+    title: 'NeoCobros',
   },
   manifest: '/manifest.json',
   formatDetection: {
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#3b82f6',
+  themeColor: '#4f46e5',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,

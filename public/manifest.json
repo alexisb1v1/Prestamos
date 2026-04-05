@@ -1,12 +1,12 @@
 {
-    "name": "Prestamos App",
-    "short_name": "Prestamos",
-    "description": "Sistema de Gestión de Préstamos",
+    "name": "NeoCobros",
+    "short_name": "NeoCobros",
+    "description": "Sistema de Gestión de Recaudación y Préstamos",
     "start_url": "/login",
     "scope": "/",
     "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#3b82f6",
+    "background_color": "#4f46e5",
+    "theme_color": "#4f46e5",
     "icons": [
         {
             "src": "/icons/icon-192x192.png",
