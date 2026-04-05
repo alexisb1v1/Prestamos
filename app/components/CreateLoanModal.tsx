@@ -148,7 +148,10 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
     };
 
     const handleCreateLoan = async () => {
-        if (!person || !currentUser || !amount) return;
+        if (!person || !currentUser || !amount || !phone) {
+            setError('Por favor complete todos los campos obligatorios: Monto, Dirección y Teléfono.');
+            return;
+        }
 
         if (Number(days) < 24) {
             setError('La cantidad mínima de días es 24.');
@@ -224,7 +227,15 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
                                 <option value="DNI">DNI</option>
                                 <option value="CE">CE</option>
                             </select>
-                            <input type="text" className="input" placeholder={`Buscar por ${docType}...`} value={docNumber} onChange={e => setDocNumber(e.target.value)} style={{ flex: 1, backgroundColor: 'var(--bg-app)' }} />
+                            <input 
+                                type="text" 
+                                className="input" 
+                                placeholder={`Buscar por ${docType}...`} 
+                                value={docNumber} 
+                                onChange={e => setDocNumber(e.target.value)} 
+                                style={{ flex: 1, backgroundColor: 'var(--bg-app)' }} 
+                                inputMode="numeric"
+                            />
                             <button className="btn btn-primary" onClick={handleSearchPerson} disabled={loading || !docNumber}>
                                 {loading ? '...' : (
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" width="20" height="20">
@@ -290,19 +301,28 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
                                 <input type="text" className="input" value={address} onChange={e => setAddress(e.target.value)} placeholder="Agrega aquí la dirección" />
                             </div>
                             <div>
-                                <label className="label">Teléfono / WhatsApp</label>
+                                <label className="label">Teléfono / WhatsApp <span style={{ color: 'var(--color-danger)' }}>*</span></label>
                                 <input 
                                     type="tel" 
                                     className="input" 
                                     value={phone} 
                                     onChange={e => setPhone(e.target.value)} 
                                     placeholder="Ej: 987654321" 
-                                    inputMode="tel"
+                                    inputMode="numeric"
                                 />
                             </div>
                             <div>
                                 <label className="label">Días del Préstamo</label>
-                                <input type="number" className={`input ${amount !== '' && Number(amount) < 1000 ? styles.disabledInput : ''}`} value={days} onChange={e => setDays(Number(e.target.value))} min={24} placeholder="24" disabled={amount !== '' && Number(amount) < 1000} />
+                                <input 
+                                    type="number" 
+                                    className={`input ${amount !== '' && Number(amount) < 1000 ? styles.disabledInput : ''}`} 
+                                    value={days} 
+                                    onChange={e => setDays(Number(e.target.value))} 
+                                    min={24} 
+                                    placeholder="24" 
+                                    disabled={amount !== '' && Number(amount) < 1000} 
+                                    inputMode="numeric"
+                                />
                             </div>
                             {/* Resumen */}
                             <div style={{ padding: '1rem', backgroundColor: 'var(--bg-app)', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -313,7 +333,7 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', fontWeight: 'bold' }}><span>Total a Pagar:</span><span style={{ color: 'var(--color-primary)' }}>S/ {total.toFixed(2)}</span></div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginTop: '0.25rem' }}><span style={{ color: 'var(--text-secondary)' }}>Cuota diaria (aprox):</span><span style={{ fontWeight: 600 }}>S/ {fee.toFixed(2)}</span></div>
                             </div>
-                            <button className="btn btn-primary" style={{ width: '100%', padding: '1rem', fontSize: '1rem', fontWeight: 'bold', marginTop: '0.5rem' }} onClick={handleCreateLoan} disabled={loading || !amount || !address}>
+                            <button className="btn btn-primary" style={{ width: '100%', padding: '1rem', fontSize: '1rem', fontWeight: 'bold', marginTop: '0.5rem' }} onClick={handleCreateLoan} disabled={loading || !amount || !address || !phone}>
                                 {loading ? 'Procesando...' : 'Crear Préstamo'}
                             </button>
                         </div>
