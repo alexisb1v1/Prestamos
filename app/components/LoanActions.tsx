@@ -58,7 +58,7 @@ export default function LoanActions({
     }, [activeMenu]);
 
     const status = getLoanStatus(loan, today);
-    const { canDeleteLoan, canReassignLoan } = usePermissions();
+    const { canDeleteLoan, canReassignLoan, canRenewLoan } = usePermissions();
 
     const isPaid = loan.status === 'Liquidado' || (loan as any).remainingAmount <= 0;
 
@@ -70,7 +70,7 @@ export default function LoanActions({
 
         return (
             <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center', position: 'relative' }}>
-                {loan.status === 'Liquidado' ? (
+                {loan.status === 'Liquidado' && canRenewLoan ? (
                     <button
                         onClick={() => onRenew(loan)}
                         title="Renovar Préstamo"
@@ -270,7 +270,7 @@ export default function LoanActions({
         }}>
             {!minimal && (
                 <>
-                    {loan.status === 'Liquidado' ? (
+                    {loan.status === 'Liquidado' && canRenewLoan ? (
                         <button
                             onClick={() => onRenew(loan)}
                             style={{

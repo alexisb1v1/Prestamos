@@ -38,6 +38,7 @@ export interface UserPermissions {
     canViewReports: boolean;
     canViewExpenses: boolean;
     canCreateLoan: boolean;
+    canRenewLoan: boolean;
     canCreateExpense: boolean;
 }
 

@@ -14,6 +14,7 @@ export const getPermissions = (user: User | null): UserPermissions => {
         canDeleteLoan: profile === 'ADMIN' || profile === 'OWNER',
         canReassignLoan: profile === 'ADMIN' || profile === 'OWNER',
         canCreateLoan: true, // Everyone can currently create loans
+        canRenewLoan: true, // Everyone can currently renew loans
 
         // Payment/Installment Management
         canDeletePayment: (paymentDate: string, registeredByUserId?: string) => {

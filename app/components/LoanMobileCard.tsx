@@ -145,26 +145,49 @@ export default function LoanMobileCard({
                 borderTop: '1px solid var(--border-color)',
                 backgroundColor: 'var(--bg-app)'
             }}>
-                <button 
-                    onClick={() => onPay(loan)}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.5rem',
-                        padding: '0.85rem 0',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        borderRight: '1px solid var(--border-color)',
-                        color: 'var(--color-success)',
-                        fontWeight: '600',
-                        fontSize: '0.9rem',
-                        cursor: 'pointer'
-                    }}
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h0M2 9.5h20"/></svg>
-                    Pagar
-                </button>
+                {loan.status === 'Liquidado' ? (
+                    <button 
+                        onClick={() => onRenew(loan)}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem',
+                            padding: '0.85rem 0',
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            borderRight: '1px solid var(--border-color)',
+                            color: 'var(--color-success)',
+                            fontWeight: '600',
+                            fontSize: '0.9rem',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+                        Renovar
+                    </button>
+                ) : (
+                    <button 
+                        onClick={() => onPay(loan)}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem',
+                            padding: '0.85rem 0',
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            borderRight: '1px solid var(--border-color)',
+                            color: 'var(--color-success)',
+                            fontWeight: '600',
+                            fontSize: '0.9rem',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h0M2 9.5h20"/></svg>
+                        Pagar
+                    </button>
+                )}
                 <button 
                     onClick={() => onDetails(loan)}
                     style={{
