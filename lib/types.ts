@@ -4,7 +4,8 @@ export interface Person {
     documentNumber: string;
     firstName: string;
     lastName: string;
-    birthday: string;
+    birthday?: string | null;
+    phone?: string;
 }
 
 export interface User {
@@ -21,7 +22,8 @@ export interface User {
     documentNumber?: string;
     firstName?: string;
     lastName?: string;
-    birthday?: string;
+    birthday?: string | null;
+    phone?: string;
     person?: Person;
     permissions?: UserPermissions;
     collectionOrder?: string[];
@@ -77,6 +79,7 @@ export interface Loan {
     paidToday: number;
     inIntervalPayment: number;
     remainingAmount?: number;
+    phone?: string;
     personId?: string;
     collectorId?: string;
     companyId?: string;
@@ -125,6 +128,7 @@ export interface CreateUserRequest {
     firstName: string;
     lastName: string;
     birthday?: string | null;
+    phone?: string;
     idCompany?: string; // Optional because only Owner sends it explicitely, others might be handled differently or required based on logic
 }
 
@@ -142,6 +146,7 @@ export interface UpdateUserRequest {
     firstName: string;
     lastName: string;
     birthday?: string | null;
+    phone?: string;
     idCompany?: string;
 }
 
@@ -170,7 +175,8 @@ export interface CreatePersonRequest {
     documentNumber: string;
     firstName: string;
     lastName: string;
-    birthday: string;
+    birthday?: string | null;
+    phone?: string;
 }
 
 export interface CreatePersonResponse {

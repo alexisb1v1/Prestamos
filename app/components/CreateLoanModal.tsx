@@ -34,12 +34,13 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
         documentNumber: '',
         firstName: '',
         lastName: '',
-        birthday: ''
+        birthday: null
     });
 
     // Step 2: Loan Details State
     const [amount, setAmount] = useState<number | ''>('');
     const [address, setAddress] = useState('');
+    const [phone, setPhone] = useState('');
     const [days, setDays] = useState<number>(24);
 
     // Calculations
@@ -71,6 +72,7 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
                 });
                 setAmount(loanToRenew.amount);
                 setAddress(loanToRenew.address);
+                setPhone(loanToRenew.phone || '');
                 setDays(24);
             } else {
                 resetState();
@@ -90,10 +92,11 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
             documentNumber: '',
             firstName: '',
             lastName: '',
-            birthday: ''
+            birthday: null
         });
         setAmount('');
         setAddress('');
+        setPhone('');
         setDays(24);
     };
 
@@ -161,10 +164,11 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
         }
 
         const payload = {
-            idPeople: String(person.id),
+            idPeople: Number(person.id),
             amount: Number(amount),
-            userId: String(currentUser.id),
+            userId: Number(currentUser.id),
             address: address,
+            phone: phone,
             days: Number(days)
         };
 
@@ -256,7 +260,6 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
                             </div>
                             <div><label className="label" style={{ fontSize: '0.75rem' }}>Nombres</label><input className="input" value={newPerson.firstName} onChange={e => setNewPerson(prev => ({ ...prev, firstName: e.target.value }))} autoFocus /></div>
                             <div><label className="label" style={{ fontSize: '0.75rem' }}>Apellidos</label><input className="input" value={newPerson.lastName} onChange={e => setNewPerson(prev => ({ ...prev, lastName: e.target.value }))} /></div>
-                            <div><label className="label" style={{ fontSize: '0.75rem' }}>F. Nacimiento <span style={{fontWeight: 'normal', color: 'var(--text-secondary)'}}>(opcional)</span></label><input type="date" className="input" value={newPerson.birthday} onChange={e => setNewPerson(prev => ({ ...prev, birthday: e.target.value }))} /></div>
                             <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
                                 <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleCreatePerson} disabled={loading || !newPerson.firstName || !newPerson.lastName}>{loading ? 'Guardando...' : 'Guardar y Continuar'}</button>
                                 <button className="btn" style={{ flex: 1, border: '1px solid var(--border-color)', backgroundColor: 'transparent' }} onClick={() => setIsRegisteringPerson(false)} disabled={loading}>Cancelar</button>
@@ -269,7 +272,15 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', animation: 'fadeIn 0.3s ease-in-out', marginTop: '0.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
                             <div>
                                 <label className="label">Monto (S/)</label>
-                                <input type="number" className="input" value={amount} onChange={e => setAmount(Number(e.target.value))} placeholder="0.00" autoFocus />
+                                <input 
+                                    type="number" 
+                                    className="input" 
+                                    value={amount} 
+                                    onChange={e => setAmount(Number(e.target.value))} 
+                                    placeholder="0.00" 
+                                    inputMode="decimal"
+                                    autoFocus 
+                                />
                                 <p style={{ fontSize: '0.75rem', marginTop: '0.25rem', color: (amount === '' || Number(amount) < 1000) ? 'var(--color-primary)' : 'var(--text-secondary)', fontWeight: '600', minHeight: '1.2em' }}>
                                     {(amount === '' || Number(amount) < 1000) ? 'ℹ️ Montos menores a S/ 1,000 tienen un plazo fijo de 24 días.' : '✅ Monto mayor o igual a S/ 1,000 permite plazos personalizados.'}
                                 </p>
@@ -277,6 +288,17 @@ export default function CreateLoanModal({ isOpen, onClose, onSuccess, loanToRene
                             <div>
                                 <label className="label">Dirección de Cobranza</label>
                                 <input type="text" className="input" value={address} onChange={e => setAddress(e.target.value)} placeholder="Agrega aquí la dirección" />
+                            </div>
+                            <div>
+                                <label className="label">Teléfono / WhatsApp</label>
+                                <input 
+                                    type="tel" 
+                                    className="input" 
+                                    value={phone} 
+                                    onChange={e => setPhone(e.target.value)} 
+                                    placeholder="Ej: 987654321" 
+                                    inputMode="tel"
+                                />
                             </div>
                             <div>
                                 <label className="label">Días del Préstamo</label>

@@ -150,6 +150,7 @@ export default function CreatePaymentModal({ isOpen, onClose, onSuccess, loan }:
                             }}
                             step="1"
                             placeholder="0"
+                            inputMode="numeric"
                             autoFocus
                         />
                         <div className={styles.currencyIndicator}>

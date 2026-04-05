@@ -1,7 +1,7 @@
 import { ResultAsync } from "neverthrow";
 import { LoanRepository } from "../repositories/loan.repository";
 import { Loan } from "../models/loan.model";
-import { CreateLoanRequestDto } from "../dto/loan.dto";
+import { CreateLoanRequestDto, UpdateLoanInfoRequestDto } from "../dto/loan.dto";
 import { DomainError } from "@/lib/domain-error";
 
 export class CreateLoanUseCase {
@@ -33,5 +33,13 @@ export class DeleteInstallmentUseCase {
 
     execute(installmentId: string): ResultAsync<void, DomainError> {
         return this.repository.deleteInstallment(installmentId);
+    }
+}
+
+export class UpdateLoanInfoUseCase {
+    constructor(private readonly repository: LoanRepository) {}
+
+    execute(loanId: string, info: UpdateLoanInfoRequestDto): ResultAsync<void, DomainError> {
+        return this.repository.updateInfo(loanId, info);
     }
 }

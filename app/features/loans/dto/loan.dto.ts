@@ -15,17 +15,24 @@ export interface LoanDto {
     paidToday: number;
     inIntervalPayment: number;
     remainingAmount?: number;
+    phone?: string;
     personId?: string;
     collectorId?: string;
     companyId?: string;
 }
 
 export interface CreateLoanRequestDto {
-    idPeople: string;
+    idPeople: number;
     amount: number;
-    userId: string;
+    userId: number;
     address: string;
+    phone: string;
     days: number;
+}
+
+export interface UpdateLoanInfoRequestDto {
+    phone: string;
+    address: string;
 }
 
 export interface InstallmentDetailDto {

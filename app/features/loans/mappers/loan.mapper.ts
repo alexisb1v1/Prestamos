@@ -19,6 +19,10 @@ import {
 
 export class LoanMapper {
     static toDomain(dto: LoanDto): Loan {
+        if (!dto) {
+            // Retornar un objeto mínimo válido para evitar errores de lectura de propiedades
+            return {} as Loan;
+        }
         return {
             id: dto.id,
             startDate: dto.startDate,
@@ -36,6 +40,7 @@ export class LoanMapper {
             paidToday: dto.paidToday,
             inIntervalPayment: dto.inIntervalPayment,
             remainingAmount: dto.remainingAmount,
+            phone: dto.phone,
             personId: dto.personId,
             collectorId: dto.collectorId,
             companyId: dto.companyId,
@@ -112,6 +117,7 @@ export class LoanMapper {
             amount: domain.amount,
             userId: domain.userId,
             address: domain.address,
+            phone: domain.phone,
             days: domain.days,
         };
     }

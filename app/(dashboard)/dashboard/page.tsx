@@ -21,6 +21,7 @@ import AnimatedNumber from '../../components/AnimatedNumber';
 import LoanMobileCard from '../../components/LoanMobileCard';
 import CollectionRouteCard from '../../components/CollectionRouteCard';
 import DashboardFilterModal from '../../components/DashboardFilterModal';
+import UpdateLoanInfoModal from '../../components/UpdateLoanInfoModal';
 import {
     DndContext,
     closestCenter,
@@ -104,9 +105,11 @@ export default function DashboardPage() {
     const [selectedLoanForRenewal, setSelectedLoanForRenewal] = useState<Loan | null>(null);
     const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
     const [selectedLoanForReassign, setSelectedLoanForReassign] = useState<Loan | null>(null);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedLoanForDelete, setSelectedLoanForDelete] = useState<Loan | null>(null);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+    const [isUpdateInfoModalOpen, setIsUpdateInfoModalOpen] = useState(false);
+    const [selectedLoanForUpdateInfo, setSelectedLoanForUpdateInfo] = useState<Loan | null>(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
     // Debounce timer for saving order to backend
     const saveOrderTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -146,6 +149,15 @@ export default function DashboardPage() {
     const handleOpenReassign = (loan: Loan) => {
         setSelectedLoanForReassign(loan);
         setIsReassignModalOpen(true);
+    };
+
+    const handleOpenUpdateInfo = (loan: Loan) => {
+        setSelectedLoanForUpdateInfo(loan);
+        setIsUpdateInfoModalOpen(true);
+    };
+
+    const handleUpdateInfoSuccess = () => {
+        loadDashboard(selectedUserId, selectedCompanyId);
     };
 
     const handleOpenDelete = (loan: Loan) => {
@@ -495,6 +507,7 @@ export default function DashboardPage() {
                     currentUser={currentUser}
                     onPay={handleOpenPayment}
                     onDetails={handleOpenDetails}
+                    onUpdateInfo={handleOpenUpdateInfo}
                     showDragHandle={!searchTermLocal.trim()}
                     dragHandleProps={{ ...attributes, ...listeners }}
                     isDragging={isDragging}
@@ -900,6 +913,17 @@ export default function DashboardPage() {
                     
                     {/* Componente invisible para generar imágenes de compartir */}
                     <LoanShareGenerator ref={shareRef} />
+
+                    {isUpdateInfoModalOpen && selectedLoanForUpdateInfo && (
+                        <UpdateLoanInfoModal
+                            loan={selectedLoanForUpdateInfo}
+                            onClose={() => {
+                                setIsUpdateInfoModalOpen(false);
+                                setSelectedLoanForUpdateInfo(null);
+                            }}
+                            onSuccess={handleUpdateInfoSuccess}
+                        />
+                    )}
                 </>
             )}
         </div>

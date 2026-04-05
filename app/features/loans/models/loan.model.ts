@@ -15,16 +15,18 @@ export interface Loan {
     paidToday: number;
     inIntervalPayment: number;
     remainingAmount?: number;
+    phone?: string;
     personId?: string;
     collectorId?: string;
     companyId?: string;
 }
 
 export interface CreateLoan {
-    idPeople: string;
+    idPeople: number;
     amount: number;
-    userId: string;
+    userId: number;
     address: string;
+    phone: string;
     days: number;
 }
 
@@ -46,6 +48,7 @@ export interface LoanDetails {
 export interface DashboardLoan extends Loan {
     remainingAmount: number;
     paidToday: number;
+    phone?: string;
 }
 
 export interface DashboardData {

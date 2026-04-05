@@ -103,11 +103,6 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
         return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
     }, []);
 
-    // const formatDatePE = useCallback((dateStr: string) => {
-    //     if (!dateStr) return '-';
-    //     return format(parseDateSafe(dateStr), 'dd/MM/yyyy');
-    // }, [parseDateSafe]);
-
     const formatDateTimePE = useCallback((dateStr: string) => {
         if (!dateStr) return '-';
         return format(parseDateTimeSafe(dateStr), 'dd/MM/yyyy HH:mm');
@@ -196,188 +191,138 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                 alignItems: 'center',
                 justifyContent: 'center',
                 zIndex: 1000,
-                padding: '1rem'
+                padding: '0.5rem'
             }}>
                 <div className="card" style={{
                     width: '100%',
-                    maxWidth: '600px',
-                    maxHeight: '95vh',
+                    maxWidth: '650px',
+                    maxHeight: '94vh',
                     overflow: 'hidden',
                     position: 'relative',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '0.6rem',
-                    padding: '1rem'
+                    gap: '0.35rem',
+                    padding: '0.85rem'
                 }}>
                     {/* Modal Header */}
                     <div style={{ 
                         display: 'flex', 
                         justifyContent: 'space-between', 
                         alignItems: 'center', 
-                        marginBottom: '0.4rem',
+                        marginBottom: '0.15rem',
                         padding: '0 0.25rem'
                     }}>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>Detalle de Pagos</h2>
-                        <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+                        <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Detalle de Pagos</h2>
+                        <div style={{ display: 'flex', gap: '0.2rem', alignItems: 'center' }}>
                             <button
                                 onClick={handleShare}
                                 disabled={isSharing}
                                 title="Compartir Ficha"
                                 style={{
-                                    padding: '0.5rem',
+                                    padding: '0.4rem',
                                     border: 'none',
                                     backgroundColor: 'transparent',
                                     cursor: isSharing ? 'wait' : 'pointer',
                                     color: 'var(--text-secondary)',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    justifyContent: 'center',
-                                    transition: 'all 0.2s'
+                                    justifyContent: 'center'
                                 }}
                             >
                                 {isSharing ? (
-                                    <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" strokeWidth="2">
+                                    <svg viewBox="0 0 24 24" fill="none" width="18" height="18" stroke="currentColor" strokeWidth="2">
                                         <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="30" strokeLinecap="round" opacity="0.6">
                                             <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite" />
                                         </circle>
                                     </svg>
                                 ) : (
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
                                 )}
                             </button>
-                            <button 
-                                onClick={onClose} 
-                                style={{ 
-                                    background: 'none', 
-                                    border: 'none', 
-                                    padding: '0.5rem',
-                                    cursor: 'pointer',
-                                    color: 'var(--text-secondary)',
-                                    display: 'flex',
-                                    alignItems: 'center'
-                                }}
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            <button onClick={onClose} style={{ background: 'none', border: 'none', padding: '0.4rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                             </button>
                         </div>
                     </div>
 
-                    {/* Premium Summary Card */}
+                    {/* Compact Summary Card */}
                     <div style={{
-                        padding: '0.85rem 1rem',
+                        padding: '0.5rem 0.85rem',
                         background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-                        borderRadius: '1rem',
+                        borderRadius: '0.75rem',
                         color: 'white',
-                        boxShadow: '0 8px 20px -5px rgba(99, 102, 241, 0.3)',
+                        boxShadow: '0 4px 12px -2px rgba(99, 102, 241, 0.2)',
                         position: 'relative',
                         overflow: 'hidden',
-                        marginBottom: '0.5rem'
+                        marginBottom: '0.1rem',
+                        flexShrink: 0
                     }}>
-                        {/* Decorative Circle */}
-                        <div style={{
-                            position: 'absolute',
-                            top: '-20%',
-                            right: '-10%',
-                            width: '150px',
-                            height: '150px',
-                            background: 'rgba(255, 255, 255, 0.1)',
-                            borderRadius: '50%',
-                            zIndex: 0
-                        }} />
-
                         <div style={{ position: 'relative', zIndex: 1 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div>
-                                    <div style={{ fontSize: '0.65rem', fontWeight: 700, opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Cliente</div>
-                                    <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0', textTransform: 'capitalize' }}>
+                                    <div style={{ fontSize: '0.55rem', fontWeight: 700, opacity: 0.8, textTransform: 'uppercase' }}>Cliente</div>
+                                    <h3 style={{ fontSize: '0.95rem', fontWeight: 800, margin: '0', textTransform: 'capitalize' }}>
                                         {loan.clientName?.toLowerCase() || 'SIN NOMBRE'}
                                     </h3>
-                                    <div style={{ fontSize: '0.75rem', opacity: 0.9, fontWeight: 500 }}>ID: #{loan.id}</div>
                                 </div>
                                 <div style={{ 
                                     backgroundColor: 'rgba(255, 255, 255, 0.2)', 
-                                    padding: '0.35rem 0.75rem', 
+                                    padding: '0.25rem 0.6rem', 
                                     borderRadius: '2rem',
-                                    fontSize: '0.7rem',
+                                    fontSize: '0.65rem',
                                     fontWeight: 700,
-                                    backdropFilter: 'blur(10px)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.4rem',
                                     border: '1px solid rgba(255, 255, 255, 0.3)'
                                 }}>
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                                     {formatDateUTC(details?.startDate || loan.startDate)} - {formatDateUTC(details?.endDate || loan.endDate)}
                                 </div>
                             </div>
 
-                            <div style={{ 
-                                height: '1px', 
-                                background: 'rgba(255, 255, 255, 0.2)', 
-                                margin: '0.6rem 0' 
-                            }} />
+                            <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.15)', margin: '0.4rem 0' }} />
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <div style={{ 
-                                        width: '32px', 
-                                        height: '32px', 
-                                        backgroundColor: 'rgba(255, 255, 255, 0.2)', 
-                                        borderRadius: '8px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <div style={{ width: '26px', height: '26px', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
                                     </div>
                                     <div>
-                                        <div style={{ fontSize: '0.6rem', opacity: 0.8, fontWeight: 600 }}>Total</div>
-                                        <div style={{ fontSize: '0.9rem', fontWeight: 800 }}>{formatMoney(loan.amount + (loan.interest || 0))}</div>
+                                        <div style={{ fontSize: '0.5rem', opacity: 0.8, fontWeight: 600 }}>Total</div>
+                                        <div style={{ fontSize: '0.8rem', fontWeight: 800 }}>{formatMoney(loan.amount + (loan.interest || 0))}</div>
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <div style={{ 
-                                        width: '32px', 
-                                        height: '32px', 
-                                        backgroundColor: 'rgba(255, 255, 255, 0.2)', 
-                                        borderRadius: '8px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <div style={{ width: '26px', height: '26px', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                                     </div>
                                     <div>
-                                        <div style={{ fontSize: '0.6rem', opacity: 0.8, fontWeight: 600 }}>Cuota</div>
-                                        <div style={{ fontSize: '0.9rem', fontWeight: 800 }}>{formatMoney(loan.fee || 0)}</div>
+                                        <div style={{ fontSize: '0.5rem', opacity: 0.8, fontWeight: 600 }}>Cuota</div>
+                                        <div style={{ fontSize: '0.8rem', fontWeight: 800 }}>{formatMoney(loan.fee || 0)}</div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Tabs Segmented Picker */}
+                    {/* Compact Tabs */}
                     <div style={{
                         display: 'flex',
-                        gap: '4px',
-                        padding: '4px',
+                        gap: '2px',
+                        padding: '3px',
                         backgroundColor: 'var(--bg-app)',
-                        borderRadius: '0.85rem',
+                        borderRadius: '0.6rem',
                         border: '1px solid var(--border-color)',
                         flexShrink: 0,
-                        marginBottom: '0.5rem'
+                        marginBottom: '0.1rem'
                     }}>
                         <button
                             style={{
                                 flex: 1,
-                                padding: '0.6rem',
-                                borderRadius: '0.65rem',
+                                padding: '0.45rem',
+                                borderRadius: '0.5rem',
                                 border: 'none',
                                 cursor: 'pointer',
-                                fontSize: '0.9rem',
+                                fontSize: '0.85rem',
                                 fontWeight: '700',
                                 backgroundColor: activeTab === 'calendar' ? 'white' : 'transparent',
-                                boxShadow: activeTab === 'calendar' ? '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)' : 'none',
                                 color: activeTab === 'calendar' ? '#4f46e5' : 'var(--text-secondary)',
                                 transition: 'all 0.2s'
                             }}
@@ -388,14 +333,13 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                         <button
                             style={{
                                 flex: 1,
-                                padding: '0.6rem',
-                                borderRadius: '0.65rem',
+                                padding: '0.45rem',
+                                borderRadius: '0.5rem',
                                 border: 'none',
                                 cursor: 'pointer',
-                                fontSize: '0.9rem',
+                                fontSize: '0.85rem',
                                 fontWeight: '700',
                                 backgroundColor: activeTab === 'list' ? 'white' : 'transparent',
-                                boxShadow: activeTab === 'list' ? '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)' : 'none',
                                 color: activeTab === 'list' ? '#4f46e5' : 'var(--text-secondary)',
                                 transition: 'all 0.2s'
                             }}
@@ -409,20 +353,20 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                         flex: 1,
                         overflowY: 'auto',
                         overflowX: 'hidden',
-                        paddingRight: '4px',
+                        paddingRight: '2px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '0.5rem'
+                        gap: '0.25rem'
                     }}>
                         {loading ? (
                             <LoadingSpinner message="Cargando detalles..." />
                         ) : error ? (
                             <div style={{ color: 'red', textAlign: 'center' }}>{error}</div>
                         ) : activeTab === 'calendar' ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                {/* Calendar Header - Show range description */}
-                                <div style={{ textAlign: 'center', padding: '0.25rem 0', marginBottom: '0.25rem' }}>
-                                    <span style={{ fontWeight: 800, textTransform: 'capitalize', fontSize: '1.2rem', color: 'var(--text-primary)' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+                                {/* Calendar Header */}
+                                <div style={{ textAlign: 'center', padding: '0.1rem 0' }}>
+                                    <span style={{ fontWeight: 800, textTransform: 'capitalize', fontSize: '0.95rem', color: 'var(--text-primary)' }}>
                                         {monthLabel}
                                     </span>
                                 </div>
@@ -431,26 +375,23 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                                 <div style={{
                                     display: 'grid',
                                     gridTemplateColumns: 'repeat(7, 1fr)',
-                                    gap: '6px',
+                                    gap: '3px',
                                     backgroundColor: 'transparent',
                                     position: 'relative',
-                                    padding: '0.25rem'
+                                    padding: '0.1rem'
                                 }}>
-                                    {/* Days of week */}
                                     {['LU', 'MA', 'MI', 'JU', 'VI', 'SÁ', 'DO'].map(d => (
                                         <div key={d} style={{
-                                            padding: '0.25rem 0',
+                                            padding: '0.1rem 0',
                                             textAlign: 'center',
-                                            fontSize: '0.65rem',
+                                            fontSize: '0.6rem',
                                             fontWeight: 800,
-                                            color: 'var(--text-secondary)',
-                                            letterSpacing: '0.05em'
+                                            color: 'var(--text-secondary)'
                                         }}>
                                             {d}
                                         </div>
                                     ))}
 
-                                    {/* Calendar Days */}
                                     {days.map(day => {
                                         const installment = getInstallmentForDay(day);
                                         const isRelevant = isLoanDate(day);
@@ -458,31 +399,28 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                                         const isEnd = isEndDate(day);
                                         const isTodayDate = isToday(day);
 
-                                        // Month indicator if day is 1st of month
-                                        const isFirstOfMonth = format(day, 'd') === '1';
-
-                                        // Check if it's an overdue unpaid day (before today, no payment, within loan period)
                                         const today = new Date();
                                         today.setHours(0, 0, 0, 0);
-                                        const isOverdueUnpaid = isRelevant && day < today && !installment;                                        // Determine background color and text colors
-                                        let bgColor = '#f8fafc'; // Neutral background for non-loan days
+                                        const isOverdueUnpaid = isRelevant && day < today && !installment;
+                                        
+                                        let bgColor = '#f8fafc'; 
                                         let textColor = 'var(--text-secondary)';
                                         let amountColor = '#64748b';
                                         
                                         if (installment) {
-                                            bgColor = '#eff9f1'; // Light Green
+                                            bgColor = '#eff9f1'; 
                                             textColor = '#16a34a';
                                             amountColor = '#16a34a';
                                         } else if (isOverdueUnpaid) {
-                                            bgColor = '#fff7ed'; // Light Orange
+                                            bgColor = '#fff7ed'; 
                                             textColor = '#ea580c';
                                             amountColor = '#ea580c';
                                         } else if (isTodayDate && isRelevant) {
-                                            bgColor = '#ecf3ff'; // Light Blue/Indigo
+                                            bgColor = '#ecf3ff'; 
                                             textColor = '#4f46e5';
                                             amountColor = '#4f46e5';
                                         } else if (isRelevant) {
-                                            bgColor = '#f0f9ff'; // Very light blue
+                                            bgColor = '#f0f9ff'; 
                                             textColor = '#0369a1';
                                             amountColor = '#0369a1';
                                         }
@@ -499,107 +437,93 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
 
                                         return (
                                             <div key={day.toISOString()} style={{
-                                                minHeight: isMobile ? '52px' : '85px',
-                                                padding: '6px 2px',
+                                                minHeight: isMobile ? '42px' : '54px',
+                                                padding: '2px',
                                                 backgroundColor: bgColor,
-                                                borderRadius: '0.75rem',
+                                                borderRadius: '0.45rem',
                                                 position: 'relative',
                                                 display: 'flex',
                                                 flexDirection: 'column',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                transition: 'transform 0.2s',
-                                                boxShadow: (isStart || isEnd) ? '0 4px 6px -1px rgba(0,0,0,0.1)' : 'none',
                                                 border: (isTodayDate && isRelevant && !isStart && !isEnd) ? '1px solid #4f46e5' : 'none'
                                             }}>
                                                 <div style={{
-                                                    fontSize: isMobile ? '0.9rem' : '1rem',
+                                                    fontSize: isMobile ? '0.75rem' : '0.85rem',
                                                     fontWeight: 800,
                                                     color: textColor,
-                                                    marginBottom: '2px'
+                                                    lineHeight: 1,
+                                                    marginBottom: (isStart || isEnd) ? '1px' : '0'
                                                 }}>
                                                     {format(day, 'd')}
                                                 </div>
 
                                                 {(isStart || isEnd) && (
                                                     <div style={{
-                                                        fontSize: '0.55rem',
+                                                        fontSize: '0.45rem',
                                                         fontWeight: 800,
                                                         textTransform: 'uppercase',
-                                                        letterSpacing: '0.05em',
-                                                        marginTop: '-2px',
-                                                        marginBottom: '2px'
+                                                        lineHeight: 1
                                                     }}>
                                                         {isStart ? 'Inicio' : 'Fin'}
                                                     </div>
                                                 )}
 
                                                 <div style={{ 
-                                                    fontSize: isMobile ? '0.6rem' : '0.75rem', 
+                                                    fontSize: isMobile ? '0.5rem' : '0.6rem', 
                                                     fontWeight: 700, 
                                                     color: amountColor,
-                                                    opacity: (isStart || isEnd) ? 1 : 0.9
+                                                    opacity: (isStart || isEnd) ? 1 : 0.9,
+                                                    lineHeight: 1
                                                 }}>
-                                                    {isRelevant ? (isMobile ? (loan.fee || 0).toFixed(0) : (loan.fee || 0).toFixed(0)) : ''}
+                                                    {isRelevant ? (loan.fee || 0).toFixed(0) : ''}
                                                 </div>
-
-                                                {isTodayDate && isRelevant && !isStart && !isEnd && (
-                                                    <div style={{
-                                                        position: 'absolute',
-                                                        top: '4px',
-                                                        right: '4px',
-                                                        width: '5px',
-                                                        height: '5px',
-                                                        borderRadius: '50%',
-                                                        backgroundColor: '#4f46e5'
-                                                    }} />
-                                                )}
                                             </div>
                                         );
                                     })}
                                 </div>
 
+                                {/* Compact Legend */}
                                 <div style={{ 
-                                    marginTop: '0.5rem', 
+                                    marginTop: '0.4rem', 
                                     display: 'grid', 
-                                    gridTemplateColumns: '1fr 1fr',
-                                    gap: '0.5rem 1rem', 
-                                    fontSize: '0.7rem', 
+                                    gridTemplateColumns: 'repeat(2, 1fr)',
+                                    gap: '0.2rem 0.5rem', 
+                                    fontSize: '0.65rem', 
                                     padding: '0 0.5rem'
                                 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <div style={{ width: '10px', height: '10px', backgroundColor: '#22c55e', borderRadius: '50%' }}></div>
-                                        <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Pago Registrado</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                        <div style={{ width: '8px', height: '8px', backgroundColor: '#22c55e', borderRadius: '50%' }}></div>
+                                        <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Pago OK</span>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <div style={{ width: '10px', height: '10px', backgroundColor: '#f97316', borderRadius: '50%' }}></div>
-                                        <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Sin Pago (Vencido)</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                        <div style={{ width: '8px', height: '8px', backgroundColor: '#f97316', borderRadius: '50%' }}></div>
+                                        <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Atrasado</span>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <div style={{ width: '10px', height: '10px', backgroundColor: '#6366f1', borderRadius: '50%' }}></div>
-                                        <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Próximo / Inicio</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                        <div style={{ width: '8px', height: '8px', backgroundColor: '#6366f1', borderRadius: '50%' }}></div>
+                                        <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Próximo</span>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <div style={{ width: '10px', height: '10px', backgroundColor: '#cbd5e1', borderRadius: '50%' }}></div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                        <div style={{ width: '8px', height: '8px', backgroundColor: '#cbd5e1', borderRadius: '50%' }}></div>
                                         <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Sin Cuota</span>
                                     </div>
                                 </div>
                             </div>
                         ) : (
-                            /* Modern List View */
-                            <div style={{ padding: '0 0.5rem' }}>
+                            /* List View */
+                            <div style={{ padding: '0 0.25rem' }}>
                                 {!details?.installments.length ? (
-                                    <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)', opacity: 0.7 }}>
+                                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)', opacity: 0.7, fontSize: '0.9rem' }}>
                                         No hay pagos registrados.
                                     </div>
                                 ) : (
                                     <div style={{ 
                                         display: 'flex', 
                                         flexDirection: 'column', 
-                                        gap: '1rem',
-                                        maxHeight: '450px',
-                                        overflowY: 'auto',
-                                        paddingRight: '4px'
+                                        gap: '0.6rem',
+                                        maxHeight: '400px',
+                                        overflowY: 'auto'
                                     }}>
                                         {[...details.installments]
                                             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -607,72 +531,44 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                                                 const canDelete = isPaymentDeleteable(inst.date, inst.registeredByUserId);
                                                 return (
                                                     <div key={idx} style={{
-                                                        padding: '1.25rem',
+                                                        padding: '0.75rem 1rem',
                                                         backgroundColor: 'var(--bg-app)',
-                                                        borderRadius: '1.25rem',
+                                                        borderRadius: '0.75rem',
                                                         border: '1px solid var(--border-color)',
                                                         display: 'flex',
                                                         justifyContent: 'space-between',
-                                                        alignItems: 'center',
-                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                                                        alignItems: 'center'
                                                     }}>
-                                                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                                        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                                                             <div style={{
-                                                                width: '44px',
-                                                                height: '44px',
-                                                                borderRadius: '14px',
+                                                                width: '32px',
+                                                                height: '32px',
+                                                                borderRadius: '8px',
                                                                 backgroundColor: 'rgba(34, 197, 94, 0.1)',
                                                                 color: '#22c55e',
                                                                 display: 'flex',
                                                                 alignItems: 'center',
                                                                 justifyContent: 'center'
                                                             }}>
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                                             </div>
                                                             <div>
-                                                                <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                                                <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                                                                     {formatMoney(inst.amount)}
                                                                 </div>
-                                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                                                    <span>{formatDateTimePE(inst.date)}</span>
-                                                                    <span style={{ opacity: 0.8 }}>Cobrador: {inst.registeredBy}</span>
+                                                                <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                                                                    {formatDateTimePE(inst.date)} • {inst.registeredBy}
                                                                 </div>
                                                             </div>
                                                         </div>
                                                         
-                                                        {(user?.profile === 'ADMIN' || user?.profile === 'OWNER' || user?.profile === 'COBRADOR') && (
-                                                            <div>
-                                                                {canDelete ? (
-                                                                    <button
-                                                                        onClick={() => openConfirmDelete(inst.id)}
-                                                                        title="Eliminar Pago"
-                                                                        style={{
-                                                                            padding: '0.75rem',
-                                                                            borderRadius: '0.75rem',
-                                                                            border: 'none',
-                                                                            backgroundColor: 'rgba(239, 68, 68, 0.08)',
-                                                                            color: '#ef4444',
-                                                                            cursor: 'pointer',
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            justifyContent: 'center',
-                                                                            transition: 'all 0.2s'
-                                                                        }}
-                                                                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
-                                                                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)')}
-                                                                    >
-                                                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                                                                    </button>
-                                                                ) : (
-                                                                    <div title={user?.profile === 'COBRADOR' ? "Solo pagos del día" : "Periodo expirado"} style={{
-                                                                        padding: '0.75rem',
-                                                                        color: '#cbd5e1',
-                                                                        opacity: 0.5
-                                                                    }}>
-                                                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                                                    </div>
-                                                                )}
-                                                            </div>
+                                                        {canDelete && (
+                                                            <button
+                                                                onClick={() => openConfirmDelete(inst.id)}
+                                                                style={{ padding: '0.5rem', borderRadius: '0.5rem', border: 'none', backgroundColor: 'rgba(239, 68, 68, 0.08)', color: '#ef4444', cursor: 'pointer' }}
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                                                            </button>
                                                         )}
                                                     </div>
                                                 );
@@ -683,29 +579,20 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                         )}
                     </div>
 
-                    <div style={{ marginTop: 'auto', padding: '0.5rem 0.5rem 0' }}>
+                    <div style={{ marginTop: 'auto', padding: '0.25rem 0.25rem 0' }}>
                         <button
                             onClick={onClose}
                             style={{
                                 width: '100%',
-                                padding: '1rem',
-                                borderRadius: '1rem',
-                                border: '2px solid var(--border-color)',
+                                padding: '0.75rem',
+                                borderRadius: '0.75rem',
+                                border: '1px solid var(--border-color)',
                                 backgroundColor: 'transparent',
                                 color: 'var(--text-secondary)',
-                                fontSize: '0.95rem',
+                                fontSize: '0.9rem',
                                 fontWeight: 800,
                                 cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                textAlign: 'center'
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = 'var(--bg-app)';
-                                e.currentTarget.style.borderColor = 'var(--text-secondary)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = 'transparent';
-                                e.currentTarget.style.borderColor = 'var(--border-color)';
+                                transition: 'all 0.2s'
                             }}
                         >
                             Cerrar Detalle
@@ -719,7 +606,7 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                 onClose={() => setIsConfirmOpen(false)}
                 onConfirm={handleDeletePayment}
                 title="Eliminar Pago"
-                message="¿Estás seguro de que deseas eliminar este pago? Esta acción no se puede deshacer."
+                message="¿Estás seguro de que deseas eliminar este pago?"
                 confirmText="Eliminar"
                 cancelText="Cancelar"
                 isDestructive={true}
@@ -728,5 +615,4 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
     );
 }
 
-// Export with React.memo to prevent unnecessary re-renders
 export default memo(LoanDetailsModal);

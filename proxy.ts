@@ -6,7 +6,7 @@ export function proxy(request: NextRequest) {
     const token = request.cookies.get('auth_token')?.value;
 
     // Define public paths that don't require authentication
-    const publicPaths = ['/login', '/favicon.ico'];
+    const publicPaths = ['/login', '/favicon.ico', '/sw.js', '/manifest.json', '/icons', '/workbox-'];
     const isPublicPath = publicPaths.some(path => request.nextUrl.pathname.startsWith(path)) ||
         request.nextUrl.pathname.startsWith('/_next');
 
@@ -31,7 +31,9 @@ export const config = {
          * - _next/static (static files)
          * - _next/image (image optimization files)
          * - favicon.ico (favicon file)
+         * - sw.js (service worker)
+         * - manifest.json (PWA manifest)
          */
-        '/((?!api|_next/static|_next/image|favicon.ico).*)',
+        '/((?!api|_next/static|_next/image|favicon.ico|sw.js|manifest.json).*)',
     ],
 };

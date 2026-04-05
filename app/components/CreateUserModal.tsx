@@ -24,7 +24,7 @@ interface CreateUserFormData {
     firstName: string;
     lastName: string;
     birthday?: string | null;
-    status: 'ACTIVE' | 'INACTIVE';
+    status?: 'ACTIVE' | 'INACTIVE';
     idCompany?: string;
 }
 
@@ -41,8 +41,7 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit
         documentNumber: '',
         firstName: '',
         lastName: '',
-        birthday: '',
-        status: 'ACTIVE'
+        birthday: null
     };
 
     const [formData, setFormData] = useState<CreateUserFormData>(initialFormState);
@@ -78,7 +77,7 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit
                     documentNumber: userToEdit.documentNumber,
                     firstName: userToEdit.firstName,
                     lastName: userToEdit.lastName,
-                    birthday: '',
+                    birthday: null,
                     status: userToEdit.status,
                     idCompany: userToEdit.idCompany
                 });
@@ -163,9 +162,17 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit
         setError('');
         setLoading(true);
 
+        const { status, ...creationData } = formData;
+        
         const result = userToEdit
-            ? await updateUserUseCase.execute(userToEdit.id, formData)
-            : await createUserUseCase.execute({ ...formData, birthday: formData.birthday || null });
+            ? await updateUserUseCase.execute(userToEdit.id, { 
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                profile: formData.profile,
+                status: formData.status,
+                birthday: null 
+              })
+            : await createUserUseCase.execute({ ...creationData, birthday: null });
 
         result.match(
             () => {
@@ -250,6 +257,7 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit
                                     onChange={handleChange}
                                     required
                                     placeholder="Ingrese documento"
+                                    inputMode="numeric"
                                 />
                             </div>
                         </div>
@@ -280,16 +288,7 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess, userToEdit
                         </div>
                     </div>
 
-                    <div>
-                        <label className="label">Fecha de Nacimiento</label>
-                        <input
-                            type="date"
-                            className="input"
-                            name="birthday"
-                            value={formData.birthday || ''}
-                            onChange={handleChange}
-                        />
-                    </div>
+
 
                     <hr style={{ borderColor: 'var(--border-color)', margin: '0.5rem 0' }} />
 

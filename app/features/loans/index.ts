@@ -9,7 +9,8 @@ import {
     CreateLoanUseCase,
     ReassignLoanUseCase,
     DeleteLoanUseCase,
-    DeleteInstallmentUseCase
+    DeleteInstallmentUseCase,
+    UpdateLoanInfoUseCase
 } from './use-cases/loan-mutations.use-case';
 
 // Composition Root (Simple Dependency Injection)
@@ -24,6 +25,7 @@ export const createLoanUseCase = new CreateLoanUseCase(loanRepository);
 export const reassignLoanUseCase = new ReassignLoanUseCase(loanRepository);
 export const deleteLoanUseCase = new DeleteLoanUseCase(loanRepository);
 export const deleteInstallmentUseCase = new DeleteInstallmentUseCase(loanRepository);
+export const updateLoanInfoUseCase = new UpdateLoanInfoUseCase(loanRepository);
 
 // Export Models
 export * from './models/loan.model';

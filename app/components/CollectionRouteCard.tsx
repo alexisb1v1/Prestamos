@@ -11,6 +11,7 @@ interface CollectionRouteCardProps {
     currentUser: User | null;
     onPay: (loan: Loan) => void;
     onDetails: (loan: Loan) => void;
+    onUpdateInfo: (loan: Loan) => void;
     dragHandleProps?: any;
     isDragging?: boolean;
     showDragHandle?: boolean;
@@ -23,6 +24,7 @@ export default function CollectionRouteCard({
     currentUser,
     onPay,
     onDetails,
+    onUpdateInfo,
     dragHandleProps,
     isDragging,
     showDragHandle
@@ -50,41 +52,39 @@ export default function CollectionRouteCard({
             transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
             display: 'flex',
             flexDirection: 'column',
-            gap: '0.85rem'
+            gap: '0.65rem'
         }}>
             {/* Header: Name, Handle, Dot, Pending */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', flex: 1, minWidth: 0 }}>
-                    {showDragHandle && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {showDragHandle && (
                             <div 
                                 {...dragHandleProps} 
                                 style={{ 
                                     cursor: 'grab', 
                                     color: '#cbd5e1', 
-                                    paddingTop: '0.1rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
                                     touchAction: 'none' 
                                 }}
                             >
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                             </div>
-                            <span style={{ 
-                                fontSize: '0.85rem', 
-                                fontWeight: 900, 
-                                color: '#6366f1',
-                                minWidth: '1.2rem',
-                                textAlign: 'center'
-                            }}>
-                                {index + 1}.
-                            </span>
-                        </div>
-                    )}
-                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: statusColor, flexShrink: 0, marginTop: '0.45rem' }}></div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                        <h3 style={{ 
-                            fontSize: '0.95rem', 
+                        )}
+                        <span style={{ 
+                            fontSize: '0.9rem', 
                             fontWeight: 900, 
-                            color: '#0f172a', 
+                            color: '#6366f1',
+                            minWidth: '1.2rem'
+                        }}>
+                            {index + 1}.
+                        </span>
+                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: statusColor, flexShrink: 0 }}></div>
+                        <h3 style={{ 
+                            fontSize: '0.9rem', 
+                            fontWeight: 900, 
+                            color: '#1e293b', 
                             margin: 0,
                             textTransform: 'uppercase',
                             letterSpacing: '0.01em',
@@ -94,39 +94,55 @@ export default function CollectionRouteCard({
                         }}>
                             {loan.clientName}
                         </h3>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', color: '#94a3b8', fontSize: '0.7rem', marginTop: '1px' }}>
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{loan.address || 'Sin dirección'}</span>
-                        </div>
+                    </div>
+
+                    {/* Address Line */}
+                    <div style={{ paddingLeft: '1.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem', color: '#94a3b8', fontSize: '0.75rem' }}>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        {loan.address ? (
+                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{loan.address}</span>
+                        ) : (
+                            <button onClick={() => onUpdateInfo(loan)} style={{ background: 'none', border: 'none', padding: 0, color: '#6366f1', fontSize: 'inherit', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' }}>Registrelo</button>
+                        )}
+                    </div>
+
+                    {/* Phone Line */}
+                    <div style={{ paddingLeft: '1.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem', color: '#6366f1', fontSize: '0.75rem' }}>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l2.28-2.28a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                        {loan.phone ? (
+                            <a href={`tel:${loan.phone}`} style={{ color: 'inherit', textDecoration: 'none', fontWeight: 'bold' }}>{loan.phone}</a>
+                        ) : (
+                            <button onClick={() => onUpdateInfo(loan)} style={{ background: 'none', border: 'none', padding: 0, color: '#6366f1', fontSize: 'inherit', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' }}>Registrelo</button>
+                        )}
                     </div>
                 </div>
 
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontSize: '0.55rem', fontWeight: 900, color: '#f472b6', textTransform: 'uppercase', lineHeight: 1 }}>Pendiente</div>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0f172a', marginTop: '1px' }}>
-                        S/ {Math.round((loan as any).remainingAmount || 0)}
+                <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '0.5rem' }}>
+                    <div style={{ fontSize: '0.65rem', fontWeight: 900, color: '#f472b6', textTransform: 'uppercase', lineHeight: 1 }}>Pendiente</div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#1e293b', marginTop: '2px' }}>
+                        {'S/ '}{Math.round((loan as any).remainingAmount || 0)}
                     </div>
                 </div>
             </div>
 
             {/* Subtle Divider */}
-            <div style={{ height: '1px', backgroundColor: '#f1f5f9', margin: '0 -1.1rem' }}></div>
+            <div style={{ height: '1px', backgroundColor: '#f1f5f9', margin: '0.2rem -1.1rem' }}></div>
 
             {/* Actions & Info Footer */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                     {/* Plan Info Block */}
-                    <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.65rem', fontWeight: 900, color: '#94a3b8' }}>PLAN:</span>
-                        <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#475569' }}>
-                            S/ {Math.round(loan.amount)}
+                    <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.58rem', fontWeight: 900, color: '#94a3b8' }}>PLAN:</span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 900, color: '#475569' }}>
+                            {'S/ '}{Math.round(loan.amount)}
                         </span>
                     </div>
                     {/* Cuota Info Block */}
-                    <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.65rem', fontWeight: 900, color: '#94a3b8' }}>CUOTA:</span>
-                        <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#6366f1' }}>
-                            S/ {Math.round(loan.fee)}
+                    <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.58rem', fontWeight: 900, color: '#94a3b8' }}>CUOTA:</span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 900, color: '#6366f1' }}>
+                            {'S/ '}{Math.round(loan.fee)}
                         </span>
                     </div>
                 </div>

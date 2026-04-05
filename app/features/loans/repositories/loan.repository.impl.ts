@@ -14,7 +14,8 @@ import {
     CreateLoanRequestDto, 
     LoanDetailsDto,
     DashboardDataDto,
-    ReportDataDto
+    ReportDataDto,
+    UpdateLoanInfoRequestDto
 } from "../dto/loan.dto";
 import { DomainError } from "@/lib/domain-error";
 
@@ -73,5 +74,9 @@ export class LoanRepositoryImpl implements LoanRepository {
 
         return api.safe.get<ReportDataDto>(`/reports/loans?${params.toString()}`)
             .map(dto => LoanMapper.toReportDataDomain(dto));
+    }
+    
+    updateInfo(loanId: string, info: UpdateLoanInfoRequestDto): ResultAsync<void, DomainError> {
+        return api.safe.patch<void>(`/loans/${loanId}/info`, info);
     }
 }
