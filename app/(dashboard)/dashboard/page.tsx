@@ -199,17 +199,20 @@ export default function DashboardPage() {
         const { active, over } = event;
 
         if (over && active.id !== over.id) {
-            setOrderedLoans((items) => {
-                const oldIndex = items.findIndex((item) => String(item.id) === active.id);
-                const newIndex = items.findIndex((item) => String(item.id) === over.id);
+            const oldIndex = orderedLoans.findIndex((item) => String(item.id) === active.id);
+            const newIndex = orderedLoans.findIndex((item) => String(item.id) === over.id);
 
-                const newOrder = arrayMove(items, oldIndex, newIndex);
+            if (oldIndex !== -1 && newIndex !== -1) {
+                const newOrder = arrayMove(orderedLoans, oldIndex, newIndex);
+                
+                // 1. Actualizar UI
+                setOrderedLoans(newOrder);
 
-                // 1. Save to localStorage (instant)
+                // 2. Persistir localmente (instantáneo)
                 const loanIds = newOrder.map(loan => String(loan.id));
                 saveCollectionOrder(selectedUserId || 'all', loanIds);
                 
-                // 2. Persist to Backend with Debounce (small delay)
+                // 3. Sincronizar con el Backend (con Debounce)
                 if (saveOrderTimerRef.current) clearTimeout(saveOrderTimerRef.current);
                 
                 saveOrderTimerRef.current = setTimeout(async () => {
@@ -218,16 +221,14 @@ export default function DashboardPage() {
                         const response = await userService.updateCollectionOrder(loanIds);
                         
                         if (response.success) {
-                            // Update the User object in session/localStorage so the order is remembered
+                            // Actualizar para que el orden persista al recargar
                             authService.updateUser({ collectionOrder: loanIds });
                         }
                     } catch (err) {
                         console.error('Error al sincronizar el orden con el backend:', err);
                     }
-                }, 800); // 800ms debounce
-
-                return newOrder;
-            });
+                }, 800);
+            }
         }
     };
 

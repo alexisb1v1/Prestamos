@@ -39,8 +39,8 @@ export default function Sidebar() {
         }
     }, [isAdmin, isOwner]);
 
-    const handleLogout = () => {
-        authService.logout();
+    const handleLogout = async () => {
+        await authService.logout();
         router.push('/login');
     };
 

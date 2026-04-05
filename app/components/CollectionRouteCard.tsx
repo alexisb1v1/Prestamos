@@ -2,9 +2,9 @@
  
 import { useState, MouseEvent } from 'react';
 import { Loan } from '@/app/features/loans';
-import { formatMoney } from '@/lib/loanUtils';
+import { formatMoney, getLoanStatus } from '@/lib/loanUtils';
 import { User } from '@/lib/types';
-
+ 
 interface CollectionRouteCardProps {
     loan: Loan;
     index: number;
@@ -18,7 +18,7 @@ interface CollectionRouteCardProps {
     isDragging?: boolean;
     showDragHandle?: boolean;
 }
-
+ 
 export default function CollectionRouteCard({
     loan,
     index,
@@ -33,14 +33,18 @@ export default function CollectionRouteCard({
     showDragHandle
 }: CollectionRouteCardProps) {
     
+    // Sincronizar con la lógica oficial de semáforo
     const getStatusColor = () => {
-        const remaining = (loan as any).remainingAmount || 0;
-        if (remaining <= 0) return '#22c55e';
-        const dayDiff = Math.floor((today.getTime() - new Date(loan.startDate).getTime()) / (1000 * 60 * 60 * 24));
-        if (dayDiff > 10) return '#ef4444';
-        return '#f59e0b';
+        const status = getLoanStatus(loan, today);
+        switch (status.value) {
+            case 'green': return '#10b981'; // Emerald 500
+            case 'yellow': return '#f59e0b'; // Amber 500
+            case 'red': return '#ef4444'; // Rose 500
+            case 'blue': return '#4f46e5'; // Indigo 600 (Liquidado)
+            default: return '#94a3b8'; // Slate 400
+        }
     };
-
+ 
     const [isSharing, setIsSharing] = useState(false);
     const statusColor = getStatusColor();
 

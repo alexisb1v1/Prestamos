@@ -80,8 +80,8 @@ export default function DashboardLayout({
                         </span>
                     </div>
                     <button 
-                         onClick={() => {
-                             authService.logout();
+                         onClick={async () => {
+                             await authService.logout();
                              router.push('/login');
                          }}
                          style={{

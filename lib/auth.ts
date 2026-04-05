@@ -45,12 +45,33 @@ export const authService = {
 
     /**
      * Logout user and clear all session data
+     * Synchronizes any pending order changes before clearing
      */
-    logout() {
-        // 1. Clear Auth Cookie
+    async logout() {
+        // 1. Force Sync Collection Order if found
+        if (typeof window !== 'undefined') {
+            const user = this.getUser();
+            if (user) {
+                try {
+                    const storageKey = `collection_route_order_${user.id}`;
+                    const lastOrderData = localStorage.getItem(storageKey);
+                    
+                    if (lastOrderData) {
+                        const { order } = JSON.parse(lastOrderData);
+                        // Send last order to backend as emergency sync
+                        await api.patch('/users/collection-order', { collectionOrder: order });
+                        console.log('✅ Orden de cobro sincronizado forzosamente antes de cerrar sesión.');
+                    }
+                } catch (e) {
+                    console.error('⚠️ Error en sincronización forzada de logout:', e);
+                }
+            }
+        }
+
+        // 2. Clear Auth Cookie
         Cookies.remove(TOKEN_KEY);
         
-        // 2. Deep clean LocalStorage
+        // 3. Deep clean LocalStorage
         if (typeof window !== 'undefined') {
             const keysToKeep = ['remembered_username'];
             Object.keys(localStorage).forEach(key => {
@@ -59,11 +80,11 @@ export const authService = {
                 }
             });
             
-            // 3. Clear all SessionStorage
+            // 4. Clear all SessionStorage
             sessionStorage.clear();
         }
         
-        // 4. Clear memory cache
+        // 5. Clear memory cache
         userCache.clear();
     },
 
