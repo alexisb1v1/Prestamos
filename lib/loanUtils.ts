@@ -28,32 +28,50 @@ export const getLoanStatus = (loan: Loan, referenceDate?: Date) => {
     const today = referenceDate ? startOfDay(referenceDate) : startOfDay(new Date());
     const yesterday = subDays(today, 1);
     const startDate = startOfDay(parseISO(loan.startDate));
+    const endDate = startOfDay(parseISO(loan.endDate));
 
-    // Calculate elapsed days (up to yesterday, not including today)
-    let daysElapsed = differenceInDays(yesterday, startDate) + 1;
-    if (daysElapsed < 0) daysElapsed = 0;
+    // Calculate elapsed days excluding Sundays (up to yesterday, capped at endDate)
+    const limitDate = yesterday < endDate ? yesterday : endDate;
+    let daysElapsed = 0;
+    
+    if (startDate <= limitDate) {
+        let currentDay = new Date(startDate);
+        while (currentDay <= limitDate) {
+            // 0 is Sunday in JS getDay()
+            if (currentDay.getDay() !== 0) {
+                daysElapsed++;
+            }
+            currentDay.setDate(currentDay.getDate() + 1);
+        }
+    }
 
     const totalDue = daysElapsed * loan.fee;
     // Calculation: Total Paid = (Amount + Interest) - Remaining
     const totalPaid = (loan.amount + loan.interest) - (loan.remainingAmount || 0);
 
     // Case: Recent loan (starts today or tomorrow)
-    if (totalDue === 0) return { label: 'Reciente', color: 'var(--color-success)', icon: '🟢', value: 'green' };
+    if (totalDue === 0 && today <= startDate) {
+        return { label: 'Reciente', color: 'var(--color-success)', icon: '🟢', value: 'green' };
+    }
 
     // Calculate debt and days overdue
     const debt = totalDue - totalPaid;
     const daysOverdue = Math.max(0, Math.floor(debt / loan.fee));
+    const isExpired = today > endDate;
 
     // Case: Green (0-1 days overdue - al día o recién empezando)
-    if (daysOverdue <= 1) {
+    if (daysOverdue <= 1 && !isExpired) {
         return { label: 'Al día', color: 'var(--color-success)', icon: '🟢', value: 'green' };
     }
 
-    // Case: Yellow (2-5 days overdue - mora leve)
-    if (daysOverdue >= 2 && daysOverdue <= 5) {
-        return { label: `Mora Leve (${daysOverdue} días)`, color: '#f59e0b', icon: '🟡', value: 'yellow' };
-    }
+    // Determine Label prefix
+    const labelPrefix = isExpired ? 'Vencido' : (daysOverdue >= 6 ? 'Mora Grave' : 'Mora Leve');
+    const statusColor = isExpired || daysOverdue >= 6 ? 'var(--color-danger)' : '#f59e0b';
 
-    // Case: Red (6+ days overdue - mora grave)
-    return { label: `Mora Grave (${daysOverdue} días)`, color: 'var(--color-danger)', icon: '🔴', value: 'red' };
+    return { 
+        label: `${labelPrefix} (${daysOverdue} ${daysOverdue === 1 ? 'día' : 'días'})`, 
+        color: statusColor, 
+        icon: isExpired || daysOverdue >= 6 ? '🔴' : '🟡', 
+        value: isExpired || daysOverdue >= 6 ? 'red' : 'yellow' 
+    };
 };

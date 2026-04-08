@@ -130,7 +130,7 @@ export default function DashboardFilterModal({
                                     selected={selectedUserId === ""} 
                                     onClick={() => onUserChange("")} 
                                 />
-                                {collectors.map(c => (
+                                {selectedCompanyId !== "" && collectors.map(c => (
                                     <FilterOption 
                                         key={c.id}
                                         label={`${c.firstName} ${c.lastName}`} 

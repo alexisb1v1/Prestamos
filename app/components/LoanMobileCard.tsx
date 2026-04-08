@@ -42,6 +42,19 @@ export default function LoanMobileCard({
 }: LoanMobileCardProps) {
     const status = getLoanStatus(loan, today);
 
+    // Color logic
+    const getStatusColor = (val: string) => {
+        switch (val) {
+            case 'green': return '#10b981';
+            case 'yellow': return '#f59e0b';
+            case 'red': return '#ef4444';
+            case 'blue': return '#4f46e5';
+            default: return '#94a3b8';
+        }
+    };
+
+    const statusColor = getStatusColor(status.value);
+
     return (
         <div 
             className="card" 
@@ -52,11 +65,15 @@ export default function LoanMobileCard({
                 transition: 'all 0.2s ease',
                 marginBottom: '1rem',
                 border: '1px solid var(--border-color)',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                position: 'relative'
             }}
         >
+            {/* Franja Lateral de Estado */}
+            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', backgroundColor: statusColor }}></div>
+
             <div style={{ padding: '1.25rem 1.25rem 1rem 1.25rem' }}>
-                {/* Header: Client Info + Status Indicator */}
+                {/* Header: Client Info + Status Badge */}
                 <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -78,7 +95,14 @@ export default function LoanMobileCard({
                             </div>
                         </div>
                     </div>
-                    <span style={{ fontSize: '0.75rem' }} title={status.label}>{status.icon}</span>
+                    
+                    {/* Badge de estado en lugar de icono */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: statusColor }}></div>
+                        <span style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', color: statusColor }}>
+                            {status.label}
+                        </span>
+                    </div>
                 </div>
 
                 {/* Main Content: Plan de Pago vs Pendiente */}

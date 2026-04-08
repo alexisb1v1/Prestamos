@@ -260,7 +260,12 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                         <div style={{ position: 'relative', zIndex: 1 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div>
-                                    <div style={{ fontSize: '0.55rem', fontWeight: 700, opacity: 0.8, textTransform: 'uppercase' }}>Cliente</div>
+                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                        <div style={{ fontSize: '0.55rem', fontWeight: 700, opacity: 0.8, textTransform: 'uppercase' }}>Cliente</div>
+                                        <div style={{ fontSize: '0.55rem', fontWeight: 900, backgroundColor: 'rgba(255,255,255,0.2)', padding: '1px 4px', borderRadius: '4px' }}>
+                                            ID: #{loan.id}
+                                        </div>
+                                    </div>
                                     <h3 style={{ fontSize: '0.95rem', fontWeight: 800, margin: '0', textTransform: 'capitalize' }}>
                                         {loan.clientName?.toLowerCase() || 'SIN NOMBRE'}
                                     </h3>
