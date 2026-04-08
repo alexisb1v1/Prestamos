@@ -28,7 +28,38 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
     const [activeTab, setActiveTab] = useState<'calendar' | 'list'>('calendar');
     const [isMobile, setIsMobile] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
-    const { user, canDeletePayment } = usePermissions();
+    const { canDeletePayment } = usePermissions();
+    const currentUser = authService.getUser();
+
+    // Helper: Formatear fecha para agrupación
+    const groupPaymentsByDate = (installments: InstallmentDetail[]) => {
+        const sorted = [...installments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        const groups: { [key: string]: { installments: any[], totalDay: number } } = {};
+
+        sorted.forEach(inst => {
+            const dateKey = format(parseISO(inst.date), 'yyyy-MM-dd');
+            if (!groups[dateKey]) {
+                groups[dateKey] = { installments: [], totalDay: 0 };
+            }
+            groups[dateKey].installments.push(inst);
+            groups[dateKey].totalDay += inst.amount;
+        });
+
+        return groups;
+    };
+
+    // Helper: Calcular saldo acumulado para cada pago
+    const getInstallmentsWithBalance = (installments: InstallmentDetail[], initialTotal: number) => {
+        const sortedOldestFirst = [...installments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        let currentBalance = initialTotal;
+        
+        const withBalance = sortedOldestFirst.map(inst => {
+            currentBalance -= inst.amount;
+            return { ...inst, balanceAfter: currentBalance };
+        });
+
+        return withBalance.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    };
 
     useEffect(() => {
         const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -116,11 +147,29 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
         if (!startDateStr || !endDateStr) {
             return { start: new Date(), end: new Date() };
         }
-        return {
-            start: parseDateSafe(startDateStr),
-            end: parseDateSafe(endDateStr)
-        };
-    }, [startDateStr, endDateStr, parseDateSafe]);
+        
+        const start = parseDateSafe(startDateStr);
+        let end = parseDateSafe(endDateStr);
+        
+        // Coherencia con el exportador: Extender si está vencido o tiene pagos tardíos
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const isLiquidated = loan?.status === 'Liquidado';
+
+        if (!isLiquidated && today > end) {
+            end = today;
+        }
+
+        // Asegurar que se incluyan todos los abonos registrados (incluso fuera de fecha)
+        if (details?.installments && details.installments.length > 0) {
+            details.installments.forEach(inst => {
+                const instDate = parseDateSafe(inst.date);
+                if (instDate > end) end = instDate;
+            });
+        }
+
+        return { start, end };
+    }, [startDateStr, endDateStr, parseDateSafe, loan?.status, details?.installments]);
 
     const days = useMemo(() => {
         if (!parsedDates.start || !parsedDates.end) return [];
@@ -169,7 +218,8 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
         if (loan && shareRef?.current) {
             setIsSharing(true);
             try {
-                await shareRef.current.shareLoan(loan);
+                // Compartir según la pestaña activa: 'calendar' o 'list'
+                await shareRef.current.shareLoan(loan, activeTab);
             } catch (error) {
                 console.error("Error al compartir ficha:", error);
             } finally {
@@ -517,69 +567,145 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                             </div>
                         ) : (
                             /* List View */
-                            <div style={{ padding: '0 0.25rem' }}>
+                            <div style={{ padding: '0 0.5rem' }}>
                                 {!details?.installments.length ? (
-                                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)', opacity: 0.7, fontSize: '0.9rem' }}>
-                                        No hay pagos registrados.
+                                    <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-secondary)', opacity: 0.7, fontSize: '0.9rem', backgroundColor: 'var(--bg-app)', borderRadius: '1rem', border: '1px dashed var(--border-color)' }}>
+                                        <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>💸</div>
+                                        No hay pagos registrados aún.
                                     </div>
-                                ) : (
-                                    <div style={{ 
-                                        display: 'flex', 
-                                        flexDirection: 'column', 
-                                        gap: '0.6rem',
-                                        maxHeight: '400px',
-                                        overflowY: 'auto'
-                                    }}>
-                                        {[...details.installments]
-                                            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                                            .map((inst, idx) => {
-                                                const canDelete = isPaymentDeleteable(inst.date, inst.registeredByUserId);
-                                                return (
-                                                    <div key={idx} style={{
-                                                        padding: '0.75rem 1rem',
-                                                        backgroundColor: 'var(--bg-app)',
-                                                        borderRadius: '0.75rem',
-                                                        border: '1px solid var(--border-color)',
-                                                        display: 'flex',
-                                                        justifyContent: 'space-between',
-                                                        alignItems: 'center'
-                                                    }}>
-                                                        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                                                            <div style={{
-                                                                width: '32px',
-                                                                height: '32px',
-                                                                borderRadius: '8px',
-                                                                backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                                                                color: '#22c55e',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center'
-                                                            }}>
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                                            </div>
-                                                            <div>
-                                                                <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                                                                    {formatMoney(inst.amount)}
-                                                                </div>
-                                                                <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                                                                    {formatDateTimePE(inst.date)} • {inst.registeredBy}
-                                                                </div>
-                                                            </div>
+                                ) : (() => {
+                                    const totalPaid = details.installments.reduce((sum, i) => sum + i.amount, 0);
+                                    const initialTotal = (loan?.amount || 0) + (loan?.interest || 0);
+                                    const installmentsWithBalance = getInstallmentsWithBalance(details.installments, initialTotal);
+                                    const groupedPayments = groupPaymentsByDate(installmentsWithBalance);
+
+                                    return (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                                            {/* Summary Header */}
+                                            <div style={{ 
+                                                padding: '1rem 1.25rem', 
+                                                backgroundColor: 'rgba(99, 102, 241, 0.05)', 
+                                                borderRadius: '1rem', 
+                                                border: '1px solid rgba(99, 102, 241, 0.1)',
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                marginBottom: '0.5rem'
+                                            }}>
+                                                <div>
+                                                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Recaudado</div>
+                                                    <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text-primary)' }}>{formatMoney(totalPaid)}</div>
+                                                </div>
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Abonos</div>
+                                                    <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text-primary)' }}>{details.installments.length}</div>
+                                                </div>
+                                            </div>
+
+                                            <div style={{ 
+                                                display: 'flex', 
+                                                flexDirection: 'column', 
+                                                gap: '1.5rem',
+                                                maxHeight: '450px',
+                                                overflowY: 'auto',
+                                                paddingRight: '0.25rem'
+                                            }}>
+                                                {Object.entries(groupedPayments).map(([dateKey, group], gIdx) => (
+                                                    <div key={dateKey} style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                                                        {/* Date Header */}
+                                                        <div style={{ 
+                                                            display: 'flex', 
+                                                            justifyContent: 'space-between', 
+                                                            alignItems: 'center',
+                                                            padding: '0 0.25rem',
+                                                            position: 'sticky',
+                                                            top: 0,
+                                                            backgroundColor: 'var(--bg-card)',
+                                                            zIndex: 10,
+                                                            paddingBottom: '0.4rem'
+                                                        }}>
+                                                            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
+                                                                {format(parseISO(dateKey), "EEEE, d 'de' MMMM", { locale: es })}
+                                                            </span>
+                                                            <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-success)', backgroundColor: 'rgba(34, 197, 94, 0.1)', padding: '2px 8px', borderRadius: '12px' }}>
+                                                                Total: {formatMoney(group.totalDay)}
+                                                            </span>
                                                         </div>
-                                                        
-                                                        {canDelete && (
-                                                            <button
-                                                                onClick={() => openConfirmDelete(inst.id)}
-                                                                style={{ padding: '0.5rem', borderRadius: '0.5rem', border: 'none', backgroundColor: 'rgba(239, 68, 68, 0.08)', color: '#ef4444', cursor: 'pointer' }}
-                                                            >
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                                                            </button>
-                                                        )}
+
+                                                        {/* Payments of the day */}
+                                                        {group.installments.map((inst, idx) => {
+                                                            const canDelete = isPaymentDeleteable(inst.date, inst.registeredByUserId);
+                                                            return (
+                                                                <div key={inst.id} style={{
+                                                                    padding: '0.85rem 1rem',
+                                                                    backgroundColor: 'var(--bg-app)',
+                                                                    borderRadius: '1rem',
+                                                                    border: '1px solid var(--border-color)',
+                                                                    display: 'flex',
+                                                                    justifyContent: 'space-between',
+                                                                    alignItems: 'center',
+                                                                    transition: 'transform 0.2s ease',
+                                                                    position: 'relative'
+                                                                }}>
+                                                                    <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'center' }}>
+                                                                        <div style={{
+                                                                            width: '38px',
+                                                                            height: '38px',
+                                                                            borderRadius: '12px',
+                                                                            backgroundColor: 'white',
+                                                                            color: 'var(--color-success)',
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                                                                            border: '1px solid var(--border-color)',
+                                                                            fontSize: '0.9rem',
+                                                                            fontWeight: 900,
+                                                                            fontFamily: 'inherit'
+                                                                        }}>
+                                                                            S/
+                                                                        </div>
+                                                                        <div>
+                                                                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                                                                                <div style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--text-primary)' }}>
+                                                                                    {formatMoney(inst.amount)}
+                                                                                </div>
+                                                                                <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                                                                                    Saldo: {formatMoney(inst.balanceAfter)}
+                                                                                </div>
+                                                                            </div>
+                                                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 600, marginTop: '2px' }}>
+                                                                                {format(parseISO(inst.date), 'hh:mm a')} • {inst.registeredBy}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    
+                                                                    {canDelete && (
+                                                                        <button
+                                                                            onClick={() => openConfirmDelete(inst.id)}
+                                                                            style={{ 
+                                                                                padding: '0.6rem', 
+                                                                                borderRadius: '0.75rem', 
+                                                                                border: 'none', 
+                                                                                backgroundColor: 'rgba(239, 68, 68, 0.08)', 
+                                                                                color: '#ef4444', 
+                                                                                cursor: 'pointer',
+                                                                                transition: 'all 0.2s'
+                                                                            }}
+                                                                            className="delete-payment-btn"
+                                                                        >
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
-                                                );
-                                            })}
-                                    </div>
-                                )}
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         )}
                     </div>

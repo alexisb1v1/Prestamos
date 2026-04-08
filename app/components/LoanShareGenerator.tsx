@@ -2,7 +2,7 @@
 
 import { useState, useImperativeHandle, forwardRef, useRef, useEffect } from 'react';
 import { getLoanDetailsUseCase } from '@/app/features/loans';
-import { formatDateUTC } from '@/lib/loanUtils';
+import { formatDateUTC, getLoanStatus } from '@/lib/loanUtils';
 import { Loan, LoanDetails } from '@/lib/types';
 import { format, parseISO, eachDayOfInterval, isSameDay, startOfWeek, endOfWeek, isWithinInterval, getDay, subMonths, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -31,20 +31,22 @@ function parseISOasUTC(dateString: string): Date {
 }
 
 export interface LoanShareGeneratorRef {
-    shareLoan: (loan: Loan) => Promise<void>;
+    shareLoan: (loan: Loan, mode?: 'calendar' | 'list') => Promise<void>;
 }
 
 const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, {}>((_, ref) => {
     const [auditData, setAuditData] = useState<{ loan: Loan, details: LoanDetails } | null>(null);
     const [generating, setGenerating] = useState(false);
     const [readyToCapture, setReadyToCapture] = useState(false);
+    const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
 
     useImperativeHandle(ref, () => ({
-        shareLoan: async (loan: Loan) => {
+        shareLoan: async (loan: Loan, mode: 'calendar' | 'list' = 'calendar') => {
             if (generating) return;
 
             try {
                 setGenerating(true);
+                setViewMode(mode);
                 // 1. Fetch Details
                 const result = await getLoanDetailsUseCase.execute(loan.id.toString());
                 
@@ -163,160 +165,328 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, {}>((_, ref) => {
     const { loan, details } = auditData;
 
     // --- Render Logic (Copied/Adapted from Modal) ---
-    const startDate = parseISOasUTC(details.startDate || loan.startDate);
-    const endDate = parseISOasUTC(details.endDate || loan.endDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    const calendarStart = startOfWeek(startDate, { weekStartsOn: 1 });
-    const calendarEnd = endOfWeek(endDate, { weekStartsOn: 1 });
+    const baseStartDate = parseISOasUTC(details.startDate || loan.startDate);
+    const baseEndDate = parseISOasUTC(details.endDate || loan.endDate);
+    
+    // Obtener estado detallado usando la utilidad del sistema
+    const statusInfo = getLoanStatus(loan, today);
+    const isLiquidated = statusInfo.value === 'blue';
+
+    // Extender calendario hasta hoy si NO está liquidado y hoy es después del fin teórico
+    let effectiveEnd = !isLiquidated && today > baseEndDate 
+        ? today 
+        : baseEndDate;
+
+    // Asegurar que se incluyan todos los abonos registrados (incluso fuera de fecha)
+    if (details.installments && details.installments.length > 0) {
+        details.installments.forEach(inst => {
+            const instDate = parseISOasUTC(inst.date);
+            if (instDate > effectiveEnd) effectiveEnd = instDate;
+        });
+    }
+
+    // Forzar que el calendario cubra al menos hasta hoy si hay mora, para que se vea el espacio vacío
+    const calendarStart = startOfWeek(baseStartDate, { weekStartsOn: 1 });
+    const calendarEnd = endOfWeek(effectiveEnd, { weekStartsOn: 1 });
     const days = getCachedDays(calendarStart, calendarEnd);
+
+    // Cálculos dinámicos de progreso
+    const remainingAmount = (loan as any).remainingAmount || 0;
+    const totalAmount = loan.amount + loan.interest;
+    const paidAmount = totalAmount - remainingAmount;
+    const totalCuotas = loan.days;
+    const paidCuotas = Math.max(0, Math.min(totalCuotas, paidAmount / loan.fee));
+    const progress = (paidAmount / totalAmount) * 100;
 
     return (
         <div id="loan-share-container" style={{
             position: 'fixed',
-            top: '-9999px',  // Moved far off-screen
+            top: '-9999px',
             left: '-9999px',
-            zIndex: -9999,   // Very low z-index
+            zIndex: -9999,
             opacity: 0,
             pointerEvents: 'none',
-            visibility: 'hidden'  // Additional safety
+            visibility: 'hidden'
         }}>
             <div id="global-loan-share-card" style={{
                 width: '450px',
-                backgroundColor: 'white',
-                padding: '20px',
+                backgroundColor: '#ffffff',
+                padding: '24px',
                 fontFamily: 'system-ui, -apple-system, sans-serif',
                 color: '#1e293b',
-                pointerEvents: 'none'  // Explicitly disable on this element too
+                pointerEvents: 'none',
+                borderRadius: '0px',
             }}>
-                <div style={{ textAlign: 'center', marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '1rem' }}>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0, color: '#4f46e5' }}>Ficha de Préstamo</h1>
-                    <p style={{ margin: '0.25rem 0 0 0', color: '#64748b', fontSize: '0.8rem' }}>Generado el {format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
+                {/* Header Compacto */}
+                <div style={{ textAlign: 'center', marginBottom: '0.75rem', borderBottom: '2px solid #f1f5f9', paddingBottom: '0.75rem' }}>
+                    <h1 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Ficha de Préstamo</h1>
+                    <p style={{ margin: '0.15rem 0 0 0', color: '#94a3b8', fontSize: '0.7rem' }}>Generado el {format(new Date(), 'dd/MM/yyyy hh:mm a')}</p>
                 </div>
 
-                <div style={{ marginBottom: '1.5rem' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 'bold', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.25rem', marginBottom: '0.5rem' }}>Datos del Cliente</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '0.5rem 1rem', fontSize: '0.9rem' }}>
-                        <div style={{ color: '#64748b' }}>Nombre:</div>
-                        <div style={{ fontWeight: 600, textTransform: 'capitalize' }}>{loan.clientName?.toLowerCase() || 'SIN NOMBRE'}</div>
-                        <div style={{ color: '#64748b' }}>Dirección:</div>
-                        <div>{loan.address}</div>
-                    </div>
-                </div>
-
-                <div style={{ marginBottom: '1.5rem' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 'bold', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.25rem', marginBottom: '0.5rem' }}>Resumen Financiero</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.9rem' }}>
-                        <div><span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem' }}>Monto Prestado</span><span style={{ fontWeight: 600 }}>S/ {Number(loan.amount).toFixed(2)}</span></div>
-                        <div><span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem' }}>Total a Pagar</span><span style={{ fontWeight: 600 }}>S/ {Number(loan.amount + loan.interest).toFixed(2)}</span></div>
-                        <div><span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem' }}>Pagado</span><span style={{ fontWeight: 600, color: '#16a34a' }}>S/ {Number((loan.amount + loan.interest) - ((loan as any).remainingAmount || 0)).toFixed(2)}</span></div>
-                        <div><span style={{ color: '#64748b', display: 'block', fontSize: '0.75rem' }}>Restante</span><span style={{ fontWeight: 600, color: '#dc2626' }}>S/ {Number((loan as any).remainingAmount || 0).toFixed(2)}</span></div>
-                    </div>
-                    <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
-                        <span style={{ color: '#64748b' }}>Vigencia: </span>
-                        {formatDateUTC(details.startDate || loan.startDate)} al {formatDateUTC(details.endDate || loan.endDate)}
-                    </div>
-                </div>
-
-                <div style={{ marginBottom: '1rem' }}>
-                    <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 'bold', margin: '0 0 0.25rem 0' }}>Calendario de Pagos</h3>
-                        <div style={{ fontWeight: 600, textTransform: 'capitalize', fontSize: '1rem', color: '#1e1b4b' }}>
-                            {format(startDate, 'MMM yyyy') === format(endDate, 'MMM yyyy') 
-                                ? format(startDate, 'MMMM yyyy', { locale: es })
-                                : `${format(startDate, 'MMMM', { locale: es })} - ${format(endDate, 'MMMM yyyy', { locale: es })}`}
+                {/* Datos del Cliente y Vigencia */}
+                <div style={{ marginBottom: '0.75rem', backgroundColor: '#f8fafc', padding: '0.85rem', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>Información del Cliente</div>
+                            <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1e293b', textTransform: 'capitalize' }}>{loan.clientName?.toLowerCase()}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: '#64748b', fontSize: '0.75rem', marginTop: '0.15rem' }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                {loan.address}
+                            </div>
                         </div>
-                    </div>
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(7, 1fr)',
-                        gap: '2px',
-                        backgroundColor: '#e2e8f0',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '0.5rem',
-                        overflow: 'hidden'
-                    }}>
-                        {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => (
-                            <div key={i + d} style={{ backgroundColor: '#f1f5f9', padding: '4px', textAlign: 'center', fontSize: '0.7rem', fontWeight: 'bold' }}>{d}</div>
-                        ))}
-                        {days.map(day => {
-                            const dateStr = day.toISOString();
-                            const installment = details.installments.find(i => isSameDay(parseISO(i.date), day));
-                            const isRelevant = isWithinInterval(day, { start: startDate, end: endDate }) && getDay(day) !== 0;
-                            const isStart = isSameDay(startDate, day);
-                            const isEnd = isSameDay(endDate, day);
-                            const isToday = isSameDay(new Date(), day);
-
-                            // Check for overdue unpaid
-                            const today = new Date();
-                            today.setHours(0, 0, 0, 0);
-                            const isOverdueUnpaid = isRelevant && day < today && !installment;
-
-                            // Determine background color
-                            let bg = 'white';
-                            if (installment) {
-                                bg = '#63c581ff'; // Green for paid
-                            } else if (isOverdueUnpaid) {
-                                bg = '#fed7aa'; // Orange for overdue unpaid
-                            } else if (isToday && isRelevant) {
-                                bg = '#b7d5fdff'; // Darker blue for today
-                            } else if (isRelevant) {
-                                bg = '#e0f0ff'; // Lighter blue for loan period
-                            }
-
-                            return (
-                                <div key={dateStr} style={{
-                                    height: '50px',
-                                    backgroundColor: bg,
-                                    padding: '2px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    fontSize: '0.7rem',
-                                    border: isToday && isRelevant && !installment ? '1px solid #3b82f6' : 'none'
-                                }}>
-                                    <div style={{
-                                        fontWeight: isStart || isEnd ? 'bold' : 'normal',
-                                        color: isStart ? '#16a34a' : (isEnd ? '#dc2626' : '#64748b')
-                                    }}>{format(day, 'd')}</div>
-
-                                    {installment && (
-                                        <div style={{ color: '#ffffffff', fontWeight: 'bold', fontSize: '0.65rem' }}>{installment.amount}</div>
-                                    )}
+                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
+                            <div>
+                                <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>Vigencia</div>
+                                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1e293b' }}>
+                                    {format(baseStartDate, 'dd/MM/yy')} - {format(baseEndDate, 'dd/MM/yy')}
                                 </div>
-                            );
-                        })}
-                    </div>
+                            </div>
 
-                    {/* Legend */}
-                    <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.75rem', fontSize: '0.7rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                            <div style={{ width: '10px', height: '10px', backgroundColor: '#63c581ff', border: '1px solid #1c9641ff', borderRadius: '2px' }}></div>
-                            <span>Pagado</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                            <div style={{ width: '10px', height: '10px', backgroundColor: '#fed7aa', border: '1px solid #fb923c', borderRadius: '2px' }}></div>
-                            <span>Vencido</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                            <div style={{ width: '10px', height: '10px', backgroundColor: '#e0f0ff', border: '1px solid #bfdbfe', borderRadius: '2px' }}></div>
-                            <span>Préstamo</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                            <div style={{ width: '10px', height: '10px', backgroundColor: '#b7d5fdff', border: '1px solid #3b82f6', borderRadius: '2px' }}></div>
-                            <span>Hoy</span>
+                            {/* Badge de Estado Reubicado */}
+                            <div style={{ 
+                                backgroundColor: statusInfo.color.startsWith('var') ? (statusInfo.value === 'red' ? '#fee2e2' : (statusInfo.value === 'blue' ? '#e0e7ff' : '#fef3c7')) : statusInfo.color + '22',
+                                color: statusInfo.color.startsWith('var') ? (statusInfo.value === 'red' ? '#b91c1c' : (statusInfo.value === 'blue' ? '#4338ca' : '#92400e')) : statusInfo.color,
+                                padding: '2px 8px',
+                                borderRadius: '6px',
+                                fontSize: '0.65rem',
+                                fontWeight: 800,
+                                border: `1px solid ${statusInfo.color.startsWith('var') ? 'transparent' : statusInfo.color + '44'}`,
+                                width: 'fit-content'
+                            }}>
+                                {statusInfo.label.toUpperCase()}
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Footer */}
-                <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.65rem', color: '#94a3b8', borderTop: '1px solid #e2e8f0', paddingTop: '0.5rem' }}>
-                    <p style={{ margin: 0 }}>
-                        <span style={{ fontWeight: 800, color: '#0f172a', letterSpacing: '-0.025em' }}>
-                            Neo<span style={{ color: '#4f46e5' }}>Cobros</span>
-                        </span>
-                        {' '}- Sistema de Control de Préstamos
-                    </p>
+                {/* Progreso Visual */}
+                <div style={{ marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem', alignItems: 'flex-end' }}>
+                        <div>
+                            <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Progreso de Pago</span>
+                            <div style={{ fontSize: '1rem', fontWeight: 900, color: '#1e293b' }}>{progress.toFixed(1)}%</div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                            <span style={{ fontSize: '9px', fontWeight: 900, color: '#6366f1', textTransform: 'uppercase', backgroundColor: 'rgba(99, 102, 241, 0.1)', padding: '2px 8px', borderRadius: '10px' }}>
+                                {paidCuotas.toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 1 })}/{totalCuotas} cuotas
+                            </span>
+                        </div>
+                    </div>
+                    <div style={{ width: '100%', height: '8px', backgroundColor: '#f1f5f9', borderRadius: '10px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                        <div style={{ width: `${progress}%`, height: '100%', backgroundColor: '#4f46e5', borderRadius: '10px' }}></div>
+                    </div>
+                </div>
+
+                {/* Resumen Financiero en UNA SOLA LÍNEA */}
+                <div style={{ 
+                    marginBottom: '1rem', 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(4, 1fr)', 
+                    gap: '0.4rem'
+                }}>
+                    <div style={{ backgroundColor: '#ffffff', padding: '0.5rem', borderRadius: '10px', border: '1px solid #f1f5f9', textAlign: 'center' }}>
+                        <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.55rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.15rem' }}>Prestado</span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1e293b' }}>S/{Math.round(loan.amount)}</span>
+                    </div>
+                    <div style={{ backgroundColor: '#ffffff', padding: '0.5rem', borderRadius: '10px', border: '1px solid #f1f5f9', textAlign: 'center' }}>
+                        <span style={{ color: '#94a3b8', display: 'block', fontSize: '0.55rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.15rem' }}>A Pagar</span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1e293b' }}>S/{Math.round(totalAmount)}</span>
+                    </div>
+                    <div style={{ backgroundColor: '#f0fdf4', padding: '0.5rem', borderRadius: '10px', border: '1px solid #dcfce7', textAlign: 'center' }}>
+                        <span style={{ color: '#15803d', display: 'block', fontSize: '0.55rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.15rem' }}>Pagado</span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#15803d' }}>S/{Math.round(paidAmount)}</span>
+                    </div>
+                    <div style={{ backgroundColor: '#fef2f2', padding: '0.5rem', borderRadius: '10px', border: '1px solid #fee2e2', textAlign: 'center' }}>
+                        <span style={{ color: '#b91c1c', display: 'block', fontSize: '0.55rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.15rem' }}>Saldo</span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#b91c1c' }}>S/{Math.round(remainingAmount)}</span>
+                    </div>
+                </div>
+
+                {/* Contenido Dinámico: Calendario o Listado */}
+                {viewMode === 'calendar' ? (
+                    <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
+                            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Calendario de Pagos</div>
+                            <div style={{ fontWeight: 800, textTransform: 'capitalize', fontSize: '0.9rem', color: '#1e293b' }}>
+                                {format(baseStartDate, 'MMMM yyyy', { locale: es })}
+                                {format(baseStartDate, 'MMMM yyyy') !== format(effectiveEnd, 'MMMM yyyy') && (
+                                    <span style={{ color: '#94a3b8' }}> - {format(effectiveEnd, 'MMMM yyyy', { locale: es })}</span>
+                                )}
+                            </div>
+                        </div>
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(7, 1fr)',
+                            gap: '4px',
+                            padding: '6px',
+                            backgroundColor: '#f8fafc',
+                            borderRadius: '14px',
+                            border: '1px solid #e2e8f0'
+                        }}>
+                            {['LU', 'MA', 'MI', 'JU', 'VI', 'SA', 'DO'].map((d, i) => (
+                                <div key={i + d} style={{ textAlign: 'center', fontSize: '0.55rem', fontWeight: 800, color: '#94a3b8' }}>{d}</div>
+                            ))}
+                            {days.map(day => {
+                                const dateStr = day.toISOString();
+                                const installment = details.installments.find(i => isSameDay(parseISO(i.date), day));
+                                const isOriginalPlan = isWithinInterval(day, { start: baseStartDate, end: baseEndDate }) && getDay(day) !== 0;
+                                const isRelevant = isWithinInterval(day, { start: baseStartDate, end: effectiveEnd }) && getDay(day) !== 0;
+                                
+                                const isStart = isSameDay(baseStartDate, day);
+                                const isToday = isSameDay(new Date(), day);
+
+                                const isOverdueUnpaid = isOriginalPlan && day < today && !installment;
+
+                                let bg = 'white';
+                                let textColor = '#64748b';
+                                let border = '1px solid #f1f5f9';
+
+                                if (installment) {
+                                    bg = '#22c55e';
+                                    textColor = 'white';
+                                    border = 'none';
+                                } else if (isOverdueUnpaid) {
+                                    bg = '#f97316';
+                                    textColor = 'white';
+                                    border = 'none';
+                                } else if (isToday && isRelevant) {
+                                    bg = '#eff6ff';
+                                    border = '1.5px solid #3b82f6';
+                                    textColor = '#3b82f6';
+                                } else if (isRelevant) {
+                                    bg = 'white';
+                                    border = '1px solid #e2e8f0';
+                                    textColor = '#1e293b';
+                                } else {
+                                    bg = 'transparent';
+                                    border = 'none';
+                                    textColor = '#cbd5e1';
+                                }
+
+                                return (
+                                    <div key={dateStr} style={{
+                                        height: '42px',
+                                        backgroundColor: bg,
+                                        borderRadius: '8px',
+                                        border: border,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '0.65rem',
+                                        fontWeight: isRelevant ? 800 : 400,
+                                        color: textColor,
+                                        position: 'relative',
+                                        overflow: 'hidden'
+                                    }}>
+                                        <span style={{ fontSize: '0.7rem', opacity: installment ? 0.9 : 1, marginBottom: installment ? '-2px' : '0' }}>{format(day, 'd')}</span>
+                                        {installment && (
+                                            <span style={{ fontSize: '0.55rem', fontWeight: 900, color: 'white' }}>
+                                                {installment.amount}
+                                            </span>
+                                        )}
+                                        {isStart && !installment && !isOverdueUnpaid && (
+                                            <div style={{ position: 'absolute', top: '2px', right: '2px', width: '4px', height: '4px', backgroundColor: '#4f46e5', borderRadius: '50%' }}></div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Leyenda Moderna */}
+                        <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.75rem', fontSize: '0.55rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                                <div style={{ width: '5px', height: '5px', backgroundColor: '#22c55e', borderRadius: '50%' }}></div>
+                                <span style={{ fontWeight: 800 }}>PAGADO</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                                <div style={{ width: '5px', height: '5px', backgroundColor: '#f97316', borderRadius: '50%' }}></div>
+                                <span style={{ fontWeight: 800 }}>VENCIDO</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                                <div style={{ width: '5px', height: '5px', border: '1px solid #e2e8f0', borderRadius: '50%' }}></div>
+                                <span style={{ fontWeight: 800 }}>PLAN</span>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <div style={{ marginBottom: '1rem' }}>
+                        <div style={{ textAlign: 'center', marginBottom: '0.75rem' }}>
+                            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Historial de Abonos</div>
+                        </div>
+                        
+                        {details.installments.length > 0 ? (
+                            <div style={{ 
+                                display: 'grid', 
+                                gridTemplateColumns: '1fr 1fr', 
+                                gap: '8px',
+                                padding: '10px',
+                                backgroundColor: '#f8fafc',
+                                borderRadius: '14px',
+                                border: '1px solid #e2e8f0'
+                            }}>
+                                {details.installments
+                                    .sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime())
+                                    .map((inst, idx) => (
+                                        <div key={inst.id} style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'space-between',
+                                            padding: '8px 12px',
+                                            backgroundColor: '#ffffff',
+                                            borderRadius: '8px',
+                                            border: '1px solid #f1f5f9'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <span style={{ 
+                                                    fontSize: '0.55rem', 
+                                                    fontWeight: 900, 
+                                                    color: '#6366f1', 
+                                                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                                                    width: '16px',
+                                                    height: '16px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    borderRadius: '4px'
+                                                }}>
+                                                    {idx + 1}
+                                                </span>
+                                                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#1e293b' }}>
+                                                    {format(parseISO(inst.date), 'dd/MM/yy')}
+                                                </span>
+                                            </div>
+                                            <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#10b981' }}>
+                                                S/{inst.amount}
+                                            </span>
+                                        </div>
+                                    ))}
+                            </div>
+                        ) : (
+                            <div style={{ 
+                                textAlign: 'center', 
+                                padding: '2rem', 
+                                backgroundColor: '#f8fafc', 
+                                borderRadius: '14px', 
+                                border: '1px dashed #cbd5e1',
+                                color: '#94a3b8',
+                                fontSize: '0.7rem'
+                            }}>
+                                No se registran pagos realizados.
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Footer Logo */}
+                <div style={{ marginTop: '1rem', textAlign: 'center', borderTop: '2px dashed #f1f5f9', paddingTop: '1rem' }}>
+                    <div style={{ fontSize: '0.55rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1rem', marginBottom: '0.2rem' }}>Potenciado por</div>
+                    <div style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.04em' }}>
+                        Neo<span style={{ color: '#4f46e5' }}>Cobros</span>
+                    </div>
                 </div>
             </div>
         </div>

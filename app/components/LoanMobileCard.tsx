@@ -5,6 +5,9 @@ import { Loan, User } from '@/lib/types';
 import { getLoanStatus, formatDateUTC, formatMoney } from '@/lib/loanUtils';
 import LoanActions from './LoanActions';
 import { LoanShareGeneratorRef } from './LoanShareGenerator';
+import { useState } from 'react';
+import { Share2, Menu, Info } from 'lucide-react';
+import ProgressInfoModal from './ProgressInfoModal';
 
 interface LoanMobileCardProps {
     loan: Loan;
@@ -40,7 +43,16 @@ export default function LoanMobileCard({
     isDragging,
     showDragHandle = false
 }: LoanMobileCardProps) {
+    const [showInfoModal, setShowInfoModal] = useState(false);
     const status = getLoanStatus(loan, today);
+
+    // Cálculos dinámicos de progreso
+    const remainingAmount = (loan as any).remainingAmount || 0;
+    const totalAmount = loan.amount + loan.interest;
+    const paidAmount = totalAmount - remainingAmount;
+    const totalCuotas = loan.days;
+    const paidCuotas = Math.max(0, Math.min(totalCuotas, paidAmount / loan.fee));
+    const progress = (paidAmount / totalAmount) * 100;
 
     // Color logic
     const getStatusColor = (val: string) => {
@@ -133,6 +145,27 @@ export default function LoanMobileCard({
                         <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#b91c1c', letterSpacing: '-0.02em' }}>
                             {formatMoney((loan as any).remainingAmount || 0)}
                         </div>
+                    </div>
+                </div>
+
+                {/* Sección de Progreso (Consistente con la vista de cobrador) */}
+                <div style={{ marginBottom: '1.25rem', padding: '0 0.25rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                            <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Progreso</span>
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); setShowInfoModal(true); }}
+                                style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', color: '#94a3b8', cursor: 'pointer' }}
+                            >
+                                <Info size={12} strokeWidth={2.5} />
+                            </button>
+                        </div>
+                        <span style={{ fontSize: '10px', fontWeight: 900, color: '#6366f1', textTransform: 'uppercase' }}>
+                            {paidCuotas.toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 1 })}/{totalCuotas} cuotas
+                        </span>
+                    </div>
+                    <div style={{ width: '100%', height: '6px', backgroundColor: 'var(--bg-app)', borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                        <div style={{ width: `${progress}%`, height: '100%', backgroundColor: '#4f46e5', borderRadius: '10px', transition: 'width 0.5s ease' }}></div>
                     </div>
                 </div>
 
@@ -248,6 +281,11 @@ export default function LoanMobileCard({
                     />
                 </div>
             </div>
+            
+            <ProgressInfoModal 
+                isOpen={showInfoModal} 
+                onClose={() => setShowInfoModal(false)} 
+            />
         </div>
     );
 }

@@ -36,11 +36,11 @@ export default function LoanActions({
     const [activeMenu, setActiveMenu] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
 
-    const handleShare = async () => {
+    const handleShare = async (mode: 'calendar' | 'list') => {
         if (!shareRef.current) return;
         setIsSharing(true);
         try {
-            await shareRef.current.shareLoan(loan);
+            await shareRef.current.shareLoan(loan, mode);
         } catch (error) {
             console.error("Error al compartir ficha:", error);
         } finally {
@@ -127,9 +127,9 @@ export default function LoanActions({
                 </button>
 
                 <button
-                    onClick={handleShare}
+                    onClick={() => handleShare('calendar')}
                     disabled={isSharing}
-                    title="Compartir Ficha"
+                    title="Compartir Calendario"
                     style={{
                         padding: '0.35rem',
                         border: 'none',
@@ -139,22 +139,37 @@ export default function LoanActions({
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#3b82f6',
+                        color: '#4f46e5',
                         opacity: isSharing ? 0.6 : 1,
                         transition: 'all 0.2s'
                     }}
                 >
-                    {isSharing ? (
-                        <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="currentColor" strokeWidth="2">
-                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="30" strokeLinecap="round" opacity="0.6">
-                                <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite" />
-                            </circle>
-                        </svg>
-                    ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
-                        </svg>
-                    )}
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                    </svg>
+                </button>
+
+                <button
+                    onClick={() => handleShare('list')}
+                    disabled={isSharing}
+                    title="Compartir Listado"
+                    style={{
+                        padding: '0.35rem',
+                        border: 'none',
+                        backgroundColor: 'transparent',
+                        cursor: isSharing ? 'wait' : 'pointer',
+                        borderRadius: '0.375rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#10b981',
+                        opacity: isSharing ? 0.6 : 1,
+                        transition: 'all 0.2s'
+                    }}
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
                 </button>
 
                 {/* More options button for Desktop - Only show if there are options available */}
@@ -395,7 +410,7 @@ export default function LoanActions({
                     marginBottom: '0.5rem'
                 }}>
                     <button
-                        onClick={handleShare}
+                        onClick={() => handleShare('calendar')}
                         disabled={isSharing}
                         style={{
                             padding: '0.75rem 1rem',
@@ -406,23 +421,37 @@ export default function LoanActions({
                             gap: '0.75rem',
                             cursor: isSharing ? 'wait' : 'pointer',
                             textAlign: 'left',
-                            color: '#3b82f6',
+                            color: '#4f46e5',
                             fontSize: '0.85rem',
-                            opacity: isSharing ? 0.6 : 1,
                         }}
                     >
-                        {isSharing ? (
-                            <svg viewBox="0 0 24 24" fill="none" width="18" height="18" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="30" strokeLinecap="round" opacity="0.6">
-                                    <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite" />
-                                </circle>
-                            </svg>
-                        ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="18" height="18">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
-                            </svg>
-                        )}
-                        {isSharing ? 'Generando...' : 'Compartir'}
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="18" height="18">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                        </svg>
+                        Compartir Calendario
+                    </button>
+
+                    <button
+                        onClick={() => handleShare('list')}
+                        disabled={isSharing}
+                        style={{
+                            padding: '0.75rem 1rem',
+                            border: 'none',
+                            backgroundColor: 'transparent',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.75rem',
+                            cursor: isSharing ? 'wait' : 'pointer',
+                            textAlign: 'left',
+                            color: '#10b981',
+                            fontSize: '0.85rem',
+                            borderTop: '1px solid var(--border-color)'
+                        }}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="18" height="18">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                        </svg>
+                        Compartir Listado
                     </button>
 
                     {canReassignLoan && !isPaid && (

@@ -11,8 +11,12 @@ import {
     Wallet,
     Eye,
     Share2,
-    Menu
+    Calendar,
+    ClipboardList,
+    Menu,
+    Info
 } from 'lucide-react';
+import ProgressInfoModal from './ProgressInfoModal';
 
 interface CollectionRouteCardProps {
     loan: Loan;
@@ -45,6 +49,8 @@ export default function CollectionRouteCard({
     // Estados
     const [isSharing, setIsSharing] = useState(false);
     const [showFullName, setShowFullName] = useState(false);
+    const [showInfoModal, setShowInfoModal] = useState(false);
+    const [showShareMenu, setShowShareMenu] = useState(false);
 
     // Cálculos dinámicos
     const status = getLoanStatus(loan, today);
@@ -52,7 +58,7 @@ export default function CollectionRouteCard({
     const totalAmount = loan.amount + loan.interest;
     const paidAmount = totalAmount - remainingAmount;
     const totalCuotas = loan.days;
-    const paidCuotas = Math.max(0, Math.min(totalCuotas, Math.round(paidAmount / loan.fee)));
+    const paidCuotas = Math.max(0, Math.min(totalCuotas, paidAmount / loan.fee));
     const progress = (paidAmount / totalAmount) * 100;
 
     // Lógica de abreviación de nombres
@@ -105,12 +111,19 @@ export default function CollectionRouteCard({
 
     const statusColor = getStatusColor();
 
-    const handleShare = async (e: MouseEvent) => {
+    useEffect(() => {
+        if (!showShareMenu) return;
+        const closeMenu = () => setShowShareMenu(false);
+        window.addEventListener('click', closeMenu);
+        return () => window.removeEventListener('click', closeMenu);
+    }, [showShareMenu]);
+
+    const handleShare = async (e: MouseEvent, mode: 'calendar' | 'list') => {
         e.stopPropagation();
         if (loan && shareRef?.current) {
             setIsSharing(true);
             try {
-                await shareRef.current.shareLoan(loan);
+                await shareRef.current.shareLoan(loan, mode);
             } catch (error) {
                 console.error("Error al compartir:", error);
             } finally {
@@ -131,7 +144,7 @@ export default function CollectionRouteCard({
                 position: 'relative',
                 marginBottom: '0.1rem',
                 opacity: isDragging ? 0.7 : 1,
-                transform: isDragging ? 'scale(1.01)' : 'scale(1)',
+                transform: isDragging ? 'scale(1.01)' : 'none',
                 display: 'flex',
                 flexDirection: 'column'
             }}
@@ -227,9 +240,17 @@ export default function CollectionRouteCard({
             {/* 3. Barra de Progreso */}
             <div style={{ padding: '0.45rem 1.25rem 0.2rem', borderTop: '1px solid #f8fafc' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Progreso</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <span style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Progreso</span>
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); setShowInfoModal(true); }}
+                            style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', color: '#94a3b8', cursor: 'pointer' }}
+                        >
+                            <Info size={12} strokeWidth={2.5} />
+                        </button>
+                    </div>
                     <span style={{ fontSize: '10px', fontWeight: 900, color: '#6366f1', textTransform: 'uppercase' }}>
-                        {paidCuotas}/{totalCuotas} cuotas
+                        {paidCuotas.toLocaleString('es-PE', { minimumFractionDigits: 0, maximumFractionDigits: 1 })}/{totalCuotas} cuotas
                     </span>
                 </div>
                 <div style={{ width: '100%', height: '4px', backgroundColor: '#f1f5f9', borderRadius: '10px', overflow: 'hidden' }}>
@@ -254,9 +275,86 @@ export default function CollectionRouteCard({
                     <button onClick={() => onDetails(loan)} style={{ width: '28px', height: '28px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', cursor: 'pointer' }}>
                         <Eye size={16} strokeWidth={2.5} />
                     </button>
-                    <button onClick={handleShare} disabled={isSharing} style={{ width: '28px', height: '28px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', cursor: isSharing ? 'wait' : 'pointer' }}>
-                        <Share2 size={16} strokeWidth={2.5} />
-                    </button>
+                    <div style={{ position: 'relative' }}>
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); setShowShareMenu(!showShareMenu); }} 
+                            disabled={isSharing} 
+                            title="Compartir"
+                            style={{ 
+                                width: '28px', 
+                                height: '28px', 
+                                backgroundColor: 'white', 
+                                border: '1px solid #e2e8f0', 
+                                borderRadius: '8px', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                color: '#6366f1', 
+                                cursor: isSharing ? 'wait' : 'pointer' 
+                            }}
+                        >
+                            <Share2 size={16} strokeWidth={2.5} />
+                        </button>
+
+                        {showShareMenu && (
+                            <div style={{
+                                position: 'absolute',
+                                bottom: 'calc(100% + 5px)',
+                                right: 0,
+                                backgroundColor: 'white',
+                                borderRadius: '10px',
+                                boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                                border: '1px solid #f1f5f9',
+                                zIndex: 100,
+                                minWidth: '160px',
+                                overflow: 'hidden',
+                                animation: 'fadeInOut 0.2s ease'
+                            }}>
+                                <button
+                                    onClick={(e) => handleShare(e, 'calendar')}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.75rem',
+                                        width: '100%',
+                                        padding: '0.75rem 1rem',
+                                        border: 'none',
+                                        backgroundColor: 'transparent',
+                                        color: '#4f46e5',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        textAlign: 'left',
+                                        transition: 'background 0.2s'
+                                    }}
+                                >
+                                    <Calendar size={14} />
+                                    Calendario
+                                </button>
+                                <button
+                                    onClick={(e) => handleShare(e, 'list')}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.75rem',
+                                        width: '100%',
+                                        padding: '0.75rem 1rem',
+                                        border: 'none',
+                                        backgroundColor: 'transparent',
+                                        color: '#10b981',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        textAlign: 'left',
+                                        borderTop: '1px solid #f8fafc'
+                                    }}
+                                >
+                                    <ClipboardList size={14} />
+                                    Historial Abonos
+                                </button>
+                            </div>
+                        )}
+                    </div>
                     <div style={{ scale: 0.85 }}>
                         <LoanActions loan={loan} currentUser={currentUser} isMobile={true} today={today} onPay={onPay} onDetails={onDetails} onRenew={() => { }} onReassign={() => { }} onDelete={() => { }} shareRef={shareRef as any} minimal={true} />
                     </div>
@@ -269,6 +367,11 @@ export default function CollectionRouteCard({
                     to { opacity: 1; transform: translateY(0); }
                 }
             `}</style>
+            
+            <ProgressInfoModal 
+                isOpen={showInfoModal} 
+                onClose={() => setShowInfoModal(false)} 
+            />
         </div>
     );
 }
