@@ -33,7 +33,7 @@ export const userService = {
         if (idCompany) params.append('idCompany', idCompany);
 
         const queryString = params.toString();
-        const users = await api.get<User[]>(`/users${queryString ? `?${queryString}` : ''}`);
+        const users = await api.get<User[]>(`/user${queryString ? `?${queryString}` : ''}`);
 
         // Only cache complete list (no search filter, no idCompany, non-COBRADOR users)
         if (!username && !idCompany && !isCobrador) {
@@ -45,10 +45,10 @@ export const userService = {
 
     /**
      * Get a single user by ID
-     * Endpoint: GET /users/:id
+     * Endpoint: GET /user/:id
      */
     async getById(id: string): Promise<User> {
-        const data = await api.get<GetUserResponse>(`/users/${id}`);
+        const data = await api.get<GetUserResponse>(`/user/${id}`);
         // Combinar user y person en un solo objeto para el frontend
         return {
             ...data.user,
@@ -62,7 +62,7 @@ export const userService = {
      * Clears user cache after creation
      */
     async create(user: CreateUserRequest): Promise<CreateUserResponse> {
-        const result = await api.post<CreateUserResponse>('/users', user);
+        const result = await api.post<CreateUserResponse>('/user', user);
         userCache.clear(); // Clear cache to force fresh fetch
         return result;
     },
@@ -72,7 +72,7 @@ export const userService = {
      * Clears user cache after update
      */
     async update(id: string, user: UpdateUserRequest): Promise<UpdateUserResponse> {
-        const result = await api.put<UpdateUserResponse>(`/users/${id}`, user);
+        const result = await api.put<UpdateUserResponse>(`/user/${id}`, user);
         userCache.clear(); // Clear cache to force fresh fetch
         return result;
     },
@@ -82,7 +82,7 @@ export const userService = {
      * Clears user cache after deletion
      */
     async delete(id: string): Promise<{ success: boolean; message: string }> {
-        const result = await api.delete<{ success: boolean; message: string }>(`/users/${id}`);
+        const result = await api.delete<{ success: boolean; message: string }>(`/user/${id}`);
         userCache.clear(); // Clear cache to force fresh fetch
         return result;
     },
@@ -91,20 +91,20 @@ export const userService = {
      * Search person by document
      */
     async searchPerson(documentType: string, documentNumber: string): Promise<Person> {
-        return api.get<Person>(`/people/search?documentType=${documentType}&documentNumber=${documentNumber}`);
+        return api.get<Person>(`/person/search?documentType=${documentType}&documentNumber=${documentNumber}`);
     },
 
     /**
      * Toggle Day Closed status for a user
      */
     async toggleDayStatus(id: string, isDayClosed: boolean): Promise<void> {
-        return api.patch<void>(`/users/${id}/toggle-day-status`, { isDayClosed });
+        return api.patch<void>(`/user/${id}/toggle-day-status`, { isDayClosed });
     },
 
     /**
      * Update collection order for the current user
      */
     async updateCollectionOrder(order: string[]): Promise<{ success: boolean; message: string }> {
-        return api.patch<{ success: boolean; message: string }>('/users/collection-order', { collectionOrder: order });
+        return api.patch<{ success: boolean; message: string }>('/user/collection-order', { collectionOrder: order });
     },
 };

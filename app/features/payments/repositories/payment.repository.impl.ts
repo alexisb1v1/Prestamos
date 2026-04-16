@@ -9,12 +9,12 @@ import { PaymentResponseDTO } from '../payment.dto';
 
 export class PaymentRepositoryImpl implements PaymentRepository {
     createPayment(payment: CreatePaymentRequest): ResultAsync<PaymentModel, DomainError> {
-        return api.safe.post<PaymentResponseDTO>('/payments', PaymentMapper.toPaymentDTOCreate(payment))
+        return api.safe.post<PaymentResponseDTO>('/installment', PaymentMapper.toPaymentDTOCreate(payment))
             .map(response => PaymentMapper.toDomain(response));
     }
 
     createInstallment(installment: CreateInstallmentRequest): ResultAsync<PaymentModel, DomainError> {
-        return api.safe.post<PaymentResponseDTO>('/loans/installments', PaymentMapper.toInstallmentDTOCreate(installment))
+        return api.safe.post<PaymentResponseDTO>('/installment', PaymentMapper.toInstallmentDTOCreate(installment))
             .map(response => PaymentMapper.toDomain(response));
     }
 }

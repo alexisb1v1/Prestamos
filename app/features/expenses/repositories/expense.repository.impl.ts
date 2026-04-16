@@ -9,7 +9,7 @@ import { ExpenseResponseDTO } from '../expense.dto';
 
 export class ExpenseRepositoryImpl implements ExpenseRepository {
     create(expense: CreateExpenseRequest): ResultAsync<ExpenseModel, DomainError> {
-        return api.safe.post<ExpenseResponseDTO>('/expenses', ExpenseMapper.toDTOCreate(expense))
+        return api.safe.post<ExpenseResponseDTO>('/expense', ExpenseMapper.toDTOCreate(expense))
             .map(response => ExpenseMapper.toDomain(response));
     }
 
@@ -19,11 +19,11 @@ export class ExpenseRepositoryImpl implements ExpenseRepository {
         if (userId) params.append('userId', userId);
         if (companyId) params.append('companyId', companyId);
 
-        return api.safe.get<ExpenseResponseDTO[]>(`/expenses?${params.toString()}`)
+        return api.safe.get<ExpenseResponseDTO[]>(`/expense?${params.toString()}`)
             .map(response => ExpenseMapper.toDomainList(response));
     }
 
     delete(id: string): ResultAsync<void, DomainError> {
-        return api.safe.delete<void>(`/expenses/${id}`);
+        return api.safe.delete<void>(`/expense/${id}`);
     }
 }

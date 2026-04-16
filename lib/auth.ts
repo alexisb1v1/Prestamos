@@ -66,7 +66,7 @@ export const authService = {
                     if (lastOrderData) {
                         const { order } = JSON.parse(lastOrderData);
                         // Send last order to backend as emergency sync
-                        await api.patch('/users/collection-order', { collectionOrder: order });
+                        await api.patch('/user/collection-order', { collectionOrder: order });
                         console.log('✅ Orden de cobro sincronizado forzosamente antes de cerrar sesión.');
                     }
                 } catch (e) {

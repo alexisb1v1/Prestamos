@@ -13,32 +13,32 @@ export class UserRepositoryImpl implements UserRepository {
         if (idCompany) params.append('idCompany', idCompany);
         const queryString = params.toString();
 
-        return api.safe.get<any[]>(`/users${queryString ? `?${queryString}` : ''}`)
+        return api.safe.get<any[]>(`/user${queryString ? `?${queryString}` : ''}`)
             .map(userListDtoToModel);
     }
 
     getById(id: string): ResultAsync<User, DomainError> {
-        return api.safe.get<any>(`/users/${id}`)
+        return api.safe.get<any>(`/user/${id}`)
             .map(userDtoToModel);
     }
 
     create(user: CreateUserRequestDto): ResultAsync<void, DomainError> {
-        return api.safe.post<any>('/users', user).map(() => undefined);
+        return api.safe.post<any>('/user', user).map(() => undefined);
     }
 
     update(id: string, user: any): ResultAsync<void, DomainError> {
-        return api.safe.put<any>(`/users/${id}`, user).map(() => undefined);
+        return api.safe.put<any>(`/user/${id}`, user).map(() => undefined);
     }
 
     delete(id: string): ResultAsync<void, DomainError> {
-        return api.safe.delete<any>(`/users/${id}`).map(() => undefined);
+        return api.safe.delete<any>(`/user/${id}`).map(() => undefined);
     }
 
     toggleDayStatus(id: string, isDayClosed: boolean): ResultAsync<void, DomainError> {
-        return api.safe.patch<void>(`/users/${id}/toggle-day-status`, { isDayClosed });
+        return api.safe.patch<void>(`/user/${id}/toggle-day-status`, { isDayClosed });
     }
 
     searchPerson(documentType: string, documentNumber: string): ResultAsync<any, DomainError> {
-        return api.safe.get<any>(`/people/search?documentType=${documentType}&documentNumber=${documentNumber}`);
+        return api.safe.get<any>(`/person/search?documentType=${documentType}&documentNumber=${documentNumber}`);
     }
 }

@@ -6,27 +6,27 @@ export const companyService = {
      * Get all companies
      */
     async getAll(): Promise<Company[]> {
-        return api.get<Company[]>('/companies');
+        return api.get<Company[]>('/company');
     },
 
     /**
      * Create a new company
      */
     async create(data: CreateCompanyRequest): Promise<{ id: string }> {
-        return api.post<{ id: string }>('/companies', data);
+        return api.post<{ id: string }>('/company', data);
     },
 
     /**
      * Update a company
      */
     async update(id: string, data: UpdateCompanyRequest): Promise<{ message: string }> {
-        return api.put<{ message: string }>(`/companies/${id}`, data);
+        return api.put<{ message: string }>(`/company/${id}`, data);
     },
 
     /**
      * Update company status
      */
     async updateStatus(id: string, status: string): Promise<{ message: string }> {
-        return api.patch<{ message: string }>(`/companies/${id}/status`, { status });
+        return api.patch<{ message: string }>(`/company/${id}/status`, { status });
     }
 };

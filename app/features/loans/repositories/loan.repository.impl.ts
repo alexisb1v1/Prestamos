@@ -29,30 +29,30 @@ export class LoanRepositoryImpl implements LoanRepository {
 
         const queryString = params.toString();
         
-        return api.safe.get<LoanDto[]>(`/loans${queryString ? `?${queryString}` : ''}`)
+        return api.safe.get<LoanDto[]>(`/loan${queryString ? `?${queryString}` : ''}`)
             .map(dtos => dtos.map(dto => LoanMapper.toDomain(dto)));
     }
 
     create(loanPayload: CreateLoanRequestDto): ResultAsync<Loan, DomainError> {
-        return api.safe.post<LoanDto>('/loans', loanPayload)
+        return api.safe.post<LoanDto>('/loan', loanPayload)
             .map(dto => LoanMapper.toDomain(dto));
     }
 
     getDetails(id: string): ResultAsync<LoanDetails, DomainError> {
-        return api.safe.get<LoanDetailsDto>(`/loans/${id}/details`)
+        return api.safe.get<LoanDetailsDto>(`/loan/${id}/details`)
             .map(dto => LoanMapper.toLoanDetailsDomain(dto));
     }
 
     reassign(loanId: string, newUserId: string): ResultAsync<void, DomainError> {
-        return api.safe.patch<void>(`/loans/${loanId}/reassign`, { newUserId });
+        return api.safe.patch<void>(`/loan/${loanId}/reassign`, { newUserId });
     }
 
     delete(loanId: string): ResultAsync<void, DomainError> {
-        return api.safe.delete<void>(`/loans/${loanId}`);
+        return api.safe.delete<void>(`/loan/${loanId}`);
     }
 
     deleteInstallment(installmentId: string): ResultAsync<void, DomainError> {
-        return api.safe.delete<void>(`/loans/installments/${installmentId}`);
+        return api.safe.delete<void>(`/installment/${installmentId}`);
     }
 
     getDashboardData(userId?: string, companyId?: string): ResultAsync<DashboardData, DomainError> {
@@ -61,7 +61,7 @@ export class LoanRepositoryImpl implements LoanRepository {
         if (companyId) params.append('companyId', companyId);
 
         const queryString = params.toString();
-        return api.safe.get<DashboardDataDto>(`/loans/dashboard${queryString ? `?${queryString}` : ''}`)
+        return api.safe.get<DashboardDataDto>(`/dashboard${queryString ? `?${queryString}` : ''}`)
             .map(dto => LoanMapper.toDashboardDataDomain(dto));
     }
 
@@ -72,11 +72,11 @@ export class LoanRepositoryImpl implements LoanRepository {
         if (companyId) params.append('companyId', companyId);
         if (userId) params.append('userId', userId);
 
-        return api.safe.get<ReportDataDto>(`/reports/loans?${params.toString()}`)
+        return api.safe.get<ReportDataDto>(`/report/loan?${params.toString()}`)
             .map(dto => LoanMapper.toReportDataDomain(dto));
     }
     
     updateInfo(loanId: string, info: UpdateLoanInfoRequestDto): ResultAsync<void, DomainError> {
-        return api.safe.patch<void>(`/loans/${loanId}/info`, info);
+        return api.safe.patch<void>(`/loan/${loanId}/info`, info);
     }
 }
