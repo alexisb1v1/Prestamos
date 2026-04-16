@@ -5,6 +5,7 @@ import { Loan, User } from '@/lib/types';
 import { getLoanStatus } from '@/lib/loanUtils';
 import { usePermissions } from '@/hooks/usePermissions';
 import { LoanShareGeneratorRef } from './LoanShareGenerator';
+import { logger } from '@/lib/logging-service';
 
 interface LoanActionsProps {
     loan: Loan;
@@ -42,7 +43,7 @@ export default function LoanActions({
         try {
             await shareRef.current.shareLoan(loan, mode);
         } catch (error) {
-            console.error("Error al compartir ficha:", error);
+            logger.error("Error al compartir ficha:", error);
         } finally {
             setIsSharing(false);
             setActiveMenu(false);

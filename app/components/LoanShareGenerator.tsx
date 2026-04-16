@@ -7,6 +7,7 @@ import { Loan, LoanDetails } from '@/lib/types';
 import { format, parseISO, eachDayOfInterval, isSameDay, startOfWeek, endOfWeek, isWithinInterval, getDay, subMonths, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import html2canvas from 'html2canvas';
+import { logger } from '@/lib/logging-service';
 
 // Helper to manage date caching (simplified from Modal)
 let cachedDays: Date[] | null = null;
@@ -56,13 +57,13 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, {}>((_, ref) => {
                         setReadyToCapture(true); // Signal that data is ready for render & capture
                     },
                     (err) => {
-                        console.error("Error fetching details for share", err);
+                        logger.error("Error fetching details for share", err);
                         setGenerating(false);
                         setAuditData(null);
                     }
                 );
             } catch (err) {
-                console.error("Unexpected error fetching details", err);
+                logger.error("Unexpected error fetching details", err);
                 setGenerating(false);
                 setAuditData(null);
             }
@@ -108,7 +109,7 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, {}>((_, ref) => {
 
                     canvas.toBlob(async (blob) => {
                         if (!blob) {
-                            console.error('Failed to create blob');
+                            logger.error('Failed to create blob');
                             return;
                         }
 
@@ -144,13 +145,13 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, {}>((_, ref) => {
                     }, 'image/png');
 
                 } catch (e) {
-                    console.error('Error capturing:', e);
+                    logger.error('Error capturing:', e);
                     setReadyToCapture(false);
                     setGenerating(false);
                     setAuditData(null);
                 }
             } else {
-                console.error('Elements not found for capture');
+                logger.error('Elements not found for capture');
                 setReadyToCapture(false);
                 setGenerating(false);
                 setAuditData(null);

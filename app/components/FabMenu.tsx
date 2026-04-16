@@ -7,6 +7,7 @@ import { userService } from '@/lib/userService';
 import { authService } from '@/lib/auth';
 import { formatMoney } from '@/lib/loanUtils';
 import styles from './FabMenu.module.css';
+import { logger } from '@/lib/logging-service';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import ConfirmModal from './ConfirmModal';
@@ -127,7 +128,7 @@ export default function FabMenu() {
             window.location.href = '/login';
 
         } catch (error) {
-            console.error('Error sharing stats:', error);
+            logger.error('Error sharing stats:', error);
             alert('Error al generar o compartir el resumen.');
         } finally {
             setLoading(false);

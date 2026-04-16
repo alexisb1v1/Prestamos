@@ -9,6 +9,7 @@ import { companyService } from '@/lib/companyService';
 import { authService } from '@/lib/auth';
 import { User, Company } from '@/lib/types';
 import { getLoanStatus, formatDateUTC, formatMoney } from '@/lib/loanUtils';
+import { logger } from '@/lib/logging-service';
 import CreatePaymentModal from '../../components/CreatePaymentModal';
 import LoanDetailsModal from '../../components/LoanDetailsModal';
 import CreateLoanModal from '../../components/CreateLoanModal';
@@ -188,7 +189,7 @@ export default function DashboardPage() {
                     setOrderedLoans(ordered);
                 },
                 (err) => {
-                    console.error('Error loading dashboard:', err);
+                    logger.error('Error loading dashboard:', err);
                     setError('Error al cargar los datos del dashboard.');
                 }
             );
@@ -219,7 +220,7 @@ export default function DashboardPage() {
                 
                 saveOrderTimerRef.current = setTimeout(async () => {
                     try {
-                        console.log('Sincronizando orden con el backend...');
+                        logger.info('Sincronizando orden con el backend...');
                         const response = await userService.updateCollectionOrder(loanIds);
                         
                         if (response.success) {
@@ -227,7 +228,7 @@ export default function DashboardPage() {
                             authService.updateUser({ collectionOrder: loanIds });
                         }
                     } catch (err) {
-                        console.error('Error al sincronizar el orden con el backend:', err);
+                        logger.error('Error al sincronizar el orden con el backend:', err);
                     }
                 }, 800);
             }
@@ -257,7 +258,7 @@ export default function DashboardPage() {
             const activeCollectors = allUsers.filter(u => u.status === 'ACTIVE' && u.profile === 'COBRADOR');
             setCollectors(activeCollectors);
         } catch (err) {
-            console.error('Error loading collectors:', err);
+            logger.error('Error loading collectors:', err);
         } finally {
             setLoadingCollectors(false);
         }
@@ -274,7 +275,7 @@ export default function DashboardPage() {
             }
             return selectedCompanyId;
         } catch (err) {
-            console.error('Failed to load companies');
+            logger.error('Failed to load companies');
             return null;
         }
     }

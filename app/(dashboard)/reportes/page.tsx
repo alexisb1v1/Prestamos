@@ -8,6 +8,7 @@ import { authService } from '@/lib/auth';
 import { User, Company } from '@/lib/types';
 import DateRangePicker from '@/app/components/DateRangePicker';
 import { formatMoney } from '@/lib/loanUtils';
+import { logger } from '@/lib/logging-service';
 
 export default function ReportesPage() {
     const [reportData, setReportData] = useState<ReportData | null>(null);
@@ -37,7 +38,7 @@ export default function ReportesPage() {
                         const companiesData = await companyService.getAll();
                         setCompanies(companiesData);
                     } catch (err) {
-                        console.error('Error companies:', err);
+                        logger.error('Error companies:', err);
                     }
                 } else {
                     setSelectedCompanyId(user.idCompany || '');
@@ -70,7 +71,7 @@ export default function ReportesPage() {
             );
             setCollectors(activeCollectors);
         } catch (err) {
-            console.error('Error loading collectors:', err);
+            logger.error('Error loading collectors:', err);
             setCollectors([]);
         }
     };
@@ -96,7 +97,7 @@ export default function ReportesPage() {
             result.match(
                 (data) => setReportData(data),
                 (err) => {
-                    console.error('Error loading report:', err);
+                    logger.error('Error loading report:', err);
                     setError('Error al cargar el reporte: ' + err.message);
                 }
             );

@@ -11,6 +11,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { LoanShareGeneratorRef } from './LoanShareGenerator';
 import ConfirmModal from './ConfirmModal';
 import LoadingSpinner from './LoadingSpinner';
+import { logger } from '@/lib/logging-service';
 
 interface LoanDetailsModalProps {
     isOpen: boolean;
@@ -47,7 +48,7 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
         result.match(
             (data) => setDetails(data),
             (err) => {
-                console.error(err);
+                logger.error('Error loading loan details:', err);
                 setError('Error al cargar los detalles del préstamo.');
             }
         );
@@ -137,7 +138,7 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
             try {
                 await shareRef.current.shareLoan(loan, activeTab);
             } catch (error) {
-                console.error("Error al compartir ficha:", error);
+                logger.error("Error al compartir ficha:", error);
             } finally {
                 setIsSharing(false);
             }
@@ -161,7 +162,7 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                 setPaymentToDelete(null);
             },
             (err) => {
-                console.error('Error deleting payment:', err);
+                logger.error('Error deleting payment:', err);
                 alert('Error al eliminar el pago: ' + err.message);
             }
         );

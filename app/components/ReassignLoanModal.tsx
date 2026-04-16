@@ -5,6 +5,7 @@ import { reassignLoanUseCase } from '@/app/features/loans';
 import { userService } from '@/lib/userService';
 import { companyService } from '@/lib/companyService';
 import { authService } from '@/lib/auth';
+import { logger } from '@/lib/logging-service';
 import { Loan, User, Company } from '@/lib/types';
 
 interface ReassignLoanModalProps {
@@ -55,7 +56,7 @@ export default function ReassignLoanModal({ isOpen, onClose, onSuccess, loan }: 
             const data = await companyService.getAll();
             setCompanies(data);
         } catch (err) {
-            console.error('Error loading companies:', err);
+            logger.error('Error loading companies:', err);
         }
     };
 
@@ -73,7 +74,7 @@ export default function ReassignLoanModal({ isOpen, onClose, onSuccess, loan }: 
             );
             setCollectors(activeCollectors);
         } catch (err) {
-            console.error('Error loading collectors:', err);
+            logger.error('Error loading collectors:', err);
             setCollectors([]);
         } finally {
             setLoading(false);
@@ -101,7 +102,7 @@ export default function ReassignLoanModal({ isOpen, onClose, onSuccess, loan }: 
                 onClose();
             },
             (err) => {
-                console.error('Error reassigning loan:', err);
+                logger.error('Error reassigning loan:', err);
                 setError(err.message || 'Error al reasignar el préstamo.');
             }
         );

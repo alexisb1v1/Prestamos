@@ -3,6 +3,7 @@ import { api } from './api';
 import { LoginResponse, User } from './types';
 import { userCache } from './userCache';
 import { saveCollectionOrder } from './collectionOrderStorage';
+import { logger } from './logging-service';
 
 /**
  * Authentication Service
@@ -67,10 +68,10 @@ export const authService = {
                         const { order } = JSON.parse(lastOrderData);
                         // Send last order to backend as emergency sync
                         await api.patch('/user/collection-order', { collectionOrder: order });
-                        console.log('✅ Orden de cobro sincronizado forzosamente antes de cerrar sesión.');
+                        logger.info('✅ Orden de cobro sincronizado forzosamente antes de cerrar sesión.');
                     }
                 } catch (e) {
-                    console.error('⚠️ Error en sincronización forzada de logout:', e);
+                    logger.error('⚠️ Error en sincronización forzada de logout:', e);
                 }
             }
         }

@@ -1,6 +1,7 @@
 import Cookies from 'js-cookie';
 import { okAsync, errAsync, ResultAsync } from 'neverthrow';
 import { DomainError } from './domain-error';
+import { logger } from './logging-service';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 const TOKEN_KEY = 'auth_token';
@@ -59,7 +60,7 @@ export async function apiRequest<T = any>(
         const isLoginEndpoint = endpoint.includes('/auth/login') || endpoint.includes('/users/login');
 
         if (isUnauthorized && !isLoginEndpoint) {
-            console.warn('Unauthorized request. Logging out...');
+            logger.warn('Unauthorized request. Logging out...');
 
             // Clear credentials
             Cookies.remove(TOKEN_KEY);
@@ -101,7 +102,7 @@ export async function apiRequest<T = any>(
         // En Next.js Dev, un console.error de una petición rechazada activa la molesta pantalla roja.
         // Silenciamos los 404 o mensajes de "no encontrado" porque son flujos esperados (ej. buscar cliente).
         if (error.statusCode !== 404 && !error.message?.toLowerCase().includes('not found') && !error.message?.toLowerCase().includes('no encontrado')) {
-            console.error('API Request Error:', error);
+            logger.error('API Request Error:', error);
         }
         throw error;
     }

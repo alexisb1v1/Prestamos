@@ -1,6 +1,7 @@
 /**
  * Utility for managing collection route order persistence in localStorage
  */
+import { logger } from './logging-service';
 
 const STORAGE_KEY_PREFIX = 'collection_route_order_';
 const MAX_AGE_DAYS = 30;
@@ -29,7 +30,7 @@ export function saveCollectionOrder(userId: string | number, loanIds: (string | 
         };
         localStorage.setItem(key, JSON.stringify(data));
     } catch (error) {
-        console.error('Error saving collection order:', error);
+        logger.error('Error saving collection order:', error);
     }
 }
 
@@ -56,7 +57,7 @@ export function getCollectionOrder(userId: string | number): (string | number)[]
 
         return data.order;
     } catch (error) {
-        console.error('Error getting collection order:', error);
+        logger.error('Error getting collection order:', error);
         return null;
     }
 }
@@ -69,7 +70,7 @@ export function clearCollectionOrder(userId: string | number): void {
         const key = getStorageKey(userId);
         localStorage.removeItem(key);
     } catch (error) {
-        console.error('Error clearing collection order:', error);
+        logger.error('Error clearing collection order:', error);
     }
 }
 
@@ -98,7 +99,7 @@ export function cleanupOldOrders(): void {
             }
         });
     } catch (error) {
-        console.error('Error cleaning up old orders:', error);
+        logger.error('Error cleaning up old orders:', error);
     }
 }
 

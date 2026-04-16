@@ -8,6 +8,7 @@ import { formatMoney } from '@/lib/loanUtils';
 import styles from './ShareButton.module.css';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { logger } from '@/lib/logging-service';
 import ConfirmModal from './ConfirmModal';
 
 export default function ShareButton() {
@@ -93,7 +94,7 @@ export default function ShareButton() {
             }, 'image/png');
 
         } catch (error) {
-            console.error('Error sharing stats:', error);
+            logger.error('Error sharing stats:', error);
             alert('Error al generar o compartir el resumen.');
         } finally {
             setLoading(false);

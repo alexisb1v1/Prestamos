@@ -9,6 +9,7 @@ import { User, Company } from '@/lib/types';
 import CreateUserModal from '@/app/components/CreateUserModal';
 import ConfirmModal from '@/app/components/ConfirmModal';
 import LoadingSpinner from '@/app/components/LoadingSpinner';
+import { logger } from '@/lib/logging-service';
 
 export default function CobradoresPage() {
     const [users, setUsers] = useState<UserModel[]>([]);
@@ -74,7 +75,7 @@ export default function CobradoresPage() {
         result.match(
             (data) => setUsers(data),
             (err) => {
-                console.error('Error loading users:', err);
+                logger.error('Error loading users:', err);
                 setError(err.message || 'Error al cargar la lista de usuarios.');
             }
         );
@@ -98,7 +99,7 @@ export default function CobradoresPage() {
                 setIsModalOpen(true);
             },
             (err) => {
-                console.error('Error fetching fresh user data:', err);
+                logger.error('Error fetching fresh user data:', err);
                 setError(err.message || 'Error al cargar los datos del usuario.');
             }
         );
@@ -137,7 +138,7 @@ export default function CobradoresPage() {
                 setConfirmation({ isOpen: false, action: null, user: null });
             },
             (err) => {
-                console.error('Error executing action:', err);
+                logger.error('Error executing action:', err);
                 setError(err.message || 'Error al procesar la acción.');
                 setLoading(false);
                 setConfirmation({ isOpen: false, action: null, user: null });

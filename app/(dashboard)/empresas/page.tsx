@@ -6,6 +6,7 @@ import { Company } from '@/lib/types';
 import CreateCompanyModal from '@/app/components/CreateCompanyModal';
 import ConfirmModal from '@/app/components/ConfirmModal';
 import LoadingSpinner from '@/app/components/LoadingSpinner';
+import { logger } from '@/lib/logging-service';
 
 interface MobileCompanyCardProps {
     company: Company;
@@ -113,7 +114,7 @@ export default function EmpresasPage() {
             const data = await companyService.getAll();
             setCompanies(data);
         } catch (err) {
-            console.error('Error loading companies:', err);
+            logger.error('Error loading companies:', err);
             setError('Error al cargar la lista de empresas.');
         } finally {
             setLoading(false);

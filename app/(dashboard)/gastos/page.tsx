@@ -9,6 +9,7 @@ import { Expense, User, Company } from '@/lib/types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import { logger } from '@/lib/logging-service';
 
 export default function ExpensesPage() {
     const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -94,10 +95,10 @@ export default function ExpensesPage() {
             const result = await getExpensesUseCase.execute(date, userIdParam, companyIdFilter);
             result.match(
                 (data) => setExpenses(data),
-                (err) => console.error('Error loading expenses:', err)
+                (err) => logger.error('Error loading expenses:', err)
             );
         } catch (error) {
-            console.error('Unexpected error loading expenses:', error);
+            logger.error('Unexpected error loading expenses:', error);
         } finally {
             setLoading(false);
         }
@@ -112,7 +113,7 @@ export default function ExpensesPage() {
             );
             setCollectors(activeCollectors);
         } catch (err) {
-            console.error('Error loading collectors:', err);
+            logger.error('Error loading collectors:', err);
         }
     };
 

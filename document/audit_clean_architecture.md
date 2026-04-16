@@ -20,7 +20,7 @@
 | 8 | Nomenclatura kebab-case / PascalCase | ⚠️ Mixto | Features usan kebab-case ✓, pero componentes usan `PascalCase.tsx` en lugar de `kebab-case.component.tsx` |
 | 9 | JSDoc en métodos públicos | ❌ **No cumple** | 0 `@param`/`@returns` encontrados en features |
 | 10 | Tests (≥ 80%) | ❌ **No cumple** | 0 archivos `.spec.ts` / `.test.ts` encontrados |
-| 11 | Sin `console.log` / `console.error` | ❌ **No cumple** | 2 `console.log` + ~44 `console.error` en producción |
+| 11 | Sin `console.log` / `console.error` | ✅ **Cumple** | Migrado a `LoggingService` centralizado |
 | 12 | Sin servicios legacy / `@/lib/types` en UI | ⚠️ Deuda técnica | 29 archivos aún importan desde `@/lib/types`; algunos usan `@/lib/userService` directamente |
 
 ---
@@ -219,9 +219,9 @@ Para cerrar los gaps identificados en esta auditoría y alinearnos con la **API 
 
 ### 🔧 1. Infraestructura y Estándares (Core)
 - [x] **Sincronización de Endpoints:** Actualizar todos los repositorios en el Frontend (`web`) para usar rutas en singular (`/loan`, `/user`, `/expense`, etc.) según la API v2.
-- [ ] **Sistema de Errores v2:**
-    - [ ] Actualizar `lib/error-mapping.ts` en el Frontend para mapear los nuevos códigos (`GEN_001`, `LOA_001`, etc.) a mensajes amigables.
-- [ ] **Servicio de Logging:** Crear `LoggingService` en el Frontend y reemplazar los `console.log/error` identificados.
+- [x] **Sistema de Errores v2:**
+    - [x] Actualizar `lib/error-mapping.ts` en el Frontend para mapear los nuevos códigos (`GEN_001`, `LOA_001`, etc.) a mensajes amigables.
+- [x] **Servicio de Logging:** Crear `LoggingService` en el Frontend y reemplazar los `console.log/error` identificados.
 
 ### 🏗️ 2. Migración a Clean Architecture
 - [ ] **Feature `companies`:**

@@ -12,6 +12,7 @@ import CreatePaymentModal from '../../components/CreatePaymentModal';
 import LoanDetailsModal from '../../components/LoanDetailsModal';
 import ReassignLoanModal from '../../components/ReassignLoanModal';
 import DeleteLoanConfirmModal from '../../components/DeleteLoanConfirmModal';
+import { logger } from '@/lib/logging-service';
 import LoanShareGenerator, { LoanShareGeneratorRef } from '../../components/LoanShareGenerator';
 import LoanActions from '../../components/LoanActions';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -173,7 +174,7 @@ export default function PrestamosPage() {
             result.match(
                 (data) => setLoans(data),
                 (err) => {
-                    console.error('Error loading loans:', err);
+                    logger.error('Error loading loans:', err);
                     setError('Error al cargar la lista de préstamos: ' + err.message);
                 }
             );
@@ -192,7 +193,7 @@ export default function PrestamosPage() {
             );
             setCollectors(activeCollectors);
         } catch (err) {
-            console.error('Error loading collectors:', err);
+            logger.error('Error loading collectors:', err);
             // Fallback empty?
             setCollectors([]);
         }
