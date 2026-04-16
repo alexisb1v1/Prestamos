@@ -82,7 +82,7 @@ export default function DashboardLayout({
                     <button 
                          onClick={async () => {
                              await authService.logout();
-                             router.push('/login');
+                             window.location.href = '/login';
                          }}
                          style={{
                              width: '38px', height: '38px', borderRadius: '0.8rem',

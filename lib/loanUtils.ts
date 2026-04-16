@@ -72,6 +72,7 @@ export const getLoanStatus = (loan: Loan, referenceDate?: Date) => {
         label: `${labelPrefix} (${daysOverdue} ${daysOverdue === 1 ? 'día' : 'días'})`, 
         color: statusColor, 
         icon: isExpired || daysOverdue >= 6 ? '🔴' : '🟡', 
-        value: isExpired || daysOverdue >= 6 ? 'red' : 'yellow' 
+        value: isExpired || daysOverdue >= 6 ? 'red' : 'yellow',
+        overdueDays: daysOverdue
     };
 };

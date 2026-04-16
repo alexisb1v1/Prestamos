@@ -123,8 +123,8 @@ export default function FabMenu() {
 
             // 4. API Call & Logout
             await userService.toggleDayStatus(String(currentUser.id), true);
-            authService.logout();
-            router.push('/login');
+            await authService.logout();
+            window.location.href = '/login';
 
         } catch (error) {
             console.error('Error sharing stats:', error);

@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, memo } from 'react';
-
 import { getLoanDetailsUseCase, deleteInstallmentUseCase } from '@/app/features/loans';
 import { authService } from '@/lib/auth';
-import { formatDateUTC, formatMoney } from '@/lib/loanUtils';
+import { formatDateUTC, formatMoney, getLoanStatus } from '@/lib/loanUtils';
 import { Loan, LoanDetails, InstallmentDetail } from '@/lib/types';
-import { format, parseISO, eachDayOfInterval, isSameDay, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addMonths, subMonths, isWithinInterval, getDay, addDays, subDays, differenceInCalendarDays } from 'date-fns';
+import { format, parseISO, eachDayOfInterval, isSameDay, startOfWeek, endOfWeek, isWithinInterval, getDay, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { usePermissions } from '@/hooks/usePermissions';
 import { LoanShareGeneratorRef } from './LoanShareGenerator';
@@ -20,7 +19,6 @@ interface LoanDetailsModalProps {
     shareRef?: React.RefObject<LoanShareGeneratorRef | null>;
 }
 
-
 function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalProps) {
     const [details, setDetails] = useState<LoanDetails | null>(null);
     const [loading, setLoading] = useState(false);
@@ -29,37 +27,8 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
     const [isMobile, setIsMobile] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
     const { canDeletePayment } = usePermissions();
-    const currentUser = authService.getUser();
-
-    // Helper: Formatear fecha para agrupación
-    const groupPaymentsByDate = (installments: InstallmentDetail[]) => {
-        const sorted = [...installments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        const groups: { [key: string]: { installments: any[], totalDay: number } } = {};
-
-        sorted.forEach(inst => {
-            const dateKey = format(parseISO(inst.date), 'yyyy-MM-dd');
-            if (!groups[dateKey]) {
-                groups[dateKey] = { installments: [], totalDay: 0 };
-            }
-            groups[dateKey].installments.push(inst);
-            groups[dateKey].totalDay += inst.amount;
-        });
-
-        return groups;
-    };
-
-    // Helper: Calcular saldo acumulado para cada pago
-    const getInstallmentsWithBalance = (installments: InstallmentDetail[], initialTotal: number) => {
-        const sortedOldestFirst = [...installments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        let currentBalance = initialTotal;
-        
-        const withBalance = sortedOldestFirst.map(inst => {
-            currentBalance -= inst.amount;
-            return { ...inst, balanceAfter: currentBalance };
-        });
-
-        return withBalance.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    };
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
 
     useEffect(() => {
         const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -68,34 +37,6 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    // Confirm Modal State
-    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-    const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
-
-    const openConfirmDelete = (paymentId: string) => {
-        setPaymentToDelete(paymentId);
-        setIsConfirmOpen(true);
-    };
-
-    const handleDeletePayment = async () => {
-        if (!paymentToDelete) return;
-
-        const result = await deleteInstallmentUseCase.execute(paymentToDelete);
-        
-        result.match(
-            () => {
-                loadDetails(); // Reload details
-                setIsConfirmOpen(false);
-                setPaymentToDelete(null);
-            },
-            (err) => {
-                console.error('Error deleting payment:', err);
-                alert('Error al eliminar el pago: ' + err.message);
-            }
-        );
-    };
-
-    // Move loadDetails function definition BEFORE useEffect to avoid dependency issues
     const loadDetails = useCallback(async () => {
         if (!loan) return;
         setLoading(true);
@@ -121,25 +62,12 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
         }
     }, [isOpen, loan, loadDetails]);
 
-    // Memoize utility functions with stable references
-    const parseDateTimeSafe = useCallback((dateStr: string) => {
-        if (!dateStr) return new Date();
-        return new Date(dateStr);
-    }, []);
-
     const parseDateSafe = useCallback((dateStr: string) => {
         if (!dateStr) return new Date();
         const date = new Date(dateStr);
-        // Crear una fecha local usando los valores UTC para evitar desfase de zona horaria en fechas tipo DATE
         return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
     }, []);
 
-    const formatDateTimePE = useCallback((dateStr: string) => {
-        if (!dateStr) return '-';
-        return format(parseDateTimeSafe(dateStr), 'dd/MM/yyyy HH:mm');
-    }, [parseDateTimeSafe]);
-
-    // Only recalculate when actual date strings change
     const startDateStr = details?.startDate || loan?.startDate || '';
     const endDateStr = details?.endDate || loan?.endDate || '';
 
@@ -151,7 +79,6 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
         const start = parseDateSafe(startDateStr);
         let end = parseDateSafe(endDateStr);
         
-        // Coherencia con el exportador: Extender si está vencido o tiene pagos tardíos
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const isLiquidated = loan?.status === 'Liquidado';
@@ -160,7 +87,6 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
             end = today;
         }
 
-        // Asegurar que se incluyan todos los abonos registrados (incluso fuera de fecha)
         if (details?.installments && details.installments.length > 0) {
             details.installments.forEach(inst => {
                 const instDate = parseDateSafe(inst.date);
@@ -187,13 +113,11 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
     }, [parsedDates.start, parsedDates.end]);
 
     const getInstallmentForDay = useCallback((day: Date) => {
-        // Normalizamos 'day' a solo fecha local para la comparación
-        const normalizedDay = new Date(day.getFullYear(), day.getMonth(), day.getDate());
-
+        const normalizedDay = new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime();
         return details?.installments?.find(inst => {
             const instDate = new Date(inst.date);
-            const instDay = new Date(instDate.getFullYear(), instDate.getMonth(), instDate.getDate());
-            return instDay.getTime() === normalizedDay.getTime();
+            const instDay = new Date(instDate.getFullYear(), instDate.getMonth(), instDate.getDate()).getTime();
+            return instDay === normalizedDay;
         });
     }, [details?.installments]);
 
@@ -207,18 +131,10 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
     const isEndDate = useCallback((day: Date) => isSameDay(parsedDates.end, day), [parsedDates.end]);
     const isToday = useCallback((day: Date) => isSameDay(new Date(), day), []);
 
-    const isPaymentDeleteable = useCallback((paymentDateStr: string, registeredByUserId?: string) => {
-        return canDeletePayment(paymentDateStr, registeredByUserId);
-    }, [canDeletePayment]);
-
-    // Conditional return AFTER all hooks
-    if (!isOpen || !loan) return null;
-
     const handleShare = async () => {
         if (loan && shareRef?.current) {
             setIsSharing(true);
             try {
-                // Compartir según la pestaña activa: 'calendar' o 'list'
                 await shareRef.current.shareLoan(loan, activeTab);
             } catch (error) {
                 console.error("Error al compartir ficha:", error);
@@ -227,6 +143,31 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
             }
         }
     };
+
+    const openConfirmDelete = (paymentDate: string) => {
+        setPaymentToDelete(paymentDate);
+        setIsConfirmOpen(true);
+    };
+
+    const handleDeletePayment = async () => {
+        if (!paymentToDelete) return;
+
+        const result = await deleteInstallmentUseCase.execute(paymentToDelete);
+        
+        result.match(
+            () => {
+                loadDetails();
+                setIsConfirmOpen(false);
+                setPaymentToDelete(null);
+            },
+            (err) => {
+                console.error('Error deleting payment:', err);
+                alert('Error al eliminar el pago: ' + err.message);
+            }
+        );
+    };
+
+    if (!isOpen || !loan) return null;
 
     return (
         <>
@@ -304,7 +245,7 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                         boxShadow: '0 4px 12px -2px rgba(99, 102, 241, 0.2)',
                         position: 'relative',
                         overflow: 'hidden',
-                        marginBottom: '0.1rem',
+                        marginBottom: '0.2rem',
                         flexShrink: 0
                     }}>
                         <div style={{ position: 'relative', zIndex: 1 }}>
@@ -332,32 +273,47 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                                 </div>
                             </div>
 
-                            <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.15)', margin: '0.4rem 0' }} />
+                            <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.2)', margin: '0.45rem 0' }} />
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <div style={{ width: '26px', height: '26px', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '0.5rem', opacity: 0.8, fontWeight: 600 }}>Total</div>
-                                        <div style={{ fontSize: '0.8rem', fontWeight: 800 }}>{formatMoney(loan.amount + (loan.interest || 0))}</div>
-                                    </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.4rem' }}>
+                                {/* Total */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                                    <div style={{ fontSize: '0.45rem', opacity: 0.8, fontWeight: 700, textTransform: 'uppercase' }}>Total</div>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: 900 }}>{formatMoney(loan.amount + (loan.interest || 0))}</div>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <div style={{ width: '26px', height: '26px', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '0.5rem', opacity: 0.8, fontWeight: 600 }}>Cuota</div>
-                                        <div style={{ fontSize: '0.8rem', fontWeight: 800 }}>{formatMoney(loan.fee || 0)}</div>
+                                {/* Cuota */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                                    <div style={{ fontSize: '0.45rem', opacity: 0.8, fontWeight: 700, textTransform: 'uppercase' }}>Cuota</div>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: 900 }}>{formatMoney(loan.fee || 0)}</div>
+                                </div>
+                                {/* Saldo */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                                    <div style={{ fontSize: '0.45rem', color: '#fef08a', fontWeight: 700, textTransform: 'uppercase' }}>Saldo</div>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#fef08a' }}>{formatMoney(loan.remainingAmount || 0)}</div>
+                                </div>
+                                {/* Estado */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', textAlign: 'right' }}>
+                                    <div style={{ fontSize: '0.45rem', opacity: 0.8, fontWeight: 700, textTransform: 'uppercase' }}>Días</div>
+                                    <div style={{ fontSize: '0.65rem', fontWeight: 900 }}>
+                                        {(() => {
+                                            const s = getLoanStatus(loan, new Date()) as any;
+                                            if (s.value === 'red') return `${s.overdueDays}d Mora`;
+                                            if (s.value === 'blue') return 'Lqd';
+                                            const start = parseDateSafe(loan.startDate);
+                                            const end = parseDateSafe(loan.endDate);
+                                            const today = new Date();
+                                            today.setHours(0,0,0,0);
+                                            const total = differenceInDays(end, start);
+                                            const current = differenceInDays(today, start);
+                                            return `${Math.max(0, current)}/${total}`;
+                                        })()}
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Compact Tabs */}
+                    {/* Tabs */}
                     <div style={{
                         display: 'flex',
                         gap: '2px',
@@ -375,10 +331,11 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                                 borderRadius: '0.5rem',
                                 border: 'none',
                                 cursor: 'pointer',
-                                fontSize: '0.85rem',
-                                fontWeight: '700',
+                                fontSize: '0.8rem',
+                                fontWeight: '800',
                                 backgroundColor: activeTab === 'calendar' ? 'white' : 'transparent',
                                 color: activeTab === 'calendar' ? '#4f46e5' : 'var(--text-secondary)',
+                                boxShadow: activeTab === 'calendar' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                                 transition: 'all 0.2s'
                             }}
                             onClick={() => setActiveTab('calendar')}
@@ -392,317 +349,137 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                                 borderRadius: '0.5rem',
                                 border: 'none',
                                 cursor: 'pointer',
-                                fontSize: '0.85rem',
-                                fontWeight: '700',
+                                fontSize: '0.8rem',
+                                fontWeight: '800',
                                 backgroundColor: activeTab === 'list' ? 'white' : 'transparent',
                                 color: activeTab === 'list' ? '#4f46e5' : 'var(--text-secondary)',
+                                boxShadow: activeTab === 'list' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                                 transition: 'all 0.2s'
                             }}
                             onClick={() => setActiveTab('list')}
                         >
-                            Listado
+                            Historial
                         </button>
                     </div>
 
+                    {/* Tab Content */}
                     <div style={{
                         flex: 1,
                         overflowY: 'auto',
                         overflowX: 'hidden',
-                        paddingRight: '2px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.25rem'
+                        padding: '0.2rem 0'
                     }}>
                         {loading ? (
-                            <LoadingSpinner message="Cargando detalles..." />
-                        ) : error ? (
-                            <div style={{ color: 'red', textAlign: 'center' }}>{error}</div>
+                            <LoadingSpinner message="Cargando..." />
                         ) : activeTab === 'calendar' ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
-                                {/* Calendar Header */}
-                                <div style={{ textAlign: 'center', padding: '0.1rem 0' }}>
-                                    <span style={{ fontWeight: 800, textTransform: 'capitalize', fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                                <div style={{ textAlign: 'center', paddingBottom: '0.4rem' }}>
+                                    <span style={{ fontWeight: 800, textTransform: 'capitalize', fontSize: '0.9rem', color: 'var(--text-primary)' }}>
                                         {monthLabel}
                                     </span>
                                 </div>
-
-                                {/* Calendar Grid */}
                                 <div style={{
                                     display: 'grid',
                                     gridTemplateColumns: 'repeat(7, 1fr)',
-                                    gap: '3px',
-                                    backgroundColor: 'transparent',
-                                    position: 'relative',
-                                    padding: '0.1rem'
+                                    gap: '4px',
+                                    padding: '2px'
                                 }}>
                                     {['LU', 'MA', 'MI', 'JU', 'VI', 'SÁ', 'DO'].map(d => (
-                                        <div key={d} style={{
-                                            padding: '0.1rem 0',
-                                            textAlign: 'center',
-                                            fontSize: '0.6rem',
-                                            fontWeight: 800,
-                                            color: 'var(--text-secondary)'
-                                        }}>
-                                            {d}
-                                        </div>
+                                        <div key={d} style={{ textAlign: 'center', fontSize: '0.6rem', fontWeight: 900, color: 'var(--text-secondary)' }}>{d}</div>
                                     ))}
-
                                     {days.map(day => {
                                         const installment = getInstallmentForDay(day);
                                         const isRelevant = isLoanDate(day);
                                         const isStart = isStartDate(day);
                                         const isEnd = isEndDate(day);
                                         const isTodayDate = isToday(day);
-
                                         const today = new Date();
                                         today.setHours(0, 0, 0, 0);
                                         const isOverdueUnpaid = isRelevant && day < today && !installment;
                                         
-                                        let bgColor = '#f8fafc'; 
+                                        let bgColor = 'var(--bg-app)';
                                         let textColor = 'var(--text-secondary)';
-                                        let amountColor = '#64748b';
                                         
-                                        if (installment) {
-                                            bgColor = '#eff9f1'; 
-                                            textColor = '#16a34a';
-                                            amountColor = '#16a34a';
-                                        } else if (isOverdueUnpaid) {
-                                            bgColor = '#fff7ed'; 
-                                            textColor = '#ea580c';
-                                            amountColor = '#ea580c';
-                                        } else if (isTodayDate && isRelevant) {
-                                            bgColor = '#ecf3ff'; 
-                                            textColor = '#4f46e5';
-                                            amountColor = '#4f46e5';
-                                        } else if (isRelevant) {
-                                            bgColor = '#f0f9ff'; 
-                                            textColor = '#0369a1';
-                                            amountColor = '#0369a1';
-                                        }
-
-                                        if (isStart) {
-                                            bgColor = '#4f46e5';
-                                            textColor = 'white';
-                                            amountColor = 'white';
-                                        } else if (isEnd) {
-                                            bgColor = '#f43f5e';
-                                            textColor = 'white';
-                                            amountColor = 'white';
-                                        }
+                                        if (installment) { bgColor = '#eff9ed'; textColor = '#15803d'; }
+                                        else if (isOverdueUnpaid) { bgColor = '#fef2f2'; textColor = '#b91c1c'; }
+                                        else if (isRelevant) { bgColor = '#f0f9ff'; textColor = '#0369a1'; }
+                                        
+                                        if (isStart) { bgColor = '#4f46e5'; textColor = 'white'; }
+                                        else if (isEnd) { bgColor = '#f43f5e'; textColor = 'white'; }
 
                                         return (
                                             <div key={day.toISOString()} style={{
-                                                minHeight: isMobile ? '42px' : '54px',
-                                                padding: '2px',
-                                                backgroundColor: bgColor,
-                                                borderRadius: '0.45rem',
-                                                position: 'relative',
+                                                aspectRatio: '1',
                                                 display: 'flex',
                                                 flexDirection: 'column',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                border: (isTodayDate && isRelevant && !isStart && !isEnd) ? '1px solid #4f46e5' : 'none'
+                                                backgroundColor: bgColor,
+                                                borderRadius: '0.5rem',
+                                                border: isTodayDate ? '1.5px solid #4f46e5' : 'none',
+                                                opacity: isRelevant || installment ? 1 : 0.4
                                             }}>
-                                                <div style={{
-                                                    fontSize: isMobile ? '0.75rem' : '0.85rem',
-                                                    fontWeight: 800,
-                                                    color: textColor,
-                                                    lineHeight: 1,
-                                                    marginBottom: (isStart || isEnd) ? '1px' : '0'
-                                                }}>
-                                                    {format(day, 'd')}
-                                                </div>
-
-                                                {(isStart || isEnd) && (
-                                                    <div style={{
-                                                        fontSize: '0.45rem',
-                                                        fontWeight: 800,
-                                                        textTransform: 'uppercase',
-                                                        lineHeight: 1
-                                                    }}>
-                                                        {isStart ? 'Inicio' : 'Fin'}
-                                                    </div>
+                                                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: textColor }}>{format(day, 'd')}</span>
+                                                {isRelevant && !isStart && !isEnd && (
+                                                    <span style={{ fontSize: '0.45rem', fontWeight: 700, opacity: 0.8, color: textColor }}>
+                                                        {loan.fee?.toFixed(0)}
+                                                    </span>
                                                 )}
-
-                                                <div style={{ 
-                                                    fontSize: isMobile ? '0.5rem' : '0.6rem', 
-                                                    fontWeight: 700, 
-                                                    color: amountColor,
-                                                    opacity: (isStart || isEnd) ? 1 : 0.9,
-                                                    lineHeight: 1
-                                                }}>
-                                                    {isRelevant ? (loan.fee || 0).toFixed(0) : ''}
-                                                </div>
+                                                {(isStart || isEnd) && (
+                                                    <span style={{ fontSize: '0.4rem', fontWeight: 900, textTransform: 'uppercase' }}>
+                                                        {isStart ? 'Ini' : 'Fin'}
+                                                    </span>
+                                                )}
                                             </div>
                                         );
                                     })}
                                 </div>
-
-                                {/* Compact Legend */}
-                                <div style={{ 
-                                    marginTop: '0.4rem', 
-                                    display: 'grid', 
-                                    gridTemplateColumns: 'repeat(2, 1fr)',
-                                    gap: '0.2rem 0.5rem', 
-                                    fontSize: '0.65rem', 
-                                    padding: '0 0.5rem'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                        <div style={{ width: '8px', height: '8px', backgroundColor: '#22c55e', borderRadius: '50%' }}></div>
-                                        <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Pago OK</span>
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                        <div style={{ width: '8px', height: '8px', backgroundColor: '#f97316', borderRadius: '50%' }}></div>
-                                        <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Atrasado</span>
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                        <div style={{ width: '8px', height: '8px', backgroundColor: '#6366f1', borderRadius: '50%' }}></div>
-                                        <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Próximo</span>
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                        <div style={{ width: '8px', height: '8px', backgroundColor: '#cbd5e1', borderRadius: '50%' }}></div>
-                                        <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Sin Cuota</span>
-                                    </div>
-                                </div>
                             </div>
                         ) : (
-                            /* List View */
-                            <div style={{ padding: '0 0.5rem' }}>
+                            /* Flat History List Grid */
+                            <div style={{ padding: '0 0.2rem' }}>
                                 {!details?.installments.length ? (
-                                    <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-secondary)', opacity: 0.7, fontSize: '0.9rem', backgroundColor: 'var(--bg-app)', borderRadius: '1rem', border: '1px dashed var(--border-color)' }}>
-                                        <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>💸</div>
-                                        No hay pagos registrados aún.
-                                    </div>
+                                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>No hay abonos aún.</div>
                                 ) : (() => {
-                                    const totalPaid = details.installments.reduce((sum, i) => sum + i.amount, 0);
-                                    const initialTotal = (loan?.amount || 0) + (loan?.interest || 0);
-                                    const installmentsWithBalance = getInstallmentsWithBalance(details.installments, initialTotal);
-                                    const groupedPayments = groupPaymentsByDate(installmentsWithBalance);
-
+                                    const sorted = [...details.installments].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
                                     return (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                                            {/* Summary Header */}
-                                            <div style={{ 
-                                                padding: '1rem 1.25rem', 
-                                                backgroundColor: 'rgba(99, 102, 241, 0.05)', 
-                                                borderRadius: '1rem', 
-                                                border: '1px solid rgba(99, 102, 241, 0.1)',
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center',
-                                                marginBottom: '0.5rem'
-                                            }}>
-                                                <div>
-                                                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Recaudado</div>
-                                                    <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text-primary)' }}>{formatMoney(totalPaid)}</div>
-                                                </div>
-                                                <div style={{ textAlign: 'right' }}>
-                                                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Abonos</div>
-                                                    <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text-primary)' }}>{details.installments.length}</div>
-                                                </div>
-                                            </div>
-
-                                            <div style={{ 
-                                                display: 'flex', 
-                                                flexDirection: 'column', 
-                                                gap: '1.5rem',
-                                                maxHeight: '450px',
-                                                overflowY: 'auto',
-                                                paddingRight: '0.25rem'
-                                            }}>
-                                                {Object.entries(groupedPayments).map(([dateKey, group], gIdx) => (
-                                                    <div key={dateKey} style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                                                        {/* Date Header */}
-                                                        <div style={{ 
-                                                            display: 'flex', 
-                                                            justifyContent: 'space-between', 
-                                                            alignItems: 'center',
-                                                            padding: '0 0.25rem',
-                                                            position: 'sticky',
-                                                            top: 0,
-                                                            backgroundColor: 'var(--bg-card)',
-                                                            zIndex: 10,
-                                                            paddingBottom: '0.4rem'
-                                                        }}>
-                                                            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
-                                                                {format(parseISO(dateKey), "EEEE, d 'de' MMMM", { locale: es })}
-                                                            </span>
-                                                            <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--color-success)', backgroundColor: 'rgba(34, 197, 94, 0.1)', padding: '2px 8px', borderRadius: '12px' }}>
-                                                                Total: {formatMoney(group.totalDay)}
-                                                            </span>
+                                        <div style={{ 
+                                            display: 'grid', 
+                                            gridTemplateColumns: 'repeat(2, 1fr)', 
+                                            gap: '6px' 
+                                        }}>
+                                            {sorted.map((inst, idx) => (
+                                                <div key={inst.id} style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    padding: '0.4rem 0.6rem',
+                                                    backgroundColor: 'var(--bg-app)',
+                                                    borderRadius: '0.6rem',
+                                                    border: '1px solid var(--border-color)'
+                                                }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <span style={{ fontSize: '0.65rem', fontWeight: 900, backgroundColor: 'rgba(99,102,241,0.1)', color: '#6366f1', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px' }}>
+                                                            {sorted.length - idx}
+                                                        </span>
+                                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                            <span style={{ fontSize: '0.75rem', fontWeight: 800 }}>{format(parseISO(inst.date), 'dd/MM/yyyy')}</span>
+                                                            <span style={{ fontSize: '0.55rem', color: 'var(--text-secondary)' }}>{format(parseISO(inst.date), 'hh:mm a')}</span>
                                                         </div>
-
-                                                        {/* Payments of the day */}
-                                                        {group.installments.map((inst, idx) => {
-                                                            const canDelete = isPaymentDeleteable(inst.date, inst.registeredByUserId);
-                                                            return (
-                                                                <div key={inst.id} style={{
-                                                                    padding: '0.85rem 1rem',
-                                                                    backgroundColor: 'var(--bg-app)',
-                                                                    borderRadius: '1rem',
-                                                                    border: '1px solid var(--border-color)',
-                                                                    display: 'flex',
-                                                                    justifyContent: 'space-between',
-                                                                    alignItems: 'center',
-                                                                    transition: 'transform 0.2s ease',
-                                                                    position: 'relative'
-                                                                }}>
-                                                                    <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'center' }}>
-                                                                        <div style={{
-                                                                            width: '38px',
-                                                                            height: '38px',
-                                                                            borderRadius: '12px',
-                                                                            backgroundColor: 'white',
-                                                                            color: 'var(--color-success)',
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            justifyContent: 'center',
-                                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                                                                            border: '1px solid var(--border-color)',
-                                                                            fontSize: '0.9rem',
-                                                                            fontWeight: 900,
-                                                                            fontFamily: 'inherit'
-                                                                        }}>
-                                                                            S/
-                                                                        </div>
-                                                                        <div>
-                                                                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                                                                                <div style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--text-primary)' }}>
-                                                                                    {formatMoney(inst.amount)}
-                                                                                </div>
-                                                                                <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                                                                                    Saldo: {formatMoney(inst.balanceAfter)}
-                                                                                </div>
-                                                                            </div>
-                                                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 600, marginTop: '2px' }}>
-                                                                                {format(parseISO(inst.date), 'hh:mm a')} • {inst.registeredBy}
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                    
-                                                                    {canDelete && (
-                                                                        <button
-                                                                            onClick={() => openConfirmDelete(inst.id)}
-                                                                            style={{ 
-                                                                                padding: '0.6rem', 
-                                                                                borderRadius: '0.75rem', 
-                                                                                border: 'none', 
-                                                                                backgroundColor: 'rgba(239, 68, 68, 0.08)', 
-                                                                                color: '#ef4444', 
-                                                                                cursor: 'pointer',
-                                                                                transition: 'all 0.2s'
-                                                                            }}
-                                                                            className="delete-payment-btn"
-                                                                        >
-                                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                                                                        </button>
-                                                                    )}
-                                                                </div>
-                                                            );
-                                                        })}
                                                     </div>
-                                                ))}
-                                            </div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                                        <span style={{ fontSize: '0.9rem', fontWeight: 900, color: '#16a34a' }}>S/{inst.amount}</span>
+                                                        {canDeletePayment(inst.date, inst.registeredByUserId) && (
+                                                            <button 
+                                                                onClick={() => openConfirmDelete(inst.date)}
+                                                                style={{ padding: '4px', border: 'none', background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderRadius: '4px', cursor: 'pointer' }}
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
                                     );
                                 })()}
@@ -710,28 +487,27 @@ function LoanDetailsModal({ isOpen, onClose, loan, shareRef }: LoanDetailsModalP
                         )}
                     </div>
 
-                    <div style={{ marginTop: 'auto', padding: '0.25rem 0.25rem 0' }}>
+                    <div style={{ marginTop: 'auto', paddingTop: '0.4rem' }}>
                         <button
                             onClick={onClose}
                             style={{
                                 width: '100%',
-                                padding: '0.75rem',
+                                padding: '0.7rem',
                                 borderRadius: '0.75rem',
                                 border: '1px solid var(--border-color)',
                                 backgroundColor: 'transparent',
                                 color: 'var(--text-secondary)',
-                                fontSize: '0.9rem',
+                                fontSize: '0.85rem',
                                 fontWeight: 800,
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
+                                cursor: 'pointer'
                             }}
                         >
-                            Cerrar Detalle
+                            Cerrar
                         </button>
                     </div>
                 </div>
             </div>
-
+            
             <ConfirmModal
                 isOpen={isConfirmOpen}
                 onClose={() => setIsConfirmOpen(false)}

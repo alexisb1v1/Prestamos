@@ -41,7 +41,7 @@ export default function Sidebar() {
 
     const handleLogout = async () => {
         await authService.logout();
-        router.push('/login');
+        window.location.href = '/login';
     };
 
     // Helper to get initials for avatar
