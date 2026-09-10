@@ -1,26 +1,22 @@
-import { CreatePaymentRequestDTO, CreateInstallmentRequestDTO, PaymentResponseDTO } from './payment.dto';
-import { PaymentModel } from './payment.model';
-import { CreatePaymentRequest, CreateInstallmentRequest } from '@/lib/types';
+import { PaymentResponseDTO } from "./payment.dto";
+import { Payment } from "./payment.model";
 
+/**
+ * Mapper para transformar datos entre la capa de infraestructura (API/DTO) y la capa de dominio en pagos.
+ */
 export class PaymentMapper {
-    static toPaymentDTOCreate(domain: CreatePaymentRequest): CreatePaymentRequestDTO {
-        return {
-            loanId: String(domain.loanId),
-            amount: Number(domain.amount),
-            userId: String(domain.userId)
-        };
-    }
-
-    static toInstallmentDTOCreate(domain: CreateInstallmentRequest): CreateInstallmentRequestDTO {
-        return {
-            loanId: String(domain.loanId),
-            amount: Number(domain.amount),
-            userId: String(domain.userId),
-            paymentType: domain.paymentType
-        };
-    }
-
-    static toDomain(dto: PaymentResponseDTO): PaymentModel {
-        return new PaymentModel(dto.id?.toString() || '');
-    }
+  /**
+   * Convierte el DTO de respuesta de la API al Modelo de Dominio.
+   * @param dto Datos provenientes de la API.
+   * @returns Modelo de dominio Payment.
+   */
+  static toDomain(dto: PaymentResponseDTO): Payment {
+    return {
+      id: dto.id?.toString() || "",
+      loanId: "",
+      amount: 0,
+      date: "",
+      cobradorId: "",
+    };
+  }
 }

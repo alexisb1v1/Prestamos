@@ -1,39 +1,34 @@
-import { CreateExpenseRequestDTO, ExpenseResponseDTO } from './expense.dto';
-import { ExpenseModel } from './expense.model';
-import { CreateExpenseRequest } from '@/lib/types'; // Types from the original app
+import { ExpenseDto } from "./expense.dto";
+import { Expense } from "./expense.model";
 
+/**
+ * Mapper para transformar datos entre la capa de infraestructura (API/DTO) y la capa de dominio.
+ */
 export class ExpenseMapper {
-    /**
-     * Convierte el request local al DTO que espera la API
-     */
-    static toDTOCreate(domain: CreateExpenseRequest): CreateExpenseRequestDTO {
-        return {
-            description: domain.description,
-            amount: Number(domain.amount),
-            userId: domain.userId.toString()
-        };
-    }
+  /**
+   * Convierte el DTO de respuesta de la API al Modelo de Dominio.
+   * @param dto Datos provenientes de la API.
+   * @returns Modelo de dominio Expense.
+   */
+  static toDomain(dto: ExpenseDto): Expense {
+    return {
+      id: dto.id?.toString() || "",
+      description: dto.description || "",
+      amount: Number(dto.amount) || 0,
+      date: dto.date || "",
+      expenseDate: dto.expenseDate || dto.date || "",
+      userId: dto.userAppId?.toString() || dto.userId?.toString() || "",
+      user: (dto.user as any) || undefined,
+    };
+  }
 
-    /**
-     * Convierte el DTO de respuesta de la API al Modelo de Dominio rico
-     */
-    static toDomain(dto: ExpenseResponseDTO): ExpenseModel {
-        return new ExpenseModel(
-            dto.id?.toString() || '',
-            dto.description || '',
-            Number(dto.amount) || 0,
-            dto.date || '',
-            dto.expenseDate || dto.date || '',
-            dto.userAppId?.toString() || dto.userId?.toString() || '',
-            dto.user || undefined
-        );
-    }
-
-    /**
-     * Convierte una lista de DTOs a una lista de Modelos de Dominio
-     */
-    static toDomainList(dtos: ExpenseResponseDTO[]): ExpenseModel[] {
-        if (!Array.isArray(dtos)) return [];
-        return dtos.map(dto => this.toDomain(dto));
-    }
+  /**
+   * Convierte una lista de DTOs a una lista de Modelos de Dominio.
+   * @param dtos Listado de datos de la API.
+   * @returns Listado de modelos de dominio.
+   */
+  static toDomainList(dtos: ExpenseDto[]): Expense[] {
+    if (!Array.isArray(dtos)) return [];
+    return dtos.map((dto) => this.toDomain(dto));
+  }
 }

@@ -1,43 +1,43 @@
-import { Person } from "@/lib/types";
+import { Person } from "@/app/features/people";
 
 export interface UserDto {
-    id: string;
-    username: string;
-    profile: 'ADMIN' | 'OWNER' | 'COBRADOR';
-    status: 'ACTIVE' | 'INACTIVE';
-    id_people: string; 
-    is_day_closed: boolean;
-    id_company: string;
-    // En el listado a veces vienen aplanados
-    first_name?: string;
-    last_name?: string;
-    document_type?: string;
-    document_number?: string;
+  id: string;
+  username: string;
+  profile: "ADMIN" | "OWNER" | "COBRADOR";
+  status: "ACTIVE" | "INACTIVE";
+  isDayClosed: boolean;
+  idCompany: string;
+  idPeople: string;
+  // Common flattened fields if any
+  firstName?: string;
+  lastName?: string;
+  documentType?: string;
+  documentNumber?: string;
+  person?: Person;
 }
 
 export interface GetUserResponseDto {
-    success: boolean;
-    message: string;
-    user: {
-        id: string;
-        username: string;
-        profile: 'ADMIN' | 'OWNER' | 'COBRADOR';
-        status: 'ACTIVE' | 'INACTIVE';
-        idPeople: string;
-        isDayClosed: boolean;
-        idCompany: string;
-    };
-    person: Person;
+  success: boolean;
+  user: UserDto;
+  person: Person;
 }
 
 export interface CreateUserRequestDto {
-    username: string;
-    password?: string;
-    profile: string;
-    documentType: string;
-    documentNumber: string;
-    firstName: string;
-    lastName: string;
-    birthday?: string | null;
-    idCompany?: string;
+  username: string;
+  password?: string;
+  profile: string;
+  documentType: string;
+  documentNumber: string;
+  firstName: string;
+  lastName: string;
+  birthday?: string | null;
+  idCompany?: string;
+}
+
+export interface UpdateUserRequestDto {
+  firstName: string;
+  lastName: string;
+  profile: string;
+  status: "ACTIVE" | "INACTIVE";
+  birthday?: string | null;
 }

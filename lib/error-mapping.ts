@@ -1,4 +1,3 @@
-import { ErrorResponse } from './types';
 
 /**
  * Interface para el mapeo de errores por módulo.

@@ -1,89 +1,89 @@
 export interface Loan {
-    id: string;
-    startDate: string;
-    endDate: string;
-    amount: number;
-    interest: number;
-    fee: number;
-    days: number;
-    createdAt: string;
-    status: string;
-    address: string;
-    documentNumber: string;
-    clientName: string;
-    collectorName: string;
-    paidToday: number;
-    inIntervalPayment: number;
-    remainingAmount?: number;
-    phone?: string;
-    personId?: string;
-    collectorId?: string;
-    companyId?: string;
+  id: string;
+  startDate: string;
+  endDate: string;
+  amount: number;
+  interest: number;
+  fee: number;
+  days: number;
+  createdAt: string;
+  status: string;
+  address: string;
+  documentNumber: string;
+  clientName: string;
+  collectorName: string;
+  paidToday: number;
+  inIntervalPayment: number;
+  remainingAmount?: number;
+  phone?: string;
+  personId?: string;
+  collectorId?: string;
+  companyId?: string;
 }
 
 export interface CreateLoan {
-    idPeople: number;
-    amount: number;
-    userId: number;
-    address: string;
-    phone: string;
-    days: number;
+  idPeople: number;
+  amount: number;
+  userId: number;
+  address: string;
+  phone: string;
+  days: number;
 }
 
 export interface InstallmentDetail {
-    id: string;
-    date: string;
-    amount: number;
-    status: string;
-    registeredBy: string;
-    registeredByUserId: string;
+  id: string;
+  date: string;
+  amount: number;
+  status: string;
+  registeredBy: string;
+  registeredByUserId: string;
 }
 
 export interface LoanDetails {
-    startDate: string;
-    endDate: string;
-    installments: InstallmentDetail[];
+  startDate: string;
+  endDate: string;
+  installments: InstallmentDetail[];
 }
 
 export interface DashboardLoan extends Loan {
-    remainingAmount: number;
-    paidToday: number;
-    phone?: string;
+  remainingAmount: number;
+  paidToday: number;
+  phone?: string;
 }
 
 export interface DashboardData {
-    totalLentToday: number;
-    collectedToday: number;
-    activeClients: number;
-    pendingLoans: DashboardLoan[];
-    detailCollectedToday: {
-        yape: number;
-        efectivo: number;
-    };
-    totalExpensesToday: number;
-    thermometer?: number;
+  totalLentToday: number;
+  collectedToday: number;
+  activeClients: number;
+  pendingLoans: DashboardLoan[];
+  detailCollectedToday: {
+    yape: number;
+    efectivo: number;
+  };
+  totalExpensesToday: number;
+  thermometer?: number;
 }
 
 export interface ReportPayment {
-    cliente: string;
-    monto: number;
-    estado: 'COBRADO' | 'PENDIENTE';
-    metodo: string;
+  cliente: string;
+  monto: number;
+  estado: "COBRADO" | "PENDIENTE";
+  metodo: string;
 }
 
 export interface ReportDay {
-    fecha: string;
-    pagos: ReportPayment[];
-    gastos: any[];
+  fecha: string;
+  pagos: ReportPayment[];
+  gastos: any[];
 }
 
 export interface ReportData {
-    summary: {
-        totalGasto: number;
-        totalCobradoEfectivo: number;
-        totalCobradoYape: number;
-        totalCobrado: number;
-        totalPrestado: number;
-    };
-    pagosPorDia: ReportDay[];
+  summary: {
+    totalGasto: number;
+    totalCobradoEfectivo: number;
+    totalCobradoYape: number;
+    totalCobrado: number;
+    totalPrestado: number;
+  };
+  pagosPorDia: ReportDay[];
 }

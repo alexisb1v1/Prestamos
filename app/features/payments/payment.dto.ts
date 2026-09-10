@@ -1,17 +1,17 @@
 export interface CreatePaymentRequestDTO {
-    loanId: string;
-    amount: number;
-    userId: string;
+  loanId: string;
+  amount: number;
+  userId: string;
 }
 
 export interface CreateInstallmentRequestDTO {
-    loanId: string;
-    amount: number;
-    userId: string;
-    paymentType?: 'EFECTIVO' | 'YAPE';
+  loanId: string;
+  amount: number;
+  userId: string;
+  paymentType?: "EFECTIVO" | "YAPE";
 }
 
 export interface PaymentResponseDTO {
-    id: string;
-    success?: boolean;
+  id: string;
+  success?: boolean;
 }

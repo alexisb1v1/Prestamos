@@ -56,9 +56,9 @@ export function getCollectionOrder(userId: string | number): (string | number)[]
         }
 
         return data.order;
-    } catch (error) {
-        logger.error('Error getting collection order:', error);
-        return null;
+    } catch (err) {
+        console.error('Error loading collection order:', err);
+        return [];
     }
 }
 
@@ -92,14 +92,14 @@ export function cleanupOldOrders(): void {
                     if (ageInDays > MAX_AGE_DAYS) {
                         localStorage.removeItem(key);
                     }
-                } catch (e) {
-                    // Invalid data, remove it
+                } catch (err) {
+                    console.error('Invalid data in order, removing:', err);
                     localStorage.removeItem(key);
                 }
             }
         });
-    } catch (error) {
-        logger.error('Error cleaning up old orders:', error);
+    } catch (err) {
+      console.error('Failed to cleanup orders:', err);
     }
 }
 

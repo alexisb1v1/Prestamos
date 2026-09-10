@@ -1,5 +1,5 @@
 import { api } from './api';
-import { User, CreateUserRequest, CreateUserResponse, Person, UpdateUserRequest, UpdateUserResponse, GetUserResponse } from './types';
+import { User, CreateUserRequest, Person, UpdateUserRequest, GetUserResponse } from './types';
 import { userCache } from './userCache';
 import { authService } from './auth';
 
@@ -61,8 +61,8 @@ export const userService = {
      * Create a new user
      * Clears user cache after creation
      */
-    async create(user: CreateUserRequest): Promise<CreateUserResponse> {
-        const result = await api.post<CreateUserResponse>('/user', user);
+    async create(user: CreateUserRequest): Promise<any> {
+        const result = await api.post<any>('/user', user);
         userCache.clear(); // Clear cache to force fresh fetch
         return result;
     },
@@ -71,8 +71,8 @@ export const userService = {
      * Update an existing user
      * Clears user cache after update
      */
-    async update(id: string, user: UpdateUserRequest): Promise<UpdateUserResponse> {
-        const result = await api.put<UpdateUserResponse>(`/user/${id}`, user);
+    async update(id: string, user: UpdateUserRequest): Promise<any> {
+        const result = await api.put<any>(`/user/${id}`, user);
         userCache.clear(); // Clear cache to force fresh fetch
         return result;
     },

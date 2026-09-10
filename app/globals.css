@@ -38,10 +38,20 @@
 
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-lg:
+    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl:
+    0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 
-  --font-family: 'Inter', sans-serif;
+  --font-family: "Inter", sans-serif;
+
+  /* States for Installments & Shares (NeoCobros) */
+  --nc-paid-bg: #eff9ed;
+  --nc-paid-text: #15803d;
+  --nc-overdue-bg: #fef2f2;
+  --nc-overdue-text: #b91c1c;
+  --nc-pending-bg: #f0f9ff;
+  --nc-pending-text: #0369a1;
 }
 
 * {
@@ -80,7 +90,9 @@ button {
   border-radius: var(--radius-lg);
   padding: 1.5rem;
   box-shadow: var(--shadow-sm);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .card:hover {
@@ -149,9 +161,15 @@ button {
 
 /* Animaciones Premium */
 @keyframes shadowPulse {
-  0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.3); }
-  50% { box-shadow: 0 0 35px 5px rgba(79, 70, 229, 0.15); }
-  100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.3); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 35px 5px rgba(79, 70, 229, 0.15);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.3);
+  }
 }
 
 .shadow-pulse-card {
@@ -190,3 +208,482 @@ button {
   background-color: rgba(79, 70, 229, 0.1);
   color: var(--color-primary);
 }
+
+/* ================================================== */
+/* SISTEMA DE DISEÑO UNIFICADO - TEMA GLOBAL (NC)     */
+/* ================================================== */
+
+.nc-page-layout {
+  min-height: 100vh;
+  background-color: var(--bg-app);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.nc-container {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.nc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 0.5rem;
+}
+
+.nc-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nc-brand-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 900;
+  font-size: 0.95rem;
+}
+
+.nc-brand-text {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.025em;
+}
+
+.nc-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: white;
+  padding: 0.35rem 0.75rem;
+  border-radius: 2rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.nc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.25rem;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-md);
+}
+
+.nc-card-gradient {
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 1rem;
+  color: white;
+  box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.nc-card-gradient-inner {
+  position: relative;
+  z-index: 1;
+}
+
+.nc-card-gradient-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.nc-client-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.15rem;
+}
+
+.nc-client-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin: 0;
+  text-transform: capitalize;
+  letter-spacing: -0.01em;
+}
+
+.nc-date-badge {
+  background-color: rgba(255, 255, 255, 0.2);
+  padding: 0.3rem 0.65rem;
+  border-radius: 2rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.nc-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.25);
+  margin: 0.75rem 0;
+}
+
+.nc-loan-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.nc-summary-label {
+  font-size: 0.55rem;
+  opacity: 0.8;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  margin-bottom: 0.1rem;
+}
+
+.nc-summary-value {
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.nc-summary-value-highlight {
+  font-size: 1rem;
+  font-weight: 900;
+  color: #fef08a;
+}
+
+.nc-tab-container {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background-color: var(--bg-app);
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-color);
+}
+
+.nc-tab-button {
+  flex: 1;
+  padding: 0.6rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 800;
+  background-color: transparent;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.nc-tab-button-active {
+  background-color: #ffffff;
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.nc-calendar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.nc-calendar-title-wrapper {
+  text-align: center;
+  padding: 0.25rem 0;
+}
+
+.nc-calendar-title {
+  font-weight: 800;
+  text-transform: capitalize;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.nc-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  background-color: white;
+}
+
+.nc-calendar-header-day {
+  text-align: center;
+  font-size: 0.65rem;
+  font-weight: 900;
+  color: var(--text-secondary);
+  padding-bottom: 4px;
+}
+
+.nc-calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-app);
+  border-radius: 0.5rem;
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.nc-calendar-day-today {
+  border: 2px solid var(--color-primary) !important;
+}
+
+.nc-day-number {
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.nc-day-fee {
+  font-size: 0.5rem;
+  font-weight: 700;
+  opacity: 0.75;
+}
+
+.nc-day-label {
+  font-size: 0.45rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+/* Day states based on variables */
+.nc-day-paid {
+  background-color: var(--nc-paid-bg);
+}
+.nc-day-paid .nc-day-number,
+.nc-day-paid .nc-day-fee {
+  color: var(--nc-paid-text);
+}
+
+.nc-day-overdue {
+  background-color: var(--nc-overdue-bg);
+}
+.nc-day-overdue .nc-day-number,
+.nc-day-overdue .nc-day-fee {
+  color: var(--nc-overdue-text);
+}
+
+.nc-day-pending {
+  background-color: var(--nc-pending-bg);
+}
+.nc-day-pending .nc-day-number,
+.nc-day-pending .nc-day-fee {
+  color: var(--nc-pending-text);
+}
+
+.nc-day-start {
+  background-color: var(--color-primary);
+  color: white !important;
+}
+.nc-day-start .nc-day-number,
+.nc-day-start .nc-day-label,
+.nc-day-start .nc-day-fee {
+  color: white !important;
+}
+
+.nc-day-end {
+  background-color: var(--color-danger);
+  color: white !important;
+}
+.nc-day-end .nc-day-number,
+.nc-day-end .nc-day-label,
+.nc-day-end .nc-day-fee {
+  color: white !important;
+}
+
+.nc-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: center;
+  padding: 0.75rem 0.5rem 0;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.nc-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.nc-legend-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.nc-legend-label {
+  color: var(--text-secondary);
+}
+
+.nc-payment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nc-payment-empty {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.nc-payment-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0.85rem;
+  background-color: var(--bg-app);
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-color);
+}
+
+.nc-payment-left {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.nc-payment-index {
+  font-size: 0.75rem;
+  font-weight: 900;
+  background-color: rgba(99, 102, 241, 0.15);
+  color: var(--color-primary);
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.nc-payment-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.nc-payment-date {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.nc-payment-time {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+}
+
+.nc-payment-amount {
+  font-size: 1rem;
+  font-weight: 900;
+  color: var(--color-success);
+}
+
+.nc-btn-whatsapp {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem;
+  border-radius: 1rem;
+  background-color: #25d366;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.2);
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.nc-btn-whatsapp:hover {
+  background-color: #22c35e;
+  transform: translateY(-1px);
+}
+
+.nc-footer {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.nc-footer-text {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  opacity: 0.8;
+}
+
+/* Premium Error Card Styles */
+.nc-error-card {
+  width: 100%;
+  max-width: 480px;
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  border-radius: 1.25rem;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  animation: shadowPulse 4s ease-in-out infinite;
+}
+
+.nc-error-icon-wrapper {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: #fef2f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #dc2626;
+}
+
+.nc-error-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.nc-error-message {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.nc-error-divider {
+  width: 100%;
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 0.5rem 0;
+}
+
+.nc-error-help {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+

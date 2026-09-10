@@ -21,7 +21,7 @@
 | 9 | JSDoc en métodos públicos | ❌ **No cumple** | 0 `@param`/`@returns` encontrados en features |
 | 10 | Tests (≥ 80%) | ❌ **No cumple** | 0 archivos `.spec.ts` / `.test.ts` encontrados |
 | 11 | Sin `console.log` / `console.error` | ✅ **Cumple** | Migrado a `LoggingService` centralizado |
-| 12 | Sin servicios legacy / `@/lib/types` en UI | ⚠️ Deuda técnica | 29 archivos aún importan desde `@/lib/types`; algunos usan `@/lib/userService` directamente |
+| 12 | Sin servicios legacy / `@/lib/types` en UI | ✅ **Cumple** | Migrado `companyService` y `userService` a sus respectivas features |
 
 ---
 
@@ -224,17 +224,17 @@ Para cerrar los gaps identificados en esta auditoría y alinearnos con la **API 
 - [x] **Servicio de Logging:** Crear `LoggingService` en el Frontend y reemplazar los `console.log/error` identificados.
 
 ### 🏗️ 2. Migración a Clean Architecture
-- [ ] **Feature `companies`:**
-    - [ ] Crear estructura completa de la feature (`dto`, `models`, `mappers`, `repositories`, `use-cases`).
-    - [ ] Migrar lógica de `@/lib/companyService.ts` y eliminar el servicio legacy.
-- [ ] **Feature `people/person`:**
-    - [ ] Implementar el Use Case para `POST /person` y centralizar el modelo eliminando referencias en `@/lib/types`.
+- [x] **Feature `companies`:**
+    - [x] Crear estructura completa de la feature (`dto`, `models`, `mappers`, `repositories`, `use-cases`).
+    - [x] Migrar lógica de `@/lib/companyService.ts` y eliminar el servicio legacy.
+- [x] **Feature `people/person`:**
+    - [x] Implementar el Use Case para `POST /person` y centralizar el modelo eliminando referencias en `@/lib/types`.
 
 ### 📦 3. Eliminación de Deuda Técnica
-- [ ] **Tipado Estricto:** Reemplazar los `any` en los repositorios de usuarios por DTOs reales.
-- [ ] **Desacoplamiento de Types:** Mover interfaces de `@/lib/types` a sus respectivas features.
-- [ ] **Documentación JSDoc:** Agregar JSDoc a todos los Use Cases y Repositorios públicos.
-- [ ] **Nomenclatura:** Estandarizar carpetas `usecases` -> `use-cases`.
+- [x] **Tipado Estricto:** Reemplazar los `any` en los repositorios de usuarios por DTOs reales.
+- [x] **Desacoplamiento de Types:** Mover interfaces de `@/lib/types` a sus respectivas features.
+- [x] **Documentación JSDoc:** Agregar JSDoc a todos los Use Cases y Repositorios públicos.
+- [x] **Nomenclatura:** Estandarizar carpetas `usecases` -> `use-cases`.
 
 ### 🧪 4. Calidad y Testing
 - [ ] **Tests Unitarios:** Implementar pruebas para Mappers y Use Cases críticos (empezando por `loans`).

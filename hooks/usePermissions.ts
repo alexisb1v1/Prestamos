@@ -3,17 +3,20 @@
 import { useState, useEffect, useMemo } from 'react';
 import { authService } from '@/lib/auth';
 import { getPermissions } from '@/lib/permissions';
-import { User, UserPermissions } from '@/lib/types';
+import { User } from '@/lib/types';
 
 /**
  * Hook to easily access user permissions in any component.
  */
 export function usePermissions() {
-    const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<User | null>(() => {
+        if (typeof window !== 'undefined') {
+            return authService.getUser();
+        }
+        return null;
+    });
 
     useEffect(() => {
-        setUser(authService.getUser());
-
         // Listen for storage changes in case of multi-tab login/logout
         const handleStorage = () => setUser(authService.getUser());
         window.addEventListener('storage', handleStorage);

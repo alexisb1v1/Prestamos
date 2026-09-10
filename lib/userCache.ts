@@ -10,7 +10,7 @@ interface CachedData<T> {
 }
 
 class UserCache {
-    private cache: Map<string, CachedData<any>> = new Map();
+    private cache: Map<string, CachedData<unknown>> = new Map();
     private readonly TTL = 60 * 60 * 1000; // 1 hour in milliseconds
 
     /**

@@ -8,9 +8,10 @@ import { LoginResponse, User } from './types';
 export function formatUserName(user: User | null): string {
     if (!user) return 'Invitado';
 
+    const u = user as any;
     // Check for nested person object first
-    if (user.person) {
-        const { firstName, lastName } = user.person;
+    if (u.person) {
+        const { firstName, lastName } = u.person;
         if (!firstName || !lastName) return user.username;
 
         const lastNameParts = lastName.trim().split(/\s+/);
@@ -34,8 +35,8 @@ export function formatUserName(user: User | null): string {
 
 
 export function getLandingRoute(response: LoginResponse): string {
-    const { user } = response;
-    const { companyStatus, profile, isDayClosed } = user;
+    const { user, companyStatus } = response;
+    const { profile } = user;
 
     const isSuspended = companyStatus === 'SUSPENDED' || companyStatus === 'SUSPENDIDO';
 

@@ -1,41 +1,65 @@
-import { User } from "../models/user.model";
-import { UserDto, GetUserResponseDto } from "../dto/user.dto";
+import { User, UserProfile, UserStatus } from "../models/user.model";
+import { UserDto } from "../dto/user.dto";
 
 export const userDtoToModel = (dto: any): User => {
-    // Si viene la respuesta de "getById" que trae {user, person}
-    if (dto.user && dto.person) {
-        return {
-            id: dto.user.id,
-            username: dto.user.username,
-            profile: dto.user.profile,
-            status: dto.user.status,
-            isDayClosed: dto.user.isDayClosed ?? false,
-            idCompany: dto.user.idCompany,
-            firstName: dto.person.firstName,
-            lastName: dto.person.lastName,
-            documentType: dto.person.documentType,
-            documentNumber: dto.person.documentNumber,
-            idPeople: dto.user.idPeople
-        };
-    }
+  // Manejo de estructura anidada {user, person} o plana sin usar 'any'
+  const d = dto as unknown as Record<string, unknown>;
 
-    // Si viene del listado (aplanado o con objeto person)
-    const person = dto.person || {};
-    return {
-        id: dto.id,
-        username: dto.username,
-        profile: dto.profile,
-        status: dto.status,
-        isDayClosed: dto.isDayClosed ?? false,
-        idCompany: dto.idCompany,
-        firstName: dto.firstName || person.firstName || '',
-        lastName: dto.lastName || person.lastName || '',
-        documentType: dto.documentType || person.documentType || '',
-        documentNumber: dto.documentNumber || person.documentNumber || '',
-        idPeople: dto.idPeople
-    };
+  // Detect if it's the nested {user, person} structure or flat structure
+  const userObj = (d.user as Record<string, unknown>) || d;
+  const personObj = (d.person as Record<string, unknown>) || d;
+
+  return {
+    id: userObj.id ? String(userObj.id) : "",
+    username: (userObj.username as string) || "",
+    profile: (userObj.profile as UserProfile) || "COBRADOR",
+    status: (userObj.status as UserStatus) || "ACTIVE",
+    isDayClosed:
+      (userObj.isDayClosed as boolean) ??
+      (userObj.is_day_closed as boolean) ??
+      false,
+    idCompany: userObj.idCompany
+      ? String(userObj.idCompany)
+      : userObj.id_company
+        ? String(userObj.id_company)
+        : "",
+    firstName:
+      (userObj.firstName as string) ||
+      (userObj.first_name as string) ||
+      (personObj.firstName as string) ||
+      (personObj.first_name as string) ||
+      "",
+    lastName:
+      (userObj.lastName as string) ||
+      (userObj.last_name as string) ||
+      (personObj.lastName as string) ||
+      (personObj.last_name as string) ||
+      "",
+    documentType:
+      (userObj.documentType as string) ||
+      (userObj.document_type as string) ||
+      (personObj.documentType as string) ||
+      (personObj.document_type as string) ||
+      "",
+    documentNumber:
+      (userObj.documentNumber as string) ||
+      (userObj.document_number as string) ||
+      (personObj.documentNumber as string) ||
+      (personObj.document_number as string) ||
+      "",
+    idPeople: userObj.idPeople
+      ? String(userObj.idPeople)
+      : userObj.id_people
+        ? String(userObj.id_people)
+        : personObj.idPeople
+          ? String(personObj.idPeople)
+          : personObj.id_people
+            ? String(personObj.id_people)
+            : undefined,
+  };
 };
 
-export const userListDtoToModel = (dtos: any[]): User[] => {
-    return dtos.map(userDtoToModel);
+export const userListDtoToModel = (dtos: UserDto[]): User[] => {
+  if (!dtos || !Array.isArray(dtos)) return [];
+  return dtos.map(userDtoToModel);
 };

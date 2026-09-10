@@ -1,5 +1,7 @@
-export class PaymentModel {
-    constructor(
-        public readonly id: string
-    ) {}
+export interface Payment {
+  id: string;
+  loanId: string;
+  amount: number;
+  date: string;
+  cobradorId: string;
 }

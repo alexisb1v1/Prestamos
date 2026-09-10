@@ -6,7 +6,7 @@ export const paymentService = {
      * Create a new general payment (old endpoint)
      */
     async create(payment: CreatePaymentRequest): Promise<CreatePaymentResponse> {
-        return api.post<CreatePaymentResponse>('/payments', payment);
+        return api.post<CreatePaymentResponse>('/installment', payment);
     },
 
     /**
@@ -14,6 +14,6 @@ export const paymentService = {
      * Endpoint: POST /loans/installments
      */
     async createInstallment(payment: CreateInstallmentRequest): Promise<CreateInstallmentResponse> {
-        return api.post<CreateInstallmentResponse>('/loans/installments', payment);
+        return api.post<CreateInstallmentResponse>('/installment', payment);
     }
 };

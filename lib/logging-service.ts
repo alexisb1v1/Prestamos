@@ -24,7 +24,7 @@ class LoggingService {
     /**
      * Log informative messages
      */
-    public info(message: string, ...args: any[]): void {
+    public info(message: string, ...args: unknown[]): void {
         if (process.env.NODE_ENV !== 'production') {
             console.log(`[${LogLevel.INFO}] ${message}`, ...args);
         }
@@ -34,14 +34,14 @@ class LoggingService {
     /**
      * Log warning messages
      */
-    public warn(message: string, ...args: any[]): void {
+    public warn(message: string, ...args: unknown[]): void {
         console.warn(`[${LogLevel.WARN}] ${message}`, ...args);
     }
 
     /**
      * Log error messages
      */
-    public error(message: string, error?: any, ...args: any[]): void {
+    public error(message: string, error?: unknown, ...args: unknown[]): void {
         console.error(`[${LogLevel.ERROR}] ${message}`, error, ...args);
         
         // Potential extension: error reporting service

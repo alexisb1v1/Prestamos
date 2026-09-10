@@ -1,4 +1,4 @@
-import { differenceInDays, startOfDay, subDays, parseISO } from 'date-fns';
+import { startOfDay, subDays, parseISO } from 'date-fns';
 import { Loan } from './types';
 
 export const formatDateUTC = (dateString: string) => {
@@ -19,7 +19,7 @@ export const formatMoney = (amount: number | undefined | null) => {
 
 export const getLoanStatus = (loan: Loan, referenceDate?: Date) => {
     // If loan is Liquidado, return Liquidado status immediately
-    if (loan.status === 'Liquidado' || (loan as any).remainingAmount === 0) {
+    if (loan.status === 'Liquidado' || (loan as { remainingAmount?: number }).remainingAmount === 0) {
         return { label: 'Liquidado', color: 'var(--color-primary)', icon: '🔵', value: 'blue' };
     }
 
@@ -35,7 +35,7 @@ export const getLoanStatus = (loan: Loan, referenceDate?: Date) => {
     let daysElapsed = 0;
     
     if (startDate <= limitDate) {
-        let currentDay = new Date(startDate);
+        const currentDay = new Date(startDate);
         while (currentDay <= limitDate) {
             // 0 is Sunday in JS getDay()
             if (currentDay.getDay() !== 0) {
