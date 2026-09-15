@@ -687,3 +687,198 @@ button {
   margin: 0;
 }
 
+/* ================================================== */
+/* LOGIN NEOCOBROS PRO (Centralized)                  */
+/* ================================================== */
+
+.login-layout {
+  min-height: 100vh;
+  background-color: #f4f7fb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  position: relative;
+  overflow-x: hidden;
+  color: var(--text-primary);
+}
+
+.login-background {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.login-bg-blob-1 {
+  position: absolute;
+  top: -8rem;
+  left: -8rem;
+  width: 24rem;
+  height: 24rem;
+  background-color: rgba(199, 210, 254, 0.4);
+  border-radius: 50%;
+  filter: blur(64px);
+}
+
+.login-bg-blob-2 {
+  position: absolute;
+  top: 33%;
+  right: -9rem;
+  width: 24rem;
+  height: 24rem;
+  background-color: rgba(191, 219, 254, 0.35);
+  border-radius: 50%;
+  filter: blur(64px);
+}
+
+.login-bg-blob-3 {
+  position: absolute;
+  bottom: -8rem;
+  left: 25%;
+  width: 20rem;
+  height: 20rem;
+  background-color: rgba(243, 232, 255, 0.4);
+  border-radius: 50%;
+  filter: blur(64px);
+}
+
+.login-wrapper {
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  z-index: 10;
+}
+
+.login-card {
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(24px);
+  border-radius: 28px;
+  box-shadow: 0 20px 50px -15px rgba(30, 41, 89, 0.12), 0 0 1px 1px rgba(226, 232, 240, 0.8);
+  border: 1px solid #f1f5f9;
+  padding: 2.25rem 1.75rem;
+  transition: all 0.3s;
+}
+
+@media (min-width: 640px) {
+  .login-card {
+    padding: 2.5rem 2.25rem;
+  }
+}
+
+.login-brand-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 16px;
+  background: linear-gradient(to bottom right, #4f46e5, #4338ca, #3730a3);
+  box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.25);
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  transition: transform 0.2s;
+}
+
+.login-brand-icon:hover {
+  transform: scale(1.05);
+}
+
+.login-brand-icon-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 14px;
+  background: linear-gradient(to top right, rgba(255, 255, 255, 0.1), transparent);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.875rem;
+}
+
+.login-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  background-color: rgba(238, 242, 255, 0.8);
+  border: 1px solid rgba(224, 231, 255, 0.6);
+  margin-bottom: 0.625rem;
+}
+
+.login-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.login-input-icon {
+  position: absolute;
+  left: 0.875rem;
+  color: #94a3b8;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.login-input {
+  width: 100%;
+  height: 3rem;
+  padding-left: 2.75rem;
+  padding-right: 1rem;
+  font-size: 0.875rem;
+  color: #1e293b;
+  background-color: rgba(248, 250, 252, 0.7);
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  transition: all 0.15s ease-in-out;
+  outline: none;
+}
+
+.login-input:hover {
+  background-color: #f8fafc;
+}
+
+.login-input:focus {
+  background-color: #ffffff;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+}
+
+.login-input::placeholder {
+  color: #94a3b8;
+}
+
+.login-btn {
+  width: 100%;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(to right, #4f46e5, #4338ca, #4147eb);
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: none;
+  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.25);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.login-btn:hover:not(:disabled) {
+  background: linear-gradient(to right, #4338ca, #3730a3);
+}
+
+.login-btn:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.login-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
