@@ -232,6 +232,9 @@ export default function CreateUserModal({
     const { status, ...creationData } = formData;
     void status; // Consume effectively to satisfy linter if needed, or just don't destructure
 
+    const effectiveCompanyId =
+      formData.idCompany || (currentUser?.idCompany ? currentUser.idCompany.toString() : undefined);
+
     const result = userToEdit
       ? await updateUserUseCase.execute(userToEdit.id, {
           firstName: formData.firstName,
@@ -240,7 +243,11 @@ export default function CreateUserModal({
           status: formData.status || userToEdit.status,
           birthday: null,
         })
-      : await createUserUseCase.execute({ ...creationData, birthday: null });
+      : await createUserUseCase.execute({ 
+          ...creationData, 
+          idCompany: effectiveCompanyId,
+          birthday: null 
+        });
 
     result.match(
       () => {
