@@ -12,13 +12,29 @@ export default function LoginPage() {
   const [rememberUser, setRememberUser] = useState(false); // Estado para el checkbox
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [tenantName, setTenantName] = useState("Cargando...");
 
-  // Cargar usuario guardado al iniciar
+  // Cargar usuario guardado al iniciar y extraer el nombre de la empresa
   useEffect(() => {
     const savedUsername = localStorage.getItem("remembered_username");
     if (savedUsername) {
       setUsername(savedUsername);
       setRememberUser(true);
+    }
+
+    // Extraer subdominio de la URL
+    if (typeof window !== "undefined") {
+      const hostname = window.location.hostname;
+      const parts = hostname.split(".");
+      
+      // Si estamos en localhost, o en central.neocobros, o sin subdominio
+      if (hostname === "localhost" || parts.length < 3 || parts[0] === "central") {
+        setTenantName("NeoCobros");
+      } else {
+        // Ejemplo: empresa1.neocobros.com -> empresa1 -> Empresa1
+        const sub = parts[0];
+        setTenantName(sub.charAt(0).toUpperCase() + sub.slice(1));
+      }
     }
   }, []);
 
@@ -95,9 +111,14 @@ export default function LoginPage() {
               letterSpacing: "-0.025em",
               color: "#0f172a",
               marginBottom: "0.25rem",
+              textTransform: "capitalize",
             }}
           >
-            Neo<span style={{ color: "var(--color-primary)" }}>Cobros</span>
+            {tenantName === "NeoCobros" ? (
+              <>Neo<span style={{ color: "var(--color-primary)" }}>Cobros</span></>
+            ) : (
+              tenantName
+            )}
           </h1>
           <p
             style={{
@@ -232,6 +253,11 @@ export default function LoginPage() {
             {loading ? "Ingresando..." : "Iniciar Sesión"}
           </button>
         </form>
+
+        {/* Footer de NeoCobros */}
+        <div style={{ marginTop: "2rem", textAlign: "center", color: "#94a3b8", fontSize: "0.8rem" }}>
+          Potenciado por <strong style={{ color: "#64748b" }}>NeoCobros</strong>
+        </div>
       </div>
     </div>
   );
