@@ -1426,7 +1426,7 @@
 }
 
 .sidebar-logo-accent {
-  color: #6366f1;
+  color: var(--color-primary);
 }
 
 .sidebar-logo-sub {
@@ -1476,8 +1476,8 @@
 }
 
 .sidebar-nav-item.sidebar-active {
-  background-color: #f5f3ff;
-  color: #6366f1;
+  background-color: rgba(65, 71, 235, 0.1);
+  color: var(--color-primary);
 }
 
 .sidebar-accordion-header {
@@ -1528,8 +1528,9 @@
 }
 
 .sidebar-sub-item.sidebar-active {
-  color: #6366f1;
+  color: var(--color-primary);
   font-weight: 700;
+  background-color: rgba(65, 71, 235, 0.05);
 }
 
 .sidebar-footer {

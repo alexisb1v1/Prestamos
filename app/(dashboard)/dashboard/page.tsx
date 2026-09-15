@@ -612,10 +612,10 @@ export default function DashboardPage() {
               >
                 <div
                   style={{
-                    backgroundColor: "#f5f3ff",
+                    backgroundColor: "rgba(65, 71, 235, 0.08)",
                     borderRadius: "0.9rem",
                     padding: "0.7rem 0.8rem",
-                    border: "1.5px solid #ede9fe",
+                    border: "1.5px solid rgba(65, 71, 235, 0.15)",
                     display: "flex",
                     alignItems: "center",
                     gap: "0.6rem",
@@ -627,7 +627,7 @@ export default function DashboardPage() {
                       width: "28px",
                       height: "28px",
                       borderRadius: "0.45rem",
-                      backgroundColor: "#6366f1",
+                      backgroundColor: "#4147eb",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -660,7 +660,7 @@ export default function DashboardPage() {
                       style={{
                         fontSize: "0.55rem",
                         fontWeight: 800,
-                        color: "#6366f1",
+                        color: "#4147eb",
                         textTransform: "uppercase",
                       }}
                     >
@@ -1061,10 +1061,11 @@ export default function DashboardPage() {
                 top: isMobile ? "4rem" : "0.5rem",
                 zIndex: 20,
                 backgroundColor: "white",
-                margin: "0",
+                margin: isMobile ? "0 -1rem" : "0",
                 padding: "0.85rem 1rem",
-                borderRadius: "1.25rem",
-                border: "2px solid #f1f5f9",
+                borderRadius: isMobile ? "0" : "1.25rem",
+                borderTop: "1px solid #f1f5f9",
+                borderBottom: "1px solid #f1f5f9",
                 boxShadow: "0 10px 30px -10px rgba(0,0,0,0.05)",
                 transition: "all 0.3s ease",
               }}

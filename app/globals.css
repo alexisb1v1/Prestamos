@@ -1,37 +1,37 @@
 :root {
   /* Premium Light Theme Palette */
-  --bg-app: #f1f5f9;
-  /* Slate 100 */
+  --bg-app: #f8f9fa;
+  /* Slate 100 / Surface */
   --bg-card: #ffffff;
   /* White */
   --bg-sidebar: #ffffff;
 
-  --text-primary: #0f172a;
-  /* Slate 900 */
-  --text-secondary: #475569;
-  /* Slate 600 */
+  --text-primary: #191c1d;
+  /* Slate 900 / On Surface */
+  --text-secondary: #454652;
+  /* Slate 600 / On Surface Variant */
 
-  --color-primary: #4f46e5;
-  /* Indigo 600 */
-  --color-primary-hover: #4338ca;
+  --color-primary: #4147eb;
+  /* Stitch Primary */
+  --color-primary-hover: #353bd6;
   /* Indigo 700 */
-  --color-accent: #818cf8;
-  /* Indigo 400 */
+  --color-accent: #bdc2ff;
+  /* Primary Fixed Dim */
 
   --color-success: #059669;
   /* Emerald 600 */
   --color-warning: #d97706;
   /* Amber 600 */
-  --color-danger: #dc2626;
-  /* Red 600 */
+  --color-danger: #ba1a1a;
+  /* Error Stitch */
 
-  --border-color: #cbd5e1;
-  /* Slate 300 */
+  --border-color: #e1e3e4;
+  /* Outline Variant Stitch */
 
   /* Spacing & Radius */
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
 
   /* Layout */
   --sidebar-width: 280px;
@@ -89,14 +89,15 @@ button {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   padding: 1.5rem;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
 }
 
 .card:hover {
-  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 .btn {

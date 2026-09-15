@@ -221,8 +221,8 @@ export default function PrestamosPage() {
           top: isMobile ? "4rem" : "auto",
           zIndex: isMobile ? 20 : "auto",
           backgroundColor: isMobile ? "var(--bg-app)" : "transparent",
-          margin: isMobile ? "0 -1rem 1rem -1rem" : "0 0 1.5rem 0",
-          padding: isMobile ? "0.75rem 1rem 1rem 1rem" : "0",
+          margin: isMobile ? "0 -1rem 0.5rem -1rem" : "0 0 1.5rem 0",
+          padding: isMobile ? "0.5rem 1rem" : "0",
           borderBottom: isMobile ? "1px solid var(--border-color)" : "none",
           boxShadow: isMobile ? "0 10px 30px -10px rgba(0,0,0,0.05)" : "none",
         }}

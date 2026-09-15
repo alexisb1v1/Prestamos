@@ -192,11 +192,11 @@ export default function CollectionRouteCard({
     <div
       style={{
         backgroundColor: "white",
-        borderRadius: "20px",
-        border: "1px solid #e2e8f0",
+        borderRadius: "1.25rem",
+        border: "1px solid var(--border-color)",
         boxShadow: isDragging
           ? "0 15px 30px -5px rgba(0,0,0,0.1)"
-          : "0 2px 4px rgba(0, 0, 0, 0.02)",
+          : "0 2px 8px rgba(0,0,0,0.04)",
         overflow: "hidden",
         transition: "all 0.2s ease",
         position: "relative",
@@ -230,21 +230,31 @@ export default function CollectionRouteCard({
           position: "relative",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.35rem",
+            padding: "0.25rem 0.6rem",
+            backgroundColor: statusColor + "15",
+            borderRadius: "1rem",
+          }}
+        >
           <div
             style={{
-              width: "6px",
-              height: "6px",
+              width: "5px",
+              height: "5px",
               borderRadius: "50%",
               backgroundColor: statusColor,
             }}
           ></div>
           <span
             style={{
-              fontSize: "10px",
-              fontWeight: 900,
+              fontSize: "9px",
+              fontWeight: 800,
               textTransform: "uppercase",
               color: statusColor,
+              letterSpacing: "0.05em",
             }}
           >
             {status.label}
@@ -274,7 +284,7 @@ export default function CollectionRouteCard({
             style={{
               fontSize: "8px",
               fontWeight: 900,
-              color: "#fb7185",
+              color: "var(--text-secondary)",
               textTransform: "uppercase",
               marginBottom: "0.1rem",
             }}
@@ -285,7 +295,7 @@ export default function CollectionRouteCard({
             style={{
               fontSize: "1.25rem",
               fontWeight: 900,
-              color: "#1e293b",
+              color: "var(--text-primary)",
               letterSpacing: "-0.04em",
               lineHeight: 1,
             }}
@@ -321,7 +331,7 @@ export default function CollectionRouteCard({
               style={{
                 fontSize: "0.875rem",
                 fontWeight: 900,
-                color: showFullName ? "#4f46e5" : "#1e293b",
+                color: showFullName ? "var(--color-primary)" : "var(--text-primary)",
                 margin: 0,
                 textTransform: "uppercase",
                 letterSpacing: "-0.01em",
@@ -333,7 +343,7 @@ export default function CollectionRouteCard({
             >
               <span
                 style={{
-                  color: "#4f46e5",
+                  color: "var(--color-primary)",
                   marginRight: "0.4rem",
                   fontWeight: 900,
                 }}
@@ -351,7 +361,7 @@ export default function CollectionRouteCard({
                 position: "absolute",
                 top: "-32px",
                 left: "20px",
-                backgroundColor: "#1e293b",
+                backgroundColor: "var(--text-primary)",
                 color: "white",
                 padding: "4px 10px",
                 borderRadius: "8px",
@@ -389,7 +399,7 @@ export default function CollectionRouteCard({
                 gap: "0.4rem",
                 fontSize: "10px",
                 fontWeight: 600,
-                color: "#64748b",
+                color: "var(--text-secondary)",
                 lineHeight: "1.2",
               }}
             >
@@ -409,7 +419,7 @@ export default function CollectionRouteCard({
                 gap: "0.4rem",
                 fontSize: "10px",
                 fontWeight: 800,
-                color: "#4f46e5",
+                color: "var(--color-primary)",
               }}
             >
               <Phone size={12} strokeWidth={2.5} style={{ opacity: 0.7 }} />
@@ -468,7 +478,7 @@ export default function CollectionRouteCard({
               style={{
                 fontSize: "10px",
                 fontWeight: 700,
-                color: "#94a3b8",
+                color: "var(--text-secondary)",
                 textTransform: "uppercase",
               }}
             >
@@ -485,7 +495,7 @@ export default function CollectionRouteCard({
                 padding: 0,
                 display: "flex",
                 alignItems: "center",
-                color: "#94a3b8",
+                color: "var(--text-secondary)",
                 cursor: "pointer",
               }}
             >
@@ -496,7 +506,7 @@ export default function CollectionRouteCard({
             style={{
               fontSize: "10px",
               fontWeight: 900,
-              color: "#6366f1",
+              color: "var(--color-primary)",
               textTransform: "uppercase",
             }}
           >

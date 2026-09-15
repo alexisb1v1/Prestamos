@@ -150,10 +150,10 @@ export default function ExpensesPage() {
           top: isMobile ? "0" : "auto",
           zIndex: isMobile ? 30 : "auto",
           backgroundColor: isMobile ? "var(--bg-app)" : "transparent",
-          margin: isMobile ? "0 -2rem 1rem -2rem" : "0 0 2rem 0",
-          padding: isMobile ? "0.75rem 2rem 1rem 2rem" : "0",
+          margin: isMobile ? "0 -1rem 0.5rem -1rem" : "0 0 2rem 0",
+          padding: isMobile ? "0.5rem 1rem" : "0",
           borderBottom: isMobile ? "1px solid var(--border-color)" : "none",
-          boxShadow: isMobile ? "var(--shadow-md)" : "none",
+          boxShadow: isMobile ? "0 4px 6px -1px rgba(0,0,0,0.05)" : "none",
           transition: "all 0.3s ease",
         }}
       >
@@ -162,13 +162,13 @@ export default function ExpensesPage() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: isMobile ? "1rem" : "2rem",
+            marginBottom: isMobile ? "0.5rem" : "2rem",
           }}
         >
           <div>
             <h1
               style={{
-                fontSize: isMobile ? "1.5rem" : "1.875rem",
+                fontSize: isMobile ? "1.25rem" : "1.875rem",
                 fontWeight: "bold",
               }}
             >
@@ -191,7 +191,7 @@ export default function ExpensesPage() {
             onSubmit={handleSearch}
             style={{
               display: "flex",
-              gap: "1rem",
+              gap: isMobile ? "0.5rem" : "1rem",
               flexWrap: "wrap",
               alignItems: "center",
             }}
