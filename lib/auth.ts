@@ -17,7 +17,7 @@ export const authService = {
     /**
      * Login user with username and password
      */
-    async login(username: string, password: string): Promise<LoginResponse> {
+    async login(username: string, password: string, tenant: string = "central"): Promise<LoginResponse> {
         // Generate or retrieve current device fingerprint (Session ID for backend validation)
         const fingerprint = this.getOrCreateFingerprint();
 
@@ -25,6 +25,7 @@ export const authService = {
             username,
             password,
             fingerprint,
+            tenant,
         });
 
         // Store JWT token in Cookie (accessible by Middleware)

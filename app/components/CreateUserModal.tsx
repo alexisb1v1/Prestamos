@@ -198,9 +198,9 @@ export default function CreateUserModal({
       ) {
         const firstLetter = formData.firstName.charAt(0).toLowerCase();
         const firstLastName = formData.lastName.split(" ")[0].toLowerCase();
-        newUsername = `${effectiveCompanyId}:${firstLetter}${firstLastName}`;
+        newUsername = `${firstLetter}${firstLastName}`;
       } else if (formData.profile === "COBRADOR" && formData.documentNumber) {
-        newUsername = `${effectiveCompanyId}:${formData.documentNumber}`;
+        newUsername = `${formData.documentNumber}`;
       }
 
       if (newUsername) {

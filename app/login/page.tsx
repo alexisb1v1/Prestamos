@@ -28,9 +28,10 @@ export default function LoginPage() {
     if (typeof window !== "undefined") {
       const hostname = window.location.hostname;
       const parts = hostname.split(".");
+      // Si estamos en localhost (puro), o en central, o sin subdominio real
+      const isLocalWithSub = hostname.endsWith(".localhost") && parts.length >= 2;
       
-      // Si estamos en localhost, o en central.neocobros, o sin subdominio
-      if (hostname === "localhost" || parts.length < 3 || parts[0] === "central") {
+      if (hostname === "localhost" || parts[0] === "central" || (!isLocalWithSub && parts.length < 3)) {
         setTenantName("NeoCobros");
       } else {
         // Ejemplo: empresa1.neocobros.com -> empresa1 -> Empresa1
@@ -45,8 +46,19 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
+    let rawTenant = "central";
+    if (typeof window !== "undefined") {
+      const hostname = window.location.hostname;
+      const parts = hostname.split(".");
+      const isLocalWithSub = hostname.endsWith(".localhost") && parts.length >= 2;
+      
+      if (hostname !== "localhost" && parts[0] !== "central" && (isLocalWithSub || parts.length >= 3)) {
+        rawTenant = parts[0];
+      }
+    }
+
     try {
-      const response = await authService.login(username, password);
+      const response = await authService.login(username, password, rawTenant);
 
       if (rememberUser) {
         localStorage.setItem("remembered_username", username);
