@@ -5,6 +5,8 @@ export interface PersonDto {
   firstName: string;
   lastName: string;
   birthday?: string | null;
+  phone?: string;
+  address?: string;
 }
 
 export interface CreatePersonRequestDto {

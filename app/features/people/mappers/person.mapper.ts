@@ -10,6 +10,8 @@ export class PersonMapper {
       firstName: dto.firstName,
       lastName: dto.lastName,
       birthday: dto.birthday,
+      phone: dto.phone,
+      address: dto.address,
     };
   }
 }

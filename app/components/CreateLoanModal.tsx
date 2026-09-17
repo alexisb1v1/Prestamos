@@ -154,6 +154,8 @@ export default function CreateLoanModal({
     result.match(
       (p) => {
         setPerson(p);
+        if (p.phone) setPhone(p.phone);
+        if (p.address) setAddress(p.address);
         setSearchPerformed(true);
         setIsRegistering(false);
       },
