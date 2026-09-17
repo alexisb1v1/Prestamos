@@ -11,14 +11,11 @@ import { authService } from "@/lib/auth";
 import { User } from "@/app/features/users";
 import {
   Search,
-  UserPlus,
   Wallet,
-  ChevronRight,
+  X,
   AlertCircle,
-  Verified,
   MapPin,
   Phone,
-  X,
 } from "lucide-react";
 
 import styles from "./CreateLoanModal.module.css";
@@ -39,10 +36,6 @@ interface CreateLoanModalProps {
   companyId?: string;
 }
 
-/**
- * Modal Premium "Luminous" con flujo vertical continuo (Single-Scroll).
- * Alineado con la documentación de la API v2: el teléfono es exclusivo del préstamo.
- */
 export default function CreateLoanModal({
   isOpen,
   onClose,
@@ -53,7 +46,6 @@ export default function CreateLoanModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
 
   // --- Control de Flujo Continuo ---
   const [searchPerformed, setSearchPerformed] = useState(false);
@@ -101,21 +93,6 @@ export default function CreateLoanModal({
       birthday: null,
     });
   }, []);
-
-  // Auto-scroll al fondo cuando aparece nuevo contenido o se ingresa monto
-  useEffect(() => {
-    if (person || amount !== "" || isRegistering) {
-      const timer = setTimeout(() => {
-        if (scrollRef.current) {
-          scrollRef.current.scrollTo({
-            top: scrollRef.current.scrollHeight,
-            behavior: "smooth",
-          });
-        }
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [person, amount, isRegistering]);
 
   useEffect(() => {
     if (isOpen) {
@@ -225,9 +202,20 @@ export default function CreateLoanModal({
     setLoading(false);
   };
 
+  const addAmount = (val: number) => {
+    setAmount((prev) => {
+      const current = typeof prev === "number" ? prev : 0;
+      const next = current + val;
+      if (next < 1000) setDays(24);
+      return next;
+    });
+  };
+
   if (!isOpen) return null;
 
-  const totalToPay = amount ? Number(amount) * (1 + interestRate) : "...";
+  const totalToPay = amount ? (Number(amount) * (1 + interestRate)).toFixed(2) : "0.00";
+  const dailyQuota = amount ? (Number(amount) * (1 + interestRate) / days).toFixed(2) : "0.00";
+  const interestTotal = amount ? (Number(amount) * interestRate).toFixed(2) : "0.00";
 
   return (
     <div
@@ -236,270 +224,370 @@ export default function CreateLoanModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className={styles.modal} ref={scrollRef}>
-        <button className={styles.closeBtn} onClick={onClose}>
-          <X size={20} />
-        </button>
-
-        <div className={styles.header}>
-          <div className={styles.iconContainer}>
-            <Wallet size={24} color="#4f46e5" />
+      <div className={styles.modal}>
+        {/* HEADER PRINCIPAL */}
+        <header className={styles.header}>
+          <div className={styles.headerLeft}>
+            <div className={styles.iconContainer}>
+              <Wallet size={20} strokeWidth={2.5} />
+            </div>
+            <div>
+              <h1 className={styles.title}>Nuevo Préstamo</h1>
+              <p className={styles.subtitle}>
+                {searchPerformed && person
+                  ? "Paso 2: Detalles & Confirmación"
+                  : "Búsqueda o registro rápido"}
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className={styles.title}>
-              {loanToRenew ? "Renovación de Préstamo" : "Nuevo Préstamo"}
-            </h2>
-            <p className={styles.subtitle}>Sigue los pasos verticales</p>
-          </div>
-        </div>
+          <button className={styles.closeBtn} onClick={onClose} type="button">
+            <X size={18} strokeWidth={2.5} />
+          </button>
+        </header>
 
-        <div className={styles.content}>
-          {/* PASO 1: Búsqueda del Cliente */}
-          <div className={styles.sectionHeader}>
-            <div className={styles.stepCircle}>1</div>
-            <h3>Identificación del Cliente</h3>
+        {error && (
+          <div
+            style={{
+              padding: "0.75rem",
+              background: "#fee2e2",
+              color: "#b91c1c",
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+            }}
+          >
+            <AlertCircle size={16} />
+            {error}
           </div>
+        )}
 
-          {!searchPerformed && !isRegistering ? (
-            <div className={styles.card}>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "80px 1fr",
-                  gap: "0.5rem",
-                  marginBottom: "1rem",
-                }}
-              >
-                <select
-                  className={styles.select}
-                  value={docType}
-                  onChange={(e) => setDocType(e.target.value)}
+        <div className={styles.contentWrapper}>
+          <div
+            className={`${styles.slidesContainer} ${searchPerformed && person ? styles.step2 : styles.step1}`}
+          >
+            {/* ============================================================== */}
+            {/* PASO 1: BÚSQUEDA / REGISTRO COMPACTO                           */}
+            {/* ============================================================== */}
+            <div className={styles.slide}>
+              {/* Indicador de paso */}
+              <div className={styles.stepIndicatorBox}>
+                <div className={styles.stepInfo}>
+                  <span className={styles.stepCircle}>1</span>
+                  <span className={styles.stepTitle}>Identificación</span>
+                  <span className={styles.stepCount}>de 2</span>
+                </div>
+                <div className={styles.stepDots}>
+                  <div className={styles.dotActive}></div>
+                  <div className={styles.dotInactive}></div>
+                </div>
+              </div>
+
+              {/* Tarjeta de Búsqueda */}
+              <section className={styles.searchCard}>
+                <div className={styles.searchHeader}>
+                  <label className={styles.searchLabel}>Documento de Identidad</label>
+                  <span className={styles.onlineBadge}>En línea</span>
+                </div>
+                
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSearch();
+                  }}
+                  style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
                 >
-                  <option value="DNI">DNI</option>
-                  <option value="CE">CE</option>
-                </select>
-                <div style={{ position: "relative" }}>
+                  <div className={styles.integratedInput}>
+                    <select
+                      className={styles.docTypeSelect}
+                      value={docType}
+                      onChange={(e) => setDocType(e.target.value)}
+                    >
+                      <option value="DNI">DNI</option>
+                      <option value="CE">C.E.</option>
+                      <option value="RUC">RUC</option>
+                    </select>
+                    <div className={styles.docInputWrapper}>
+                      <input
+                        className={styles.docNumberInput}
+                        type="tel"
+                        inputMode="numeric"
+                        placeholder="Número de documento"
+                        value={docNumber}
+                        onChange={(e) => setDocNumber(e.target.value)}
+                      />
+                      <Search className={styles.searchIconInside} size={18} />
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    className={styles.primaryBtn}
+                    disabled={loading || !docNumber}
+                  >
+                    {loading ? "Buscando..." : "BUSCAR CLIENTE"}
+                  </button>
+                </form>
+
+                <div className={styles.registerPrompt}>
+                  <span>¿No existe el cliente?</span>
+                  <button
+                    type="button"
+                    className={styles.registerBtn}
+                    onClick={() => setIsRegistering(true)}
+                  >
+                    + Registrar aquí
+                  </button>
+                </div>
+              </section>
+
+              {/* Registro embebido (si decide registrar) */}
+              {isRegistering && (
+                <section className={styles.registerForm}>
+                  <h4>Registro Rápido</h4>
                   <input
                     type="text"
-                    className={styles.input}
-                    placeholder="Número de documento"
-                    value={docNumber}
-                    onChange={(e) => setDocNumber(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                    className={styles.fieldInput}
+                    placeholder="Nombres"
+                    value={newPerson.firstName}
+                    onChange={(e) =>
+                      setNewPerson({ ...newPerson, firstName: e.target.value })
+                    }
                   />
-                  <Search className={styles.inputIcon} size={16} />
-                </div>
-              </div>
-              <button
-                className={styles.primaryBtn}
-                onClick={handleSearch}
-                disabled={loading || !docNumber}
-              >
-                {loading ? "Buscando..." : "BUSCAR CLIENTE"}
-              </button>
-            </div>
-          ) : null}
-
-          {/* PASO 1B: Registro si no existe */}
-          {isRegistering && (
-            <div className={`${styles.card} ${styles.animateIn}`}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                  color: "#eab308",
-                  marginBottom: "1rem",
-                  fontSize: "0.85rem",
-                  fontWeight: 600,
-                }}
-              >
-                <AlertCircle size={16} /> Cliente no encontrado, regístralo:
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.75rem",
-                }}
-              >
-                <input
-                  type="text"
-                  className={styles.input}
-                  placeholder="Nombres"
-                  value={newPerson.firstName}
-                  onChange={(e) =>
-                    setNewPerson({ ...newPerson, firstName: e.target.value })
-                  }
-                />
-                <input
-                  type="text"
-                  className={styles.input}
-                  placeholder="Apellidos"
-                  value={newPerson.lastName}
-                  onChange={(e) =>
-                    setNewPerson({ ...newPerson, lastName: e.target.value })
-                  }
-                />
-                <button
-                  className={styles.primaryBtn}
-                  onClick={handleCreatePerson}
-                  disabled={
-                    loading || !newPerson.firstName || !newPerson.lastName
-                  }
-                >
-                  {loading ? "Registrando..." : "REGISTRAR Y CONTINUAR"}
-                  <UserPlus size={18} />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* PASO 2: Confirmación Cliente y Datos Préstamo */}
-          {searchPerformed && person && (
-            <>
-              <div className={`${styles.confirmedCard} ${styles.animateIn}`}>
-                <div className={styles.confirmedHeader}>
-                  <Verified size={18} color="#22c55e" />
-                  <span>CLIENTE CONFIRMADO</span>
-                </div>
-                <div className={styles.clientName}>
-                  {person.firstName} {person.lastName}
-                </div>
-                <div className={styles.clientDoc}>
-                  {person.documentType}: {person.documentNumber}
-                </div>
-              </div>
-
-              <div className={styles.sectionHeader}>
-                <div className={styles.stepCircle}>2</div>
-                <h3>Detalles del Préstamo</h3>
-              </div>
-
-              <div className={`${styles.card} ${styles.animateIn}`}>
-                <div className={styles.inputGroup}>
-                  <label className={styles.label}>N° Celular (Personal)</label>
-                  <div style={{ position: "relative" }}>
-                    <input
-                      type="text"
-                      className={styles.input}
-                      placeholder="999 999 999"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                    />
-                    <Phone className={styles.inputIcon} size={16} />
-                  </div>
-                </div>
-
-                <div className={styles.inputGroup}>
-                  <label className={styles.label}>Dirección / Domicilio</label>
-                  <div style={{ position: "relative" }}>
-                    <input
-                      type="text"
-                      className={styles.input}
-                      placeholder="Calle, Jr, Av..."
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                    />
-                    <MapPin className={styles.inputIcon} size={16} />
-                  </div>
-                </div>
-
-                <div className={styles.inputGroup}>
-                  <label className={styles.label}>Monto a Prestar (S/.)</label>
                   <input
-                    type="number"
-                    className={styles.inputMain}
-                    placeholder="0.00"
-                    value={amount}
-                    onChange={(e) => {
-                      const raw = e.target.value;
-                      if (raw === "") {
-                        setAmount("");
-                        return;
-                      }
-                      const val = Number(raw);
-                      if (!isNaN(val)) {
-                        setAmount(val);
-                        if (val < 1000) setDays(24);
-                      }
-                    }}
+                    type="text"
+                    className={styles.fieldInput}
+                    placeholder="Apellidos"
+                    value={newPerson.lastName}
+                    onChange={(e) =>
+                      setNewPerson({ ...newPerson, lastName: e.target.value })
+                    }
                   />
-                  <div className={styles.amountBadge}>
-                    Interés (20%): S/.{" "}
-                    {amount
-                      ? (Number(amount) * interestRate).toFixed(2)
-                      : "0.00"}
-                  </div>
-                </div>
-
-                <div
-                  className={styles.inputGroup}
-                  style={{ marginBottom: "0.5rem" }}
-                >
-                  <label className={styles.label}>Periodo de Pago (Días)</label>
-                  <input
-                    type="number"
-                    className={`${styles.input} ${amount && Number(amount) < 1000 ? styles.disabledInput : ""}`}
-                    placeholder="Ej: 24 o 30"
-                    value={days}
-                    onChange={(e) => {
-                      const raw = e.target.value;
-                      if (raw === "") {
-                        setDays("" as any);
-                        return;
-                      }
-                      const val = Number(raw);
-                      if (!isNaN(val)) setDays(val);
-                    }}
-                    min={24}
-                    disabled={!!amount && Number(amount) < 1000}
-                  />
-                </div>
-
-                {amount && (
-                  <div className={styles.summaryBox}>
-                    <div className={styles.summaryRow}>
-                      <span>Total a Cobrar</span>
-                      <strong>S/. {totalToPay}</strong>
-                    </div>
-                    <div className={styles.summaryRow}>
-                      <span>Cuota Diaria</span>
-                      <strong>
-                        S/. {(Number(totalToPay) / days).toFixed(2)}
-                      </strong>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {error && (
-                <div
-                  className={styles.errorBox}
-                  onClick={() => setError("")}
-                  style={{ animation: "shake 0.4s ease" }}
-                >
-                  <AlertCircle size={18} /> {error}
-                </div>
+                  <button
+                    type="button"
+                    className={styles.primaryBtn}
+                    onClick={handleCreatePerson}
+                    disabled={
+                      loading || !newPerson.firstName || !newPerson.lastName
+                    }
+                  >
+                    {loading ? "Registrando..." : "Guardar y Continuar"}
+                  </button>
+                </section>
               )}
 
-              <div style={{ marginTop: "1rem" }}>
-                <button
-                  className={styles.finalBtn}
-                  onClick={handleCreateLoan}
-                  disabled={loading || !amount || !address || !phone}
-                >
-                  {loading ? "CREANDO..." : "CONFIRMAR"}
-                  <ChevronRight size={20} />
-                </button>
-                <div className={styles.helperText}>
-                  Al confirmar, se registrará el préstamo y se abrirá la vista
-                  de impresión.
+              {/* Footer de información extra */}
+              <footer className={styles.infoFooter}>
+                <div className={styles.infoIcon}>
+                  <AlertCircle size={14} strokeWidth={2.5} />
                 </div>
-              </div>
-            </>
-          )}
+                <p className={styles.infoText}>
+                  NeoCobros valida la identidad automáticamente con RENIEC para
+                  agilizar la evaluación de crédito.
+                </p>
+              </footer>
+            </div>
+
+            {/* ============================================================== */}
+            {/* PASO 2: DETALLES COMPACTO                                      */}
+            {/* ============================================================== */}
+            <div className={styles.slide}>
+              {person && (
+                <>
+                  <div className={styles.stepHeader}>
+                    <span className={styles.stepCircle} style={{width: 20, height: 20}}>1</span>
+                    <h2>Identificación del Cliente</h2>
+                  </div>
+
+                  {/* Tarjeta de Cliente Validado */}
+                  <div className={styles.verifiedClientCard}>
+                    <div className={styles.verifiedLeft}>
+                      <div className={styles.verifiedLabel}>
+                        <svg
+                          className="w-3.5 h-3.5"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                          style={{width: 14, height: 14}}
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                            clipRule="evenodd"
+                          ></path>
+                        </svg>
+                        Cliente Confirmado
+                      </div>
+                      <div className={styles.verifiedName}>
+                        {person.firstName} {person.lastName}
+                      </div>
+                      <div className={styles.verifiedDni}>
+                        DNI: <strong>{person.documentNumber}</strong>
+                      </div>
+                    </div>
+                    <button
+                      className={styles.changeClientBtn}
+                      onClick={() => setSearchPerformed(false)}
+                      type="button"
+                    >
+                      Cambiar
+                    </button>
+                  </div>
+
+                  <div className={styles.stepHeader}>
+                    <span className={styles.stepCircle} style={{width: 20, height: 20}}>2</span>
+                    <h2>Detalles del Préstamo</h2>
+                  </div>
+
+                  {/* Formulario de Préstamo */}
+                  <div className={styles.loanForm}>
+                    {/* Celular */}
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.fieldLabel}>N° Celular (Personal)</label>
+                      <div className={styles.fieldInputWrapper}>
+                        <input
+                          type="tel"
+                          className={styles.fieldInput}
+                          placeholder="999 999 999"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                        />
+                        <Phone className={styles.fieldIcon} size={16} />
+                      </div>
+                    </div>
+
+                    {/* Dirección */}
+                    <div className={styles.fieldGroup}>
+                      <label className={styles.fieldLabel}>Dirección / Domicilio</label>
+                      <div className={styles.fieldInputWrapper}>
+                        <input
+                          type="text"
+                          className={styles.fieldInput}
+                          placeholder="Calle, Jr, Av..."
+                          value={address}
+                          onChange={(e) => setAddress(e.target.value)}
+                        />
+                        <MapPin className={styles.fieldIcon} size={16} />
+                      </div>
+                    </div>
+
+                    {/* Monto Central */}
+                    <div className={styles.fieldGroup} style={{ marginTop: "0.25rem" }}>
+                      <div className={styles.amountHeader}>
+                        <label className={styles.fieldLabel}>Monto a Prestar (S/.)</label>
+                        <span className={styles.rateBadge}>Tasa: 20%</span>
+                      </div>
+                      <div className={styles.amountInputWrapper}>
+                        <span className={styles.currencySymbol}>S/.</span>
+                        <input
+                          type="number"
+                          className={styles.amountInput}
+                          value={amount}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            if (raw === "") {
+                              setAmount("");
+                              return;
+                            }
+                            const val = Number(raw);
+                            if (!isNaN(val)) {
+                              setAmount(val);
+                              if (val < 1000) setDays(24);
+                            }
+                          }}
+                        />
+                      </div>
+                      <div className={styles.amountHelpers}>
+                        <div className={styles.quickBtns}>
+                          <button type="button" className={styles.quickBtn} onClick={() => addAmount(50)}>+50</button>
+                          <button type="button" className={styles.quickBtn} onClick={() => addAmount(100)}>+100</button>
+                          <button type="button" className={styles.quickBtn} onClick={() => addAmount(200)}>+200</button>
+                        </div>
+                        <div className={styles.interestBadge}>
+                          Interés: <strong>S/. {interestTotal}</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Período */}
+                    <div className={styles.fieldGroup} style={{ marginTop: "0.25rem" }}>
+                      <div className={styles.amountHeader}>
+                        <label className={styles.fieldLabel}>Período de Pago</label>
+                        <span style={{ fontSize: "10px", fontWeight: 600, color: "#94a3b8", textTransform: "uppercase" }}>Frecuencia Diaria</span>
+                      </div>
+                      <div className={styles.fieldInputWrapper}>
+                        <input
+                          type="number"
+                          className={styles.fieldInput}
+                          value={days}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            if (raw === "") {
+                              setDays("" as any);
+                              return;
+                            }
+                            const val = Number(raw);
+                            if (!isNaN(val)) setDays(val);
+                          }}
+                          disabled={!!amount && Number(amount) < 1000}
+                        />
+                        <span className={styles.periodSuffix}>Días</span>
+                      </div>
+                    </div>
+
+                    {/* Tarjeta Resumen */}
+                    <div className={styles.financialSummary}>
+                      <div className={styles.summaryRowTop}>
+                        <span className={styles.summaryLabelTop}>Total a Cobrar</span>
+                        <span className={styles.summaryValueTop}>S/. {totalToPay}</span>
+                      </div>
+                      <div className={styles.summaryRowBottom}>
+                        <div>
+                          <span className={styles.summaryLabelBottom}>Cuota Diaria</span>
+                          <span className={styles.summarySubBottom}>Cobro de Lunes a Sábado</span>
+                        </div>
+                        <div className={styles.summaryValueBottom}>
+                          S/. {dailyQuota}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
+
+        {/* ============================================================== */}
+        {/* FOOTER ACCIÓN (Solo visible en Paso 2)                         */}
+        {/* ============================================================== */}
+        {searchPerformed && person && (
+          <footer className={styles.actionFooter}>
+            <button
+              className={styles.confirmBtn}
+              onClick={handleCreateLoan}
+              disabled={loading || !amount || Number(amount) <= 0 || !days}
+            >
+              <span>{loading ? "CONFIRMANDO..." : "CONFIRMAR PRÉSTAMO"}</span>
+              <svg
+                className="w-4 h-4 stroke-[2.5]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                style={{ width: 16, height: 16, strokeWidth: 2.5 }}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 5l7 7-7 7"
+                ></path>
+              </svg>
+            </button>
+            <p className={styles.actionSubtext}>
+              Al confirmar, se registrará el préstamo y se abrirá la vista de
+              impresión del comprobante.
+            </p>
+          </footer>
+        )}
       </div>
     </div>
   );
