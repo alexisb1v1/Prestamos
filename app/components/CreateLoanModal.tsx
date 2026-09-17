@@ -9,6 +9,8 @@ import {
 import { createLoanUseCase } from "@/app/features/loans";
 import { authService } from "@/lib/auth";
 import { User } from "@/app/features/users";
+import { Loan } from "@/lib/types";
+import LoanShareGenerator, { LoanShareGeneratorRef } from "./LoanShareGenerator";
 import {
   Search,
   Wallet,
@@ -16,6 +18,8 @@ import {
   AlertCircle,
   MapPin,
   Phone,
+  CheckCircle2,
+  Share2,
 } from "lucide-react";
 
 import styles from "./CreateLoanModal.module.css";
@@ -50,6 +54,9 @@ export default function CreateLoanModal({
   // --- Control de Flujo Continuo ---
   const [searchPerformed, setSearchPerformed] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [createdLoan, setCreatedLoan] = useState<Loan | null>(null);
+  
+  const shareRef = useRef<LoanShareGeneratorRef>(null);
 
   // --- State: Cliente ---
   const [docType, setDocType] = useState("DNI");
@@ -78,6 +85,7 @@ export default function CreateLoanModal({
     setError("");
     setSearchPerformed(false);
     setIsRegistering(false);
+    setCreatedLoan(null);
     setDocType("DNI");
     setDocNumber("");
     setPerson(null);
@@ -190,10 +198,10 @@ export default function CreateLoanModal({
     });
 
     result.match(
-      () => {
+      (loan) => {
         onSuccess();
-        onClose();
-        resetState();
+        setCreatedLoan(loan);
+        // Ya no cerramos inmediatamente el modal, sino que mostramos el paso 3
       },
       (err) => {
         setError(err.message || "Error al crear el préstamo.");
@@ -210,11 +218,24 @@ export default function CreateLoanModal({
       return next;
     });
   };
+  
+  const handleShare = async () => {
+    if (createdLoan && shareRef.current) {
+      setLoading(true);
+      try {
+        await shareRef.current.shareLoan(createdLoan, "calendar");
+      } catch (err) {
+        console.error("Error al compartir", err);
+      }
+      setLoading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
-  const totalToPay = amount ? (Number(amount) * (1 + interestRate)).toFixed(2) : "0.00";
-  const dailyQuota = amount ? (Number(amount) * (1 + interestRate) / days).toFixed(2) : "0.00";
+  const totalToPayNum = amount ? Number(amount) * (1 + interestRate) : 0;
+  const totalToPay = amount ? totalToPayNum.toFixed(2) : "0.00";
+  const dailyQuota = amount ? (totalToPayNum / days).toFixed(2) : "0.00";
   const interestTotal = amount ? (Number(amount) * interestRate).toFixed(2) : "0.00";
 
   return (
@@ -234,7 +255,9 @@ export default function CreateLoanModal({
             <div>
               <h1 className={styles.title}>Nuevo Préstamo</h1>
               <p className={styles.subtitle}>
-                {searchPerformed && person
+                {createdLoan 
+                  ? "Paso 3: Confirmación"
+                  : searchPerformed && person
                   ? "Paso 2: Detalles & Confirmación"
                   : "Búsqueda o registro rápido"}
               </p>
@@ -265,7 +288,9 @@ export default function CreateLoanModal({
 
         <div className={styles.contentWrapper}>
           <div
-            className={`${styles.slidesContainer} ${searchPerformed && person ? styles.step2 : styles.step1}`}
+            className={`${styles.slidesContainer} ${
+              createdLoan ? styles.step3 : searchPerformed && person ? styles.step2 : styles.step1
+            }`}
           >
             {/* ============================================================== */}
             {/* PASO 1: BÚSQUEDA / REGISTRO COMPACTO                           */}
@@ -554,13 +579,68 @@ export default function CreateLoanModal({
                 </>
               )}
             </div>
+
+            {/* ============================================================== */}
+            {/* PASO 3: ÉXITO Y COMPARTIR                                      */}
+            {/* ============================================================== */}
+            <div className={styles.slide}>
+              <div className={styles.successContainer}>
+                <div className={styles.successIconWrapper}>
+                  <CheckCircle2 size={40} strokeWidth={2.5} />
+                </div>
+                
+                <div>
+                  <h3 className={styles.successTitle}>¡Préstamo Creado!</h3>
+                  <p className={styles.successSubtitle}>El crédito ha sido registrado correctamente.</p>
+                </div>
+                
+                <div className={styles.successSummaryCard}>
+                  <div className={styles.summaryRow}>
+                    <span className={styles.summaryLabel}>Cliente</span>
+                    <span className={styles.summaryValue}>{person?.firstName} {person?.lastName}</span>
+                  </div>
+                  <div className={styles.summaryRow}>
+                    <span className={styles.summaryLabel}>Monto prestado</span>
+                    <span className={styles.summaryValue}>S/. {amount}</span>
+                  </div>
+                  <div className={styles.summaryRow}>
+                    <span className={styles.summaryLabel}>Total a pagar</span>
+                    <span className={styles.summaryValue} style={{color: '#10b981'}}>S/. {totalToPay}</span>
+                  </div>
+                </div>
+
+                <div className={styles.successActions}>
+                  <button 
+                    type="button" 
+                    className={styles.shareBtn} 
+                    onClick={handleShare}
+                    disabled={loading}
+                  >
+                    <Share2 size={18} />
+                    {loading ? "Generando..." : "Compartir Tarjeta"}
+                  </button>
+                  <button 
+                    type="button" 
+                    className={styles.doneBtn} 
+                    onClick={() => {
+                      onClose();
+                      // Reiniciar después de que la animación termine
+                      setTimeout(resetState, 400); 
+                    }}
+                  >
+                    Finalizar
+                  </button>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
 
         {/* ============================================================== */}
         {/* FOOTER ACCIÓN (Solo visible en Paso 2)                         */}
         {/* ============================================================== */}
-        {searchPerformed && person && (
+        {searchPerformed && person && !createdLoan && (
           <footer className={styles.actionFooter}>
             <button
               className={styles.confirmBtn}
@@ -583,12 +663,14 @@ export default function CreateLoanModal({
               </svg>
             </button>
             <p className={styles.actionSubtext}>
-              Al confirmar, se registrará el préstamo y se abrirá la vista de
-              impresión del comprobante.
+              Al confirmar, se registrará el préstamo y podrás imprimir el comprobante.
             </p>
           </footer>
         )}
       </div>
+      
+      {/* Componente invisible para generar imágenes de compartir */}
+      <LoanShareGenerator ref={shareRef} />
     </div>
   );
 }
