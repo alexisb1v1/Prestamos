@@ -32,7 +32,12 @@ export default function LoginPage() {
       const isLocalWithSub = hostname.endsWith(".localhost") && parts.length >= 2;
       
       if (hostname === "localhost" || parts[0] === "central" || (!isLocalWithSub && parts.length < 3)) {
-        setTenantName("NeoCobros");
+        const devTenant = process.env.NEXT_PUBLIC_DEV_TENANT;
+        if (hostname === "localhost" && devTenant && devTenant !== "central") {
+          setTenantName(devTenant.charAt(0).toUpperCase() + devTenant.slice(1));
+        } else {
+          setTenantName("NeoCobros");
+        }
       } else {
         // Ejemplo: empresa1.neocobros.com -> empresa1 -> Empresa1
         const sub = parts[0];
@@ -54,6 +59,8 @@ export default function LoginPage() {
       
       if (hostname !== "localhost" && parts[0] !== "central" && (isLocalWithSub || parts.length >= 3)) {
         rawTenant = parts[0];
+      } else if (hostname === "localhost" && process.env.NEXT_PUBLIC_DEV_TENANT) {
+        rawTenant = process.env.NEXT_PUBLIC_DEV_TENANT;
       }
     }
 

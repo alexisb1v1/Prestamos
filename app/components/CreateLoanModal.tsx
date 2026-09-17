@@ -36,6 +36,7 @@ interface CreateLoanModalProps {
     address: string;
     phone?: string;
   } | null;
+  companyId?: string;
 }
 
 /**
@@ -47,6 +48,7 @@ export default function CreateLoanModal({
   onClose,
   onSuccess,
   loanToRenew,
+  companyId,
 }: CreateLoanModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -205,6 +207,7 @@ export default function CreateLoanModal({
       address,
       userId: Number(currentUser.id),
       days,
+      companyId: companyId || currentUser.idCompany,
     });
 
     result.match(

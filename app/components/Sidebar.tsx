@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
@@ -12,13 +12,16 @@ import {
   ChevronRight,
   LogOut,
   X,
+  HelpCircle,
 } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { authService } from "@/lib/auth";
 import { formatUserName } from "@/lib/utils";
+import { TOURS } from "@/lib/tours.config";
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const {
@@ -45,6 +48,22 @@ export default function Sidebar() {
 
   const toggleConfig = () => {
     setManualConfigExpanded(!isConfigExpanded);
+  };
+
+  const [manualHelpExpanded, setManualHelpExpanded] = useState<boolean | null>(null);
+  const isHelpExpanded = manualHelpExpanded !== null ? manualHelpExpanded : false;
+  const toggleHelp = () => setManualHelpExpanded(!isHelpExpanded);
+
+  const handleStartTour = (path: string) => {
+    setIsOpen(false);
+    if (pathname !== path) {
+      router.push(path);
+      setTimeout(() => {
+        if (window.startTour) window.startTour(path);
+      }, 800);
+    } else {
+      if (window.startTour) window.startTour(path);
+    }
   };
 
   const handleLogout = async () => {
@@ -216,6 +235,34 @@ export default function Sidebar() {
               </div>
             </>
           )}
+
+          {/* Sección de Ayuda / Tutoriales */}
+          <div className="sidebar-group-label" style={{ marginTop: '1rem' }}>AYUDA</div>
+          <div>
+            <button
+              className={`sidebar-accordion-header ${isHelpExpanded ? "sidebar-active" : ""}`}
+              onClick={toggleHelp}
+            >
+              <HelpCircle size={20} strokeWidth={isHelpExpanded ? 2.5 : 2} />
+              <span style={{ flex: 1, textAlign: "left" }}>Tutoriales</span>
+              {isHelpExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            </button>
+
+            {isHelpExpanded && (
+              <div className="sidebar-accordion-content">
+                {Object.values(TOURS).map((tour) => (
+                  <button
+                    key={tour.id}
+                    className="sidebar-sub-item"
+                    style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 'none' }}
+                    onClick={() => handleStartTour(tour.path)}
+                  >
+                    {tour.title}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </nav>
 
         <div className="sidebar-footer">

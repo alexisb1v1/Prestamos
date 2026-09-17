@@ -15,7 +15,7 @@ export const loanService = {
         return api.get<Loan[]>(`/loan${queryString ? `?${queryString}` : ''}`);
     },
 
-    async create(loan: { idPeople: string; amount: number; userId: string; address: string; days: number }): Promise<{ success: boolean; loanId: string }> {
+    async create(loan: { idPeople: string; amount: number; userId: string; address: string; days: number; companyId?: string }): Promise<{ success: boolean; loanId: string }> {
         return api.post<{ success: boolean; loanId: string }>('/loan', loan);
     },
 

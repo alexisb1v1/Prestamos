@@ -313,6 +313,7 @@ export default function PrestamosPage() {
         >
           <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
             <h1
+              id="header-prestamos"
               style={{
                 fontSize: isMobile ? "1.25rem" : "1.875rem",
                 fontWeight: 800,
@@ -329,6 +330,7 @@ export default function PrestamosPage() {
             </span>
 
             <button
+              id="filtro-ruta"
               onClick={() => setIsFilterModalOpen(true)}
               style={{
                 width: "32px",
@@ -552,7 +554,7 @@ export default function PrestamosPage() {
           )}
         </div>
       ) : (
-        <div className="card" style={{ padding: 0, overflow: "visible" }}>
+        <div id="tabla-prestamos" className="card" style={{ padding: 0, overflow: "visible" }}>
           <table
             style={{
               width: "100%",
@@ -904,6 +906,7 @@ export default function PrestamosPage() {
           if (currentUser) loadLoans(currentUser);
         }}
         loanToRenew={selectedLoanForRenewal}
+        companyId={selectedCompanyId || currentUser?.idCompany}
       />
       <CreatePaymentModal
         isOpen={isPaymentModalOpen}

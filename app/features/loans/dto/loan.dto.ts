@@ -28,6 +28,7 @@ export interface CreateLoanRequestDto {
   address: string;
   phone: string;
   days: number;
+  companyId?: string;
 }
 
 export interface UpdateLoanInfoRequestDto {

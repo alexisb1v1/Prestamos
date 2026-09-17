@@ -495,11 +495,12 @@ export default function DashboardPage() {
           marginBottom: "0.75rem",
         }}
       >
-        <h1 style={{ fontSize: "1.35rem", fontWeight: 800, color: "#1e293b" }}>
+        <h1 id="header-dashboard" style={{ fontSize: "1.35rem", fontWeight: 800, color: "#1e293b" }}>
           Resumen
         </h1>
         {isAdmin && (
           <button
+            id="filtro-dashboard"
             onClick={() => setIsFilterModalOpen(true)}
             style={{
               width: "36px",
@@ -560,6 +561,7 @@ export default function DashboardPage() {
       ) : !data ? null : (
         <>
           <div
+            id="stats-dashboard"
             style={{
               display: "grid",
               gridTemplateColumns: isMobile
@@ -1053,7 +1055,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div style={{ marginTop: "1.25rem" }}>
+          <div id="lista-rutas-dashboard" style={{ marginTop: "1.25rem" }}>
             {/* Sticky Header Container */}
             <div
               style={{

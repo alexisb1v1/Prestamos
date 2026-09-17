@@ -167,6 +167,7 @@ export default function ExpensesPage() {
         >
           <div>
             <h1
+              id="header-gastos"
               style={{
                 fontSize: isMobile ? "1.25rem" : "1.875rem",
                 fontWeight: "bold",
@@ -178,6 +179,7 @@ export default function ExpensesPage() {
         </div>
 
         <div
+          id="filtro-gastos"
           className={isMobile ? "" : "card"}
           style={{
             marginBottom: isMobile ? "0" : "2rem",
@@ -303,6 +305,7 @@ export default function ExpensesPage() {
 
         {!loading && expenses.length > 0 && (
           <div
+            id="total-gastos"
             style={{
               marginTop: isMobile ? "1rem" : "1.5rem",
               marginBottom: isMobile ? "0.5rem" : "0",
@@ -329,7 +332,7 @@ export default function ExpensesPage() {
         )}
       </div>
 
-      <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+      <div id="lista-gastos" style={{ maxWidth: "800px", margin: "0 auto" }}>
         {loading ? (
           <LoadingSpinner message="Cargando gastos..." />
         ) : expenses.length === 0 ? (

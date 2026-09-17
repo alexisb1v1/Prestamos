@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { authService } from "@/lib/auth";
 import Sidebar from "../components/Sidebar";
 import FabMenu from "../components/FabMenu";
+import TourRunner from "../components/TourRunner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -170,6 +171,7 @@ export default function DashboardLayout({
         </main>
         {showShareButton && <FabMenu />}
       </div>
+      <TourRunner />
     </div>
   );
 }

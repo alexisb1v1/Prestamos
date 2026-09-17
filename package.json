@@ -15,6 +15,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@ducanh2912/next-pwa": "^10.2.9",
     "date-fns": "^4.1.0",
+    "driver.js": "^1.8.0",
     "html2canvas": "^1.4.1",
     "js-cookie": "^3.0.5",
     "lucide-react": "^1.7.0",

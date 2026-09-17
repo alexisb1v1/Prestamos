@@ -234,6 +234,7 @@ export default function FabMenu() {
 
         {/* Main FAB */}
         <button
+          id="btn-accion"
           className={`fab-main ${isOpen ? "fab-open" : ""}`}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
