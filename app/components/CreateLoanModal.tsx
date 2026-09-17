@@ -200,8 +200,14 @@ export default function CreateLoanModal({
     result.match(
       (loan) => {
         onSuccess();
-        setCreatedLoan(loan);
-        // Ya no cerramos inmediatamente el modal, sino que mostramos el paso 3
+        // El backend podría no devolver las relaciones (como el nombre del cliente), 
+        // así que enriquecemos el objeto con los datos que ya tenemos en el modal
+        const enrichedLoan: Loan = {
+          ...loan,
+          clientName: loan.clientName || `${person.firstName} ${person.lastName}`,
+          documentNumber: loan.documentNumber || person.documentNumber,
+        };
+        setCreatedLoan(enrichedLoan);
       },
       (err) => {
         setError(err.message || "Error al crear el préstamo.");
