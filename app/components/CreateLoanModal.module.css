@@ -190,6 +190,20 @@
   outline: none;
 }
 
+/* Ocultar flechas en inputs numéricos */
+.inputMain::-webkit-outer-spin-button,
+.inputMain::-webkit-inner-spin-button,
+.input::-webkit-outer-spin-button,
+.input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.inputMain[type="number"],
+.input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 .inputIcon {
   position: absolute;
   right: 1rem;

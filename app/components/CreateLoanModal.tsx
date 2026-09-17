@@ -413,9 +413,16 @@ export default function CreateLoanModal({
                     placeholder="0.00"
                     value={amount}
                     onChange={(e) => {
-                      const val = Number(e.target.value);
-                      setAmount(val);
-                      if (val < 1000) setDays(24);
+                      const raw = e.target.value;
+                      if (raw === "") {
+                        setAmount("");
+                        return;
+                      }
+                      const val = Number(raw);
+                      if (!isNaN(val)) {
+                        setAmount(val);
+                        if (val < 1000) setDays(24);
+                      }
                     }}
                   />
                   <div className={styles.amountBadge}>
@@ -436,7 +443,15 @@ export default function CreateLoanModal({
                     className={`${styles.input} ${amount && Number(amount) < 1000 ? styles.disabledInput : ""}`}
                     placeholder="Ej: 24 o 30"
                     value={days}
-                    onChange={(e) => setDays(Number(e.target.value))}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      if (raw === "") {
+                        setDays("" as any);
+                        return;
+                      }
+                      const val = Number(raw);
+                      if (!isNaN(val)) setDays(val);
+                    }}
                     min={24}
                     disabled={!!amount && Number(amount) < 1000}
                   />
