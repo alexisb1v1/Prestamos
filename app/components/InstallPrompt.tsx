@@ -79,47 +79,44 @@ export default function InstallPrompt() {
     localStorage.setItem("iosInstallPromptSeen", "true");
   };
 
-  if (isStandalone) return null;
-
-  if (deferredPrompt) {
-    return (
-      <div className="install-prompt-container">
-        <div className="install-prompt-content">
-          <span className="install-prompt-icon">📱</span>
-          <div className="install-prompt-text">
-            <strong>Instalar App</strong>
-            <p>Agrega la app a tu inicio para un acceso más rápido.</p>
+  // Always return a stable wrapper to prevent hydration errors on <body>
+  return (
+    <div id="install-prompt-wrapper" aria-live="polite">
+      {!isStandalone && deferredPrompt && (
+        <div className="install-prompt-container">
+          <div className="install-prompt-content">
+            <span className="install-prompt-icon">📱</span>
+            <div className="install-prompt-text">
+              <strong>Instalar App</strong>
+              <p>Agrega la app a tu inicio para un acceso más rápido.</p>
+            </div>
           </div>
-        </div>
-        <button className="install-prompt-btn" onClick={handleInstallClick}>
-          Instalar
-        </button>
-      </div>
-    );
-  }
-
-  if (showIOSPrompt) {
-    return (
-      <div className="install-prompt-ios">
-        <div className="install-prompt-ios-content">
-          <p>Para instalar en iOS:</p>
-          <ol>
-            <li>
-              Toca el botón <strong>Compartir</strong>{" "}
-              <span style={{ fontSize: "1.2rem" }}>⎋</span>
-            </li>
-            <li>
-              Desliza y selecciona <strong>&quot;Agregar a Inicio&quot;</strong>{" "}
-              <span style={{ fontSize: "1.2rem" }}>➕</span>
-            </li>
-          </ol>
-          <button className="install-prompt-close-btn" onClick={closeIOSPrompt}>
-            Entendido
+          <button className="install-prompt-btn" onClick={handleInstallClick}>
+            Instalar
           </button>
         </div>
-      </div>
-    );
-  }
+      )}
 
-  return null;
+      {!isStandalone && showIOSPrompt && (
+        <div className="install-prompt-ios">
+          <div className="install-prompt-ios-content">
+            <p>Para instalar en iOS:</p>
+            <ol>
+              <li>
+                Toca el botón <strong>Compartir</strong>{" "}
+                <span style={{ fontSize: "1.2rem" }}>⎋</span>
+              </li>
+              <li>
+                Desliza y selecciona <strong>&quot;Agregar a Inicio&quot;</strong>{" "}
+                <span style={{ fontSize: "1.2rem" }}>➕</span>
+              </li>
+            </ol>
+            <button className="install-prompt-close-btn" onClick={closeIOSPrompt}>
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
