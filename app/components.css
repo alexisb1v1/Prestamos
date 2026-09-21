@@ -375,7 +375,10 @@
 /* ================================================== */
 .create-payment-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100dvh;
   background-color: rgba(15, 23, 42, 0.4);
   display: flex;
   align-items: center;
@@ -637,6 +640,17 @@
 @media (max-width: 640px) {
   .create-payment-overlay {
     align-items: flex-end;
+  }
+  
+  /* Move modal up when the input is focused (keyboard is open) */
+  .create-payment-overlay:focus-within {
+    align-items: flex-start;
+    padding-top: 8vh;
+  }
+
+  .create-payment-overlay:focus-within .create-payment-modal {
+    border-bottom-left-radius: 1.75rem;
+    border-bottom-right-radius: 1.75rem;
   }
 
   .create-payment-modal {
