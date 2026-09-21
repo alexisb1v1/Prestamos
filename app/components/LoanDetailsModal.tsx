@@ -762,7 +762,17 @@ function LoanDetailsModal({
                         >
                           {format(day, "d")}
                         </span>
-                        {isRelevant && !isStart && !isEnd && (
+                        {installment ? (
+                          <span
+                            style={{
+                              fontSize: "0.45rem",
+                              fontWeight: 900,
+                              color: textColor,
+                            }}
+                          >
+                            {installment.amount?.toFixed(0)}
+                          </span>
+                        ) : isRelevant && !isStart && !isEnd ? (
                           <span
                             style={{
                               fontSize: "0.45rem",
@@ -773,18 +783,18 @@ function LoanDetailsModal({
                           >
                             {loan.fee?.toFixed(0)}
                           </span>
-                        )}
-                        {(isStart || isEnd) && (
+                        ) : (isStart || isEnd) ? (
                           <span
                             style={{
                               fontSize: "0.4rem",
                               fontWeight: 900,
                               textTransform: "uppercase",
+                              color: textColor,
                             }}
                           >
                             {isStart ? "Ini" : "Fin"}
                           </span>
-                        )}
+                        ) : null}
                       </div>
                     );
                   })}
