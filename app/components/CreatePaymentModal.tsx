@@ -30,6 +30,7 @@ export default function CreatePaymentModal({
   const [paymentType, setPaymentType] = useState<"EFECTIVO" | "YAPE">("YAPE"); // Yape is default in design
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen && loan) {
@@ -75,7 +76,7 @@ export default function CreatePaymentModal({
 
   return (
     <div
-      className="create-payment-overlay"
+      className={`create-payment-overlay ${isKeyboardOpen ? "keyboard-open" : ""}`}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -163,6 +164,10 @@ export default function CreatePaymentModal({
               placeholder="0"
               inputMode="numeric"
               autoFocus
+              onFocus={() => setIsKeyboardOpen(true)}
+              onBlur={() => {
+                setTimeout(() => setIsKeyboardOpen(false), 200);
+              }}
             />
             <div className="create-payment-currency">
               PEN

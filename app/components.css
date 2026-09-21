@@ -643,12 +643,12 @@
   }
   
   /* Move modal up when the input is focused (keyboard is open) */
-  .create-payment-overlay:focus-within {
+  .create-payment-overlay.keyboard-open {
     align-items: flex-start;
     padding-top: 8vh;
   }
 
-  .create-payment-overlay:focus-within .create-payment-modal {
+  .create-payment-overlay.keyboard-open .create-payment-modal {
     border-bottom-left-radius: 1.75rem;
     border-bottom-right-radius: 1.75rem;
   }
