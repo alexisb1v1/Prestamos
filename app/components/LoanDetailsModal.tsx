@@ -153,7 +153,7 @@ function LoanDetailsModal({
         day.getMonth(),
         day.getDate(),
       ).getTime();
-      return details?.installments?.find((inst) => {
+      const dayInstallments = details?.installments?.filter((inst) => {
         const instDate = new Date(inst.date);
         const instDay = new Date(
           instDate.getFullYear(),
@@ -162,6 +162,15 @@ function LoanDetailsModal({
         ).getTime();
         return instDay === normalizedDay;
       });
+
+      if (!dayInstallments || dayInstallments.length === 0) return undefined;
+
+      const totalAmount = dayInstallments.reduce((sum, inst) => sum + (inst.amount || 0), 0);
+      
+      return {
+        ...dayInstallments[0],
+        amount: totalAmount,
+      };
     },
     [details?.installments],
   );

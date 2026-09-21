@@ -682,9 +682,10 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
                 ))}
                 {days.map((day) => {
                   const dateStr = day.toISOString();
-                  const installment = details.installments.find((i) =>
+                  const dayInstallments = details.installments.filter((i) =>
                     isSameDay(parseISO(i.date), day),
                   );
+                  let installment = dayInstallments.length > 0 ? { ...dayInstallments[0], amount: dayInstallments.reduce((sum, inst) => sum + (inst.amount || 0), 0) } : undefined;
                   const isOriginalPlan =
                     isWithinInterval(day, {
                       start: baseStartDate,
