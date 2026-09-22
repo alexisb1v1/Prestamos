@@ -2,11 +2,10 @@
 
 import { useState, useEffect } from "react";
 import {
-  Banknote,
-  Smartphone,
   X,
   AlertCircle,
-  ChevronsUpDown,
+  HelpCircle,
+  ChevronLeft
 } from "lucide-react";
 import { paymentService } from "@/lib/paymentService";
 import { Loan } from "@/lib/types";
@@ -25,19 +24,17 @@ export default function CreatePaymentModal({
   onSuccess,
   loan,
 }: CreatePaymentModalProps) {
-  // State for amount - user requested ONLY integers
+  // State for amount
   const [amount, setAmount] = useState<number | "">("");
-  const [paymentType, setPaymentType] = useState<"EFECTIVO" | "YAPE">("YAPE"); // Yape is default in design
+  const [paymentType, setPaymentType] = useState<"EFECTIVO" | "YAPE">("YAPE");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
+  // When modal opens
   useEffect(() => {
     if (isOpen && loan) {
-      // Default to fee, but rounded to nearest integer as requested
       setAmount(Math.round(loan.fee || 0));
       setError("");
-      // Set YAPE as default matched with design image
       setPaymentType("YAPE");
     }
   }, [isOpen, loan]);
@@ -56,9 +53,9 @@ export default function CreatePaymentModal({
     try {
       await paymentService.createInstallment({
         loanId: String(loan.id),
-        amount: Math.floor(Number(amount)), // Ensure integer just in case
+        amount: Number(Number(amount).toFixed(2)), // Ensure up to 2 decimals
         userId: String(user.id),
-        paymentType: paymentType,
+        paymentType: paymentType as any,
       });
       onSuccess();
       onClose();
@@ -74,125 +71,337 @@ export default function CreatePaymentModal({
 
   if (!isOpen || !loan) return null;
 
+  // Derived Values
+  const initial = loan.clientName?.substring(0, 2).toUpperCase() || "CL";
+  const remainingAmount = loan.remainingAmount ?? 0;
+  
+  // Predict new remaining balance
+  const parsedAmount = Number(amount) || 0;
+  const newRemainingAmount = Math.max(0, remainingAmount - parsedAmount);
+
   return (
     <div
-      className={`create-payment-overlay ${isKeyboardOpen ? "keyboard-open" : ""}`}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 50,
+        backgroundColor: "rgba(15, 23, 42, 0.8)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "flex-end", // Bottom aligned on mobile
+      }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="create-payment-modal">
-        {/* Mobile Handle */}
-        <div className="create-payment-handle-bar"></div>
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "420px",
+          backgroundColor: "#f8fafc",
+          height: "100%",
+          maxHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          position: "relative",
+          animation: "slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+          overflowY: "auto"
+        }}
+      >
+        <style>
+          {`
+            @keyframes slideUp {
+              from { transform: translateY(100%); }
+              to { transform: translateY(0); }
+            }
+            .no-scrollbar::-webkit-scrollbar { display: none; }
+            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+            .shortcut-chip:active { transform: scale(0.95); }
+          `}
+        </style>
 
-        <div className="create-payment-header">
-          <h2 className="create-payment-title">Registrar Pago</h2>
-          <button
-            onClick={onClose}
-            className="create-payment-close"
-            aria-label="Cerrar"
-          >
-            <X size={20} strokeWidth={2.5} />
-          </button>
-        </div>
-
-        {/* Client Info */}
-        <div className="create-payment-section">
-          <div className="create-payment-label">CLIENTE</div>
-          <div className="create-payment-value">{loan.clientName}</div>
-        </div>
-
-        {error && (
-          <div className="create-payment-error">
-            <AlertCircle size={18} />
-            {error}
-          </div>
-        )}
-
-        {/* Payment Type Selection */}
-        <div className="create-payment-section">
-          <label className="create-payment-label">TIPO DE PAGO</label>
-          <div className="create-payment-type-container">
-            <label className="create-payment-type-card">
-              <input
-                type="radio"
-                name="paymentType"
-                value="EFECTIVO"
-                checked={paymentType === "EFECTIVO"}
-                onChange={() => setPaymentType("EFECTIVO")}
-              />
-              <div className="create-payment-card-content">
-                <div className="create-payment-icon-wrapper">
-                  <Banknote size={24} strokeWidth={2.5} />
-                </div>
-                <span className="create-payment-type-name">Efectivo</span>
-              </div>
-            </label>
-            <label className="create-payment-type-card">
-              <input
-                type="radio"
-                name="paymentType"
-                value="YAPE"
-                checked={paymentType === "YAPE"}
-                onChange={() => setPaymentType("YAPE")}
-              />
-              <div className="create-payment-card-content">
-                <div className="create-payment-icon-wrapper">
-                  <Smartphone size={24} strokeWidth={2.5} />
-                </div>
-                <span className="create-payment-type-name">Yape</span>
-              </div>
-            </label>
-          </div>
-        </div>
-
-        {/* Amount Input */}
-        <div className="create-payment-section">
-          <label className="create-payment-label">MONTO A PAGAR (S/)</label>
-          <div className="create-payment-input-wrapper">
-            <input
-              type="number"
-              className="create-payment-input"
-              value={amount}
-              onChange={(e) => {
-                // Only allow integers
-                const val = e.target.value;
-                if (val === "") setAmount("");
-                else setAmount(Math.floor(Number(val)));
+        {/* TopBar */}
+        <header
+          style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 30,
+            backgroundColor: "rgba(255, 255, 255, 0.95)",
+            backdropFilter: "blur(12px)",
+            borderBottom: "1px solid #f1f5f9",
+            padding: "1rem",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <button
+              onClick={onClose}
+              style={{
+                width: "2.25rem",
+                height: "2.25rem",
+                borderRadius: "9999px",
+                backgroundColor: "#f1f5f9",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#334155",
+                border: "none",
+                cursor: "pointer"
               }}
-              step="1"
-              placeholder="0"
-              inputMode="numeric"
-              autoFocus
-              onFocus={() => setIsKeyboardOpen(true)}
-              onBlur={() => {
-                setTimeout(() => setIsKeyboardOpen(false), 200);
-              }}
-            />
-            <div className="create-payment-currency">
-              PEN
-              <ChevronsUpDown size={14} />
+            >
+              <ChevronLeft size={20} strokeWidth={2.5} />
+            </button>
+            <div style={{ textAlign: "center" }}>
+              <h1 style={{ fontSize: "1rem", fontWeight: "bold", color: "#0f172a", margin: 0 }}>Registrar Abono</h1>
+              <span style={{ fontSize: "0.75rem", fontWeight: 500, color: "#4338ca" }}>
+                Préstamo #{loan.id} • {loan.days} días
+              </span>
             </div>
+            <button
+              style={{
+                width: "2.25rem",
+                height: "2.25rem",
+                borderRadius: "9999px",
+                backgroundColor: "#f8fafc",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#94a3b8",
+                border: "none"
+              }}
+            >
+              <HelpCircle size={20} />
+            </button>
           </div>
-        </div>
+        </header>
 
-        {/* Action Buttons */}
-        <div className="create-payment-actions">
-          <button
-            className="create-payment-secondary-btn"
-            onClick={onClose}
-            disabled={loading}
+        {/* MainContent */}
+        <main style={{ flex: 1, padding: "1rem", display: "flex", flexDirection: "column", gap: "1rem", overflowX: "hidden" }}>
+          
+          {/* ClientContextCard */}
+          <section
+            style={{
+              background: "linear-gradient(to bottom right, #1e1b4b, #312e81, #3730a3)",
+              borderRadius: "1rem",
+              padding: "1rem",
+              color: "white",
+              position: "relative",
+              overflow: "hidden",
+              boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)"
+            }}
           >
-            Cancelar
-          </button>
-          <button
-            className="create-payment-primary-btn"
-            onClick={handlePayment}
-            disabled={loading || !amount}
-          >
-            {loading ? "Procesando..." : "Abonar"}
-          </button>
-        </div>
+            {/* Watermark circle */}
+            <div style={{ position: "absolute", right: "-1.5rem", bottom: "-1.5rem", width: "7rem", height: "7rem", borderRadius: "9999px", backgroundColor: "rgba(255,255,255,0.05)", pointerEvents: "none" }} />
+            
+            <div style={{ position: "relative", zIndex: 10, display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                <div style={{ width: "2.75rem", height: "2.75rem", borderRadius: "0.75rem", backgroundColor: "rgba(255,255,255,0.1)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "1rem", border: "1px solid rgba(255,255,255,0.2)" }}>
+                  {initial}
+                </div>
+                <div>
+                  <h2 style={{ fontSize: "1rem", fontWeight: "bold", margin: 0, textTransform: "uppercase", letterSpacing: "-0.025em" }}>{loan.clientName}</h2>
+                  <p style={{ fontSize: "0.75rem", color: "#c7d2fe", margin: "0.1rem 0 0 0" }}>DNI: {loan.documentNumber} • {loan.address}</p>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid rgba(255,255,255,0.15)" }}>
+              <div style={{ backgroundColor: "rgba(255,255,255,0.1)", borderRadius: "0.75rem", padding: "0.5rem 0.6rem" }}>
+                <span style={{ fontSize: "0.6rem", color: "#c7d2fe", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 500, display: "block" }}>Cuota del Día</span>
+                <span style={{ fontSize: "0.875rem", fontWeight: "bold", color: "white" }}>S/ {loan.fee.toFixed(2)}</span>
+              </div>
+              <div style={{ backgroundColor: "rgba(255,255,255,0.1)", borderRadius: "0.75rem", padding: "0.5rem 0.6rem" }}>
+                <span style={{ fontSize: "0.6rem", color: "#c7d2fe", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 500, display: "block" }}>Saldo Pendiente</span>
+                <span style={{ fontSize: "0.875rem", fontWeight: "bold", color: "#6ee7b7" }}>S/ {remainingAmount.toFixed(2)}</span>
+              </div>
+            </div>
+          </section>
+
+          {/* PaymentMethodSection */}
+          <section style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <label style={{ fontSize: "0.75rem", fontWeight: "bold", color: "#334155", textTransform: "uppercase", letterSpacing: "0.05em" }}>Tipo de Pago</label>
+            </div>
+            
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.5rem" }}>
+              {/* Efectivo */}
+              <button
+                type="button"
+                onClick={() => setPaymentType("EFECTIVO")}
+                style={{
+                  position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0.6rem", borderRadius: "0.75rem",
+                  border: paymentType === "EFECTIVO" ? "2px solid #10b981" : "2px solid #e2e8f0",
+                  backgroundColor: paymentType === "EFECTIVO" ? "#ecfdf5" : "white",
+                  cursor: "pointer", transition: "all 0.15s"
+                }}
+              >
+                {paymentType === "EFECTIVO" && (
+                  <div style={{ position: "absolute", top: "-6px", right: "-6px", width: "16px", height: "16px", borderRadius: "50%", backgroundColor: "#10b981", color: "white", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid white" }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  </div>
+                )}
+                <div style={{ width: "2rem", height: "2rem", borderRadius: "50%", backgroundColor: "#d1fae5", color: "#059669", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "4px" }}>
+                  <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect height="12" rx="2" strokeWidth="2" width="20" x="2" y="6"></rect><circle cx="12" cy="12" r="2.5" strokeWidth="2"></circle><path d="M6 12h.01M18 12h.01" strokeLinecap="round" strokeWidth="2"></path></svg>
+                </div>
+                <span style={{ fontSize: "0.75rem", fontWeight: "bold", color: paymentType === "EFECTIVO" ? "#047857" : "#1e293b" }}>Efectivo</span>
+              </button>
+
+              {/* Yape */}
+              <button
+                type="button"
+                onClick={() => setPaymentType("YAPE")}
+                style={{
+                  position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0.6rem", borderRadius: "0.75rem",
+                  border: paymentType === "YAPE" ? "2px solid #742384" : "2px solid #e2e8f0",
+                  backgroundColor: paymentType === "YAPE" ? "rgba(116, 35, 132, 0.05)" : "white",
+                  cursor: "pointer", transition: "all 0.15s"
+                }}
+              >
+                {paymentType === "YAPE" && (
+                  <div style={{ position: "absolute", top: "-6px", right: "-6px", width: "16px", height: "16px", borderRadius: "50%", backgroundColor: "#742384", color: "white", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid white" }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  </div>
+                )}
+                <div style={{ width: "2rem", height: "2rem", borderRadius: "50%", backgroundColor: "#f3e8f5", color: "#742384", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "4px" }}>
+                  <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M17 2H7C5.9 2 5 2.9 5 4v16c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-5 18c-.8 0-1.5-.7-1.5-1.5S11.2 17 12 17s1.5.7 1.5 1.5S12.8 20 12 20zm5-4H7V5h10v11z"></path></svg>
+                </div>
+                <span style={{ fontSize: "0.75rem", fontWeight: 800, color: paymentType === "YAPE" ? "#742384" : "#1e293b" }}>Yape</span>
+              </button>
+
+            </div>
+          </section>
+
+          {/* AmountDisplaySection */}
+          <section style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            <label style={{ fontSize: "0.75rem", fontWeight: "bold", color: "#334155", textTransform: "uppercase", letterSpacing: "0.05em" }}>Monto a Cobrar</label>
+            
+            <div style={{ backgroundColor: "white", borderRadius: "1rem", padding: "0.75rem", border: "2px solid rgba(67, 56, 202, 0.7)", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 0 0 4px #eef2ff" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", flex: 1, paddingLeft: "0.25rem" }}>
+                <span style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#94a3b8" }}>S/</span>
+                <input 
+                  type="number"
+                  value={amount}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "") setAmount("");
+                    else setAmount(Number(val));
+                  }}
+                  step="1"
+                  min="0"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  style={{
+                    width: "100%",
+                    fontSize: "1.875rem",
+                    fontWeight: 800,
+                    color: "#0f172a",
+                    letterSpacing: "-0.025em",
+                    border: "none",
+                    outline: "none",
+                    background: "transparent",
+                    padding: 0,
+                    margin: 0
+                  }}
+                />
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "#64748b", backgroundColor: "#f1f5f9", border: "1px solid #e2e8f0", padding: "0.25rem 0.5rem", borderRadius: "0.5rem" }}>PEN</span>
+                <button
+                  type="button"
+                  onClick={() => setAmount("")}
+                  style={{ color: "#cbd5e1", padding: "0.25rem", background: "transparent", border: "none", cursor: "pointer" }}
+                >
+                  <X size={16} strokeWidth={2.5} />
+                </button>
+              </div>
+            </div>
+
+            {/* Quick-Selection Chips */}
+            <div className="no-scrollbar" style={{ display: "flex", alignItems: "center", gap: "0.375rem", overflowX: "auto", padding: "0.125rem 0", fontSize: "0.75rem", fontWeight: 600 }}>
+              <button
+                type="button"
+                className="shortcut-chip"
+                onClick={() => setAmount(Math.round(loan.fee))}
+                style={{ whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", backgroundColor: "#4f46e5", color: "white", border: "none", fontWeight: "bold", cursor: "pointer" }}
+              >
+                Cuota: S/ {Math.round(loan.fee)}
+              </button>
+              <button
+                type="button"
+                className="shortcut-chip"
+                onClick={() => setAmount(Math.round(loan.fee * 2))}
+                style={{ whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", backgroundColor: "white", border: "1px solid #e2e8f0", color: "#334155", cursor: "pointer" }}
+              >
+                2 cuotas (S/ {Math.round(loan.fee * 2)})
+              </button>
+              <button
+                type="button"
+                className="shortcut-chip"
+                onClick={() => setAmount(50)}
+                style={{ whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", backgroundColor: "white", border: "1px solid #e2e8f0", color: "#334155", cursor: "pointer" }}
+              >
+                S/ 50
+              </button>
+              <button
+                type="button"
+                className="shortcut-chip"
+                onClick={() => setAmount(100)}
+                style={{ whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", backgroundColor: "white", border: "1px solid #e2e8f0", color: "#334155", cursor: "pointer" }}
+              >
+                S/ 100
+              </button>
+              <button
+                type="button"
+                className="shortcut-chip"
+                onClick={() => setAmount(Math.ceil(remainingAmount))}
+                style={{ whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", backgroundColor: "#eef2ff", border: "1px solid #c7d2fe", color: "#4338ca", fontWeight: "bold", cursor: "pointer" }}
+              >
+                Saldo total S/ {Math.ceil(remainingAmount)}
+              </button>
+            </div>
+
+            <div style={{ backgroundColor: "white", borderRadius: "1rem", padding: "0.875rem", border: "1px solid rgba(226, 232, 240, 0.8)", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)", marginTop: "0.5rem" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.75rem" }}>
+                <span style={{ color: "#64748b", fontWeight: 500 }}>Nuevo saldo restante:</span>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
+                  <span style={{ textDecoration: "line-through", color: "#94a3b8", fontSize: "0.6875rem" }}>S/ {remainingAmount.toFixed(2)}</span>
+                  <span style={{ color: "#94a3b8" }}>→</span>
+                  <span style={{ fontWeight: "bold", color: "#059669", fontSize: "0.875rem" }}>S/ {newRemainingAmount.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          </section>
+          
+          {error && (
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#dc2626", backgroundColor: "#fef2f2", padding: "0.75rem", borderRadius: "0.5rem", fontSize: "0.875rem" }}>
+              <AlertCircle size={18} />
+              {error}
+            </div>
+          )}
+
+        </main>
+
+        {/* FooterActionTray */}
+        <footer style={{ position: "sticky", bottom: 0, zIndex: 30, backgroundColor: "white", borderTop: "1px solid #f1f5f9", padding: "0.75rem 1rem 1.25rem 1rem", display: "flex", flexDirection: "column", gap: "0.625rem", boxShadow: "0 -4px 6px -1px rgba(0, 0, 0, 0.05)" }}>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "0.5rem" }}>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              style={{ padding: "0.75rem", borderRadius: "0.75rem", border: "1px solid #e2e8f0", backgroundColor: "white", color: "#334155", fontWeight: "bold", fontSize: "0.875rem", cursor: "pointer" }}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handlePayment}
+              disabled={loading || !amount || amount <= 0}
+              style={{ padding: "0.75rem", borderRadius: "0.75rem", border: "none", backgroundColor: loading || !amount || amount <= 0 ? "#818cf8" : "#4f46e5", color: "white", fontWeight: "bold", fontSize: "0.875rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", cursor: (loading || !amount || amount <= 0) ? "not-allowed" : "pointer" }}
+            >
+              {loading ? "Procesando..." : `Confirmar S/ ${Number(amount || 0).toFixed(2)}`}
+            </button>
+          </div>
+        </footer>
       </div>
     </div>
   );
