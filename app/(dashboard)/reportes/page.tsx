@@ -180,6 +180,118 @@ export default function ReportesPage() {
 
   return (
     <div style={{ maxWidth: "1200px", margin: "0 auto", width: "100%" }}>
+      {/* Top Filter Bar - Aligned with dashboard/prestamos */}
+      {(currentUser?.profile === "ADMIN" || currentUser?.profile === "OWNER") && (
+        <div
+          style={{
+            backgroundColor: "var(--bg-app)",
+            margin: "-1.5rem -1rem 1rem -1rem",
+            padding: "0 1rem 0.6rem 1rem",
+            display: "flex",
+            gap: "0.5rem",
+            borderBottom: "1px solid var(--border-color)",
+            position: "relative",
+            zIndex: 10
+          }}
+        >
+          <div style={{ position: "absolute", top: "-1px", left: 0, right: 0, height: "2px", backgroundColor: "var(--bg-app)" }}></div>
+          
+          {currentUser?.profile === "OWNER" && (
+            <div
+              style={{
+                flex: 1,
+                backgroundColor: "white",
+                padding: "0.45rem 0.5rem",
+                borderRadius: "2rem",
+                fontSize: "0.7rem",
+                fontWeight: 600,
+                color: "#475569",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.3rem",
+                border: "1px solid var(--border-color)",
+                position: "relative",
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#64748b" }}>
+                <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                <path d="M9 22v-4h6v4"></path>
+              </svg>
+              <select
+                value={selectedCompanyId}
+                onChange={handleCompanyChange}
+                style={{
+                  flex: 1,
+                  border: "none",
+                  backgroundColor: "transparent",
+                  outline: "none",
+                  appearance: "none",
+                  color: "#475569",
+                  fontWeight: 600,
+                  fontSize: "0.7rem",
+                  cursor: "pointer",
+                }}
+              >
+                <option value="">Todas las empresas</option>
+                {companies.map((c) => (
+                  <option key={c.id} value={c.id}>{c.companyName}</option>
+                ))}
+              </select>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#94a3b8", pointerEvents: "none" }}>
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+          )}
+
+          <div
+            style={{
+              flex: 1,
+              backgroundColor: "white",
+              padding: "0.45rem 0.5rem",
+              borderRadius: "2rem",
+              fontSize: "0.7rem",
+              fontWeight: 600,
+              color: "#475569",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.3rem",
+              border: "1px solid var(--border-color)",
+              position: "relative",
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#64748b" }}>
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <select
+              value={selectedUserId}
+              onChange={(e) => setSelectedUserId(e.target.value)}
+              style={{
+                flex: 1,
+                border: "none",
+                backgroundColor: "transparent",
+                outline: "none",
+                appearance: "none",
+                color: "#475569",
+                fontWeight: 600,
+                fontSize: "0.7rem",
+                cursor: "pointer",
+              }}
+            >
+              <option value="">Todos los cobradores</option>
+              {collectors.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.username} ({c.firstName} {c.lastName})
+                </option>
+              ))}
+            </select>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#94a3b8", pointerEvents: "none" }}>
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div
         style={{
@@ -262,43 +374,6 @@ export default function ReportesPage() {
               }}
             />
           </div>
-
-          {currentUser?.profile === "OWNER" && (
-            <div>
-              <label className="label">Empresa</label>
-              <select
-                className="input"
-                value={selectedCompanyId}
-                onChange={handleCompanyChange}
-              >
-                <option value="">Todas las empresas</option>
-                {companies.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.companyName}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {(currentUser?.profile === "ADMIN" ||
-            currentUser?.profile === "OWNER") && (
-            <div>
-              <label className="label">Cobrador</label>
-              <select
-                className="input"
-                value={selectedUserId}
-                onChange={(e) => setSelectedUserId(e.target.value)}
-              >
-                <option value="">Todos los cobradores</option>
-                {collectors.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.username} ({c.firstName} {c.lastName})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
 
           <button
             className="btn btn-primary"

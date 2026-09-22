@@ -178,6 +178,69 @@ export default function CobradoresPage() {
           transition: "all 0.3s ease",
         }}
       >
+        {currentUser?.profile === "OWNER" && (
+          <div
+            style={{
+              backgroundColor: "var(--bg-app)",
+              margin: "-1.5rem -1rem 1rem -1rem",
+              padding: "0 1rem 0.6rem 1rem",
+              display: "flex",
+              gap: "0.5rem",
+              borderBottom: "1px solid var(--border-color)",
+              position: "relative",
+              zIndex: 10
+            }}
+          >
+            {/* Ocultar el borde del header para fusionarlos visualmente */}
+            <div style={{ position: "absolute", top: "-1px", left: 0, right: 0, height: "2px", backgroundColor: "var(--bg-app)" }}></div>
+            
+            <div
+              style={{
+                flex: 1,
+                backgroundColor: "white",
+                padding: "0.45rem 0.5rem",
+                borderRadius: "2rem",
+                fontSize: "0.7rem",
+                fontWeight: 600,
+                color: "#475569",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.3rem",
+                border: "1px solid var(--border-color)",
+                position: "relative",
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#64748b" }}>
+                <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                <path d="M9 22v-4h6v4"></path>
+              </svg>
+              <select
+                value={selectedCompanyId}
+                onChange={handleCompanyChange}
+                style={{
+                  flex: 1,
+                  border: "none",
+                  backgroundColor: "transparent",
+                  outline: "none",
+                  appearance: "none",
+                  color: "#475569",
+                  fontWeight: 600,
+                  fontSize: "0.7rem",
+                  cursor: "pointer",
+                }}
+              >
+                <option value="">Todas las empresas</option>
+                {companies.map((c) => (
+                  <option key={c.id} value={c.id}>{c.companyName}</option>
+                ))}
+              </select>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#94a3b8", pointerEvents: "none" }}>
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+          </div>
+        )}
+
         <div
           style={{
             display: "flex",
@@ -250,30 +313,6 @@ export default function CobradoresPage() {
                 }}
               />
             </div>
-
-            {currentUser?.profile === "OWNER" && (
-              <div style={{ width: isMobile ? "100%" : "auto" }}>
-                <select
-                  className="input"
-                  value={selectedCompanyId}
-                  onChange={handleCompanyChange}
-                  style={{
-                    width: "100%",
-                    maxWidth: isMobile ? "none" : "250px",
-                    backgroundColor: isMobile
-                      ? "var(--bg-card)"
-                      : "var(--bg-app)",
-                  }}
-                >
-                  <option value="">Todas las empresas</option>
-                  {companies.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.companyName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
 
             <div
               style={{

@@ -227,78 +227,83 @@ export default function PrestamosPage() {
           boxShadow: isMobile ? "0 10px 30px -10px rgba(0,0,0,0.05)" : "none",
         }}
       >
-        {(currentUser?.profile === "ADMIN" ||
-          currentUser?.profile === "OWNER") && (
-          <div
+        {(currentUser?.profile === "ADMIN" || currentUser?.profile === "OWNER") && (
+          <div id="filtro-ruta"
             style={{
+              backgroundColor: "var(--bg-app)",
+              margin: "-1.5rem -1rem 1rem -1rem",
+              padding: "0 1rem 0.6rem 1rem",
               display: "flex",
-              gap: "0.4rem",
-              marginBottom: "0.65rem",
-              flexWrap: "wrap",
+              gap: "0.5rem",
+              borderBottom: "1px solid var(--border-color)",
+              position: "relative",
+              zIndex: 10
             }}
           >
-            <div
+            {/* Ocultar el borde del header para fusionarlos visualmente */}
+            <div style={{ position: "absolute", top: "-1px", left: 0, right: 0, height: "2px", backgroundColor: "var(--bg-app)" }}></div>
+
+            {currentUser?.profile === "OWNER" && (
+              <button
+                onClick={() => setIsFilterModalOpen(true)}
+                style={{
+                  flex: 1,
+                  backgroundColor: "white",
+                  padding: "0.45rem 0.5rem",
+                  borderRadius: "2rem",
+                  fontSize: "0.7rem",
+                  fontWeight: 600,
+                  color: "#475569",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.3rem",
+                  border: "1px solid var(--border-color)",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#64748b" }}>
+                  <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                  <path d="M9 22v-4h6v4"></path>
+                </svg>
+                <span style={{ flex: 1, textAlign: "left", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {selectedCompanyId ? companies.find((c) => c.id === selectedCompanyId)?.companyName : "Todas las empresas"}
+                </span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#94a3b8" }}>
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+            )}
+
+            <button
+              onClick={() => setIsFilterModalOpen(true)}
               style={{
+                flex: 1,
                 backgroundColor: "white",
-                padding: "0.3rem 0.65rem",
+                padding: "0.45rem 0.5rem",
                 borderRadius: "2rem",
                 fontSize: "0.7rem",
                 fontWeight: 600,
-                color: "#64748b",
+                color: "#475569",
                 display: "flex",
                 alignItems: "center",
                 gap: "0.3rem",
-                border: "1px solid #f1f5f9",
+                border: "1px solid var(--border-color)",
+                cursor: "pointer",
+                transition: "all 0.2s"
               }}
             >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
-                <path d="M9 22v-4h6v4"></path>
-              </svg>
-              {selectedCompanyId
-                ? companies.find((c) => c.id === selectedCompanyId)?.companyName
-                : "Todas las empresas"}
-            </div>
-            <div
-              style={{
-                backgroundColor: "white",
-                padding: "0.3rem 0.65rem",
-                borderRadius: "2rem",
-                fontSize: "0.7rem",
-                fontWeight: 600,
-                color: "#64748b",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.3rem",
-                border: "1px solid #f1f5f9",
-              }}
-            >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#64748b" }}>
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                 <circle cx="12" cy="7" r="4"></circle>
               </svg>
-              {selectedCollector
-                ? collectors.find((c) => c.id === selectedCollector)?.username
-                : "Todos los cobradores"}
-            </div>
+              <span style={{ flex: 1, textAlign: "left", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {selectedCollector ? collectors.find((c) => c.id === selectedCollector)?.username : "Todos los cobradores"}
+              </span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#94a3b8" }}>
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
           </div>
         )}
 
@@ -328,54 +333,6 @@ export default function PrestamosPage() {
             >
               ({loans.length})
             </span>
-
-            <button
-              id="filtro-ruta"
-              onClick={() => setIsFilterModalOpen(true)}
-              style={{
-                width: "32px",
-                height: "32px",
-                borderRadius: "0.5rem",
-                background: "white",
-                border: "1.5px solid #f1f5f9",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                color: "#64748b",
-                marginLeft: "0.2rem",
-                position: "relative",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
-              }}
-              title="Filtros de Vista"
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-              </svg>
-              {(selectedCompanyId || selectedCollector) && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "5px",
-                    right: "5px",
-                    width: "7px",
-                    height: "7px",
-                    backgroundColor: "#ef4444",
-                    borderRadius: "50%",
-                    border: "2.5px solid white",
-                  }}
-                ></div>
-              )}
-            </button>
           </div>
 
           <div

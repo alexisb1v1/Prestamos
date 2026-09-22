@@ -253,30 +253,44 @@ function LoanDetailsModal({
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: "#f8fafc", // slate-50
+          backgroundColor: isMobile ? "#f8fafc" : "rgba(15, 23, 42, 0.4)",
           display: "flex",
-          flexDirection: "column",
+          justifyContent: isMobile ? "flex-start" : "flex-end",
+          alignItems: "stretch",
+          flexDirection: isMobile ? "column" : "row",
           zIndex: 1000,
           width: "100%",
           height: "100%",
           overflow: "hidden",
+        }}
+        onClick={(e) => {
+          if (!isMobile && e.target === e.currentTarget) onClose();
         }}
       >
         <div
           style={{
             width: "100%",
             height: "100%",
-            maxWidth: "650px",
-            margin: "0 auto",
+            maxWidth: isMobile ? "100%" : "480px",
+            margin: "0",
             backgroundColor: "#f8fafc",
             display: "flex",
             flexDirection: "column",
             position: "relative",
             borderLeft: isMobile ? "none" : "1px solid #e2e8f0",
-            borderRight: isMobile ? "none" : "1px solid #e2e8f0",
-            boxShadow: isMobile ? "none" : "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+            borderRight: "none",
+            boxShadow: isMobile ? "none" : "-10px 0 30px rgba(0, 0, 0, 0.15)",
+            animation: isMobile ? "none" : "slideLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         >
+          <style>
+            {`
+              @keyframes slideLeft {
+                from { transform: translateX(100%); }
+                to { transform: translateX(0); }
+              }
+            `}
+          </style>
           {/* Header */}
           <header
             style={{

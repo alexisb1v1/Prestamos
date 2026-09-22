@@ -29,6 +29,17 @@ export default function CreatePaymentModal({
   const [paymentType, setPaymentType] = useState<"EFECTIVO" | "YAPE">("YAPE");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    const timer = setTimeout(checkMobile, 0);
+    window.addEventListener("resize", checkMobile);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", checkMobile);
+    };
+  }, []);
 
   // When modal opens
   useEffect(() => {
@@ -85,10 +96,10 @@ export default function CreatePaymentModal({
         position: "fixed",
         inset: 0,
         zIndex: 50,
-        backgroundColor: "rgba(15, 23, 42, 0.8)",
+        backgroundColor: isMobile ? "rgba(15, 23, 42, 0.8)" : "rgba(15, 23, 42, 0.4)",
         display: "flex",
-        justifyContent: "center",
-        alignItems: "flex-end", // Bottom aligned on mobile
+        justifyContent: isMobile ? "center" : "flex-end",
+        alignItems: isMobile ? "flex-end" : "stretch",
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -97,15 +108,16 @@ export default function CreatePaymentModal({
       <div
         style={{
           width: "100%",
-          maxWidth: "420px",
+          maxWidth: isMobile ? "100%" : "420px",
           backgroundColor: "#f8fafc",
           height: "100%",
           maxHeight: "100vh",
           display: "flex",
           flexDirection: "column",
           position: "relative",
-          animation: "slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-          overflowY: "auto"
+          animation: isMobile ? "slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)" : "slideLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+          overflowY: "auto",
+          boxShadow: isMobile ? "none" : "-10px 0 30px rgba(0,0,0,0.15)",
         }}
       >
         <style>
@@ -113,6 +125,10 @@ export default function CreatePaymentModal({
             @keyframes slideUp {
               from { transform: translateY(100%); }
               to { transform: translateY(0); }
+            }
+            @keyframes slideLeft {
+              from { transform: translateX(100%); }
+              to { transform: translateX(0); }
             }
             .no-scrollbar::-webkit-scrollbar { display: none; }
             .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -180,7 +196,7 @@ export default function CreatePaymentModal({
           {/* ClientContextCard */}
           <section
             style={{
-              background: "linear-gradient(to bottom right, #1e1b4b, #312e81, #3730a3)",
+              background: "linear-gradient(to bottom right, #4f46e5, #4338ca, #3730a3)",
               borderRadius: "1rem",
               padding: "1rem",
               color: "white",
