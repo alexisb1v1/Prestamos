@@ -274,7 +274,7 @@ export default function CreatePaymentModal({
           <section style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             <label style={{ fontSize: "0.75rem", fontWeight: "bold", color: "#334155", textTransform: "uppercase", letterSpacing: "0.05em" }}>Monto a Cobrar</label>
             
-            <div style={{ backgroundColor: "white", borderRadius: "1rem", padding: "0.75rem", border: "2px solid rgba(67, 56, 202, 0.7)", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 0 0 4px #eef2ff" }}>
+            <div style={{ backgroundColor: "white", borderRadius: "1rem", padding: "0.75rem", border: "2px solid rgba(67, 56, 202, 0.7)", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05), 0 0 0 4px #eef2ff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", flex: 1, paddingLeft: "0.25rem" }}>
                 <span style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#94a3b8" }}>S/</span>
                 <input 
