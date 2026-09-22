@@ -24,6 +24,7 @@ import { LoanShareGeneratorRef } from "./LoanShareGenerator";
 import ConfirmModal from "./ConfirmModal";
 import LoadingSpinner from "./LoadingSpinner";
 import { logger } from "@/lib/logging-service";
+import { ArrowLeft, Share2, Calendar, Receipt, ChevronLeft, ChevronRight, Clock, CheckCircle2 } from "lucide-react";
 
 interface LoanDetailsModalProps {
   isOpen: boolean;
@@ -235,6 +236,14 @@ function LoanDetailsModal({
 
   if (!isOpen || !loan) return null;
 
+  const totalAmount = loan.amount + loan.interest;
+  const remainingAmount = loan.remainingAmount ?? (totalAmount - (loan.paidToday || 0)); // fallback if needed
+  const paidAmount = totalAmount - remainingAmount;
+  const progressPercent = totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0;
+  
+  const totalDays = loan.days;
+  const paidDays = Math.max(0, Math.min(totalDays, paidAmount / loan.fee));
+
   return (
     <>
       <div
@@ -244,476 +253,270 @@ function LoanDetailsModal({
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: "rgba(0,0,0,0.5)",
+          backgroundColor: "#f8fafc", // slate-50
           display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          flexDirection: "column",
           zIndex: 1000,
-          padding: "0.5rem",
+          width: "100%",
+          height: "100%",
+          overflow: "hidden",
         }}
       >
         <div
-          className="card"
           style={{
             width: "100%",
+            height: "100%",
             maxWidth: "650px",
-            maxHeight: "94vh",
-            overflow: "hidden",
-            position: "relative",
+            margin: "0 auto",
+            backgroundColor: "#f8fafc",
             display: "flex",
             flexDirection: "column",
-            gap: "0.35rem",
-            padding: isMobile ? "0.6rem" : "0.85rem",
+            position: "relative",
+            borderLeft: isMobile ? "none" : "1px solid #e2e8f0",
+            borderRight: isMobile ? "none" : "1px solid #e2e8f0",
+            boxShadow: isMobile ? "none" : "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
           }}
         >
-          {/* Error Banner */}
-          {error && (
-            <div
-              style={{
-                backgroundColor: "#fef2f2",
-                color: "#b91c1c",
-                padding: "0.5rem",
-                borderRadius: "0.5rem",
-                fontSize: "0.75rem",
-                textAlign: "center",
-                border: "1px solid #fecaca",
-                marginBottom: "0.5rem",
-              }}
-            >
-              {error}
-            </div>
-          )}
-
-          {/* Modal Header */}
-          <div
+          {/* Header */}
+          <header
             style={{
+              position: "sticky",
+              top: 0,
+              zIndex: 30,
+              backgroundColor: "rgba(255, 255, 255, 0.95)",
+              backdropFilter: "blur(12px)",
+              borderBottom: "1px solid #f1f5f9",
+              paddingTop: "max(12px, env(safe-area-inset-top))",
+              paddingLeft: "1rem",
+              paddingRight: "1rem",
+              paddingBottom: "0.75rem",
               display: "flex",
-              justifyContent: "space-between",
               alignItems: "center",
-              marginBottom: "0.15rem",
-              padding: "0 0.25rem",
+              justifyContent: "space-between",
             }}
           >
-            <h2
-              style={{
-                fontSize: "1.2rem",
-                fontWeight: 800,
-                color: "var(--text-primary)",
-                margin: 0,
-              }}
-            >
-              Detalle de Pagos
-            </h2>
-            <div
-              style={{ display: "flex", gap: "0.2rem", alignItems: "center" }}
-            >
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
               <button
-                onClick={handleShare}
-                disabled={isSharing}
-                title="Compartir Ficha"
+                onClick={onClose}
+                aria-label="Volver"
                 style={{
-                  padding: "0.4rem",
+                  padding: "0.5rem",
+                  marginLeft: "-0.25rem",
+                  color: "#475569",
+                  background: "transparent",
                   border: "none",
-                  backgroundColor: "transparent",
-                  cursor: isSharing ? "wait" : "pointer",
-                  color: "var(--text-secondary)",
+                  borderRadius: "9999px",
+                  cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                {isSharing ? (
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    width="18"
-                    height="18"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeDasharray="30"
-                      strokeLinecap="round"
-                      opacity="0.6"
-                    >
-                      <animateTransform
-                        attributeName="transform"
-                        type="rotate"
-                        from="0 12 12"
-                        to="360 12 12"
-                        dur="1s"
-                        repeatCount="indefinite"
-                      />
-                    </circle>
-                  </svg>
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="18" cy="5" r="3"></circle>
-                    <circle cx="6" cy="12" r="3"></circle>
-                    <circle cx="18" cy="19" r="3"></circle>
-                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-                  </svg>
-                )}
+                <ArrowLeft size={20} strokeWidth={2.4} />
               </button>
+              <div>
+                <h1 style={{ fontSize: "1rem", fontWeight: "bold", color: "#0f172a", margin: 0, lineHeight: 1.25 }}>
+                  Detalle de Pagos
+                </h1>
+                <p style={{ fontSize: "0.75rem", fontWeight: 500, color: "#64748b", margin: 0 }}>
+                  Préstamo Activo #{loan.id}
+                </p>
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
               <button
-                onClick={onClose}
+                onClick={handleShare}
+                disabled={isSharing}
+                aria-label="Compartir estado"
                 style={{
-                  background: "none",
+                  padding: "0.5rem",
+                  color: "#475569",
+                  background: "transparent",
                   border: "none",
-                  padding: "0.4rem",
-                  cursor: "pointer",
-                  color: "var(--text-secondary)",
+                  borderRadius: "9999px",
+                  cursor: isSharing ? "wait" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
+                <Share2 size={20} strokeWidth={2} />
               </button>
             </div>
-          </div>
+          </header>
 
-          {/* Compact Summary Card */}
-          <div
-            style={{
-              padding: "0.5rem 0.85rem",
-              background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
-              borderRadius: "0.75rem",
-              color: "white",
-              boxShadow: "0 4px 12px -2px rgba(99, 102, 241, 0.2)",
-              position: "relative",
-              overflow: "hidden",
-              marginBottom: "0.2rem",
-              flexShrink: 0,
-            }}
-          >
-            <div style={{ position: "relative", zIndex: 1 }}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "0.5rem",
-                      alignItems: "center",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: "0.55rem",
-                        fontWeight: 700,
-                        opacity: 0.8,
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      Cliente
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "0.55rem",
-                        fontWeight: 900,
-                        backgroundColor: "rgba(255,255,255,0.2)",
-                        padding: "1px 4px",
-                        borderRadius: "4px",
-                      }}
-                    >
-                      ID: #{loan.id}
-                    </div>
-                  </div>
-                   <h3
-                    style={{
-                      fontSize: isMobile ? "0.85rem" : "0.95rem",
-                      fontWeight: 800,
-                      margin: "0",
-                      textTransform: "capitalize",
-                    }}
-                  >
-                    {loan.clientName?.toLowerCase() || "SIN NOMBRE"}
-                  </h3>
-                </div>
-                <div
-                  style={{
-                    backgroundColor: "rgba(255, 255, 255, 0.2)",
-                    padding: "0.25rem 0.6rem",
-                    borderRadius: "2rem",
-                    fontSize: "0.65rem",
-                    fontWeight: 700,
-                    border: "1px solid rgba(255, 255, 255, 0.3)",
-                  }}
-                >
-                  {formatDateUTC(details?.startDate || loan.startDate)} -{" "}
-                  {formatDateUTC(details?.endDate || loan.endDate)}
-                </div>
-              </div>
-
-              <div
-                style={{
-                  height: "1px",
-                  background: "rgba(255, 255, 255, 0.2)",
-                  margin: "0.45rem 0",
-                }}
-              />
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(4, 1fr)",
-                  gap: "0.4rem",
-                }}
-              >
-                {/* Total */}
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "1px",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "0.45rem",
-                      opacity: 0.8,
-                      fontWeight: 700,
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Total
-                  </div>
-                  <div style={{ fontSize: "0.75rem", fontWeight: 900 }}>
-                    {formatMoney(loan.amount + (loan.interest || 0))}
-                  </div>
-                </div>
-                {/* Cuota */}
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "1px",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "0.45rem",
-                      opacity: 0.8,
-                      fontWeight: 700,
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Cuota
-                  </div>
-                  <div style={{ fontSize: "0.75rem", fontWeight: 900 }}>
-                    {formatMoney(loan.fee || 0)}
-                  </div>
-                </div>
-                {/* Saldo */}
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "1px",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "0.45rem",
-                      color: "#fef08a",
-                      fontWeight: 700,
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Saldo
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "0.75rem",
-                      fontWeight: 900,
-                      color: "#fef08a",
-                    }}
-                  >
-                    {formatMoney(loan.remainingAmount || 0)}
-                  </div>
-                </div>
-                {/* Estado */}
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "1px",
-                    textAlign: "right",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "0.45rem",
-                      opacity: 0.8,
-                      fontWeight: 700,
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Días
-                  </div>
-                  <div style={{ fontSize: "0.65rem", fontWeight: 900 }}>
-                    {(() => {
-                      const s = getLoanStatus(loan, new Date());
-                      if (s.value === "red") return `${s.overdueDays}d Mora`;
-                      if (s.value === "blue") return "Lqd";
-                      const start = parseDateSafe(loan.startDate);
-                      const end = parseDateSafe(loan.endDate);
-                      const today = new Date();
-                      today.setHours(0, 0, 0, 0);
-                      const total = differenceInDays(end, start);
-                      const current = differenceInDays(today, start);
-                      return `${Math.max(0, current)}/${total}`;
-                    })()}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Tabs */}
-          <div
-            style={{
-              display: "flex",
-              gap: "2px",
-              padding: "3px",
-              backgroundColor: "var(--bg-app)",
-              borderRadius: "0.6rem",
-              border: "1px solid var(--border-color)",
-              flexShrink: 0,
-              marginBottom: "0.1rem",
-            }}
-          >
-            <button
-              style={{
-                flex: 1,
-                padding: "0.45rem",
-                borderRadius: "0.5rem",
-                border: "none",
-                cursor: "pointer",
-                fontSize: "0.8rem",
-                fontWeight: "800",
-                backgroundColor:
-                  activeTab === "calendar" ? "white" : "transparent",
-                color:
-                  activeTab === "calendar"
-                    ? "#4f46e5"
-                    : "var(--text-secondary)",
-                boxShadow:
-                  activeTab === "calendar"
-                    ? "0 1px 3px rgba(0,0,0,0.1)"
-                    : "none",
-                transition: "all 0.2s",
-              }}
-              onClick={() => setActiveTab("calendar")}
-            >
-              Calendario
-            </button>
-            <button
-              style={{
-                flex: 1,
-                padding: "0.45rem",
-                borderRadius: "0.5rem",
-                border: "none",
-                cursor: "pointer",
-                fontSize: "0.8rem",
-                fontWeight: "800",
-                backgroundColor: activeTab === "list" ? "white" : "transparent",
-                color:
-                  activeTab === "list" ? "#4f46e5" : "var(--text-secondary)",
-                boxShadow:
-                  activeTab === "list" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
-                transition: "all 0.2s",
-              }}
-              onClick={() => setActiveTab("list")}
-            >
-              Historial
-            </button>
-          </div>
-
-          {/* Tab Content */}
-          <div
+          {/* Main Content */}
+          <main
             style={{
               flex: 1,
               overflowY: "auto",
-              overflowX: "hidden",
-              padding: "0.2rem 0",
+              padding: "1rem",
+              display: "flex",
+              flexDirection: "column",
+              gap: "1rem",
             }}
           >
-            {loading ? (
-              <LoadingSpinner message="Cargando..." />
-            ) : activeTab === "calendar" ? (
+            {/* Error Banner */}
+            {error && (
               <div
                 style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.1rem",
+                  backgroundColor: "#fef2f2",
+                  color: "#b91c1c",
+                  padding: "0.5rem",
+                  borderRadius: "0.5rem",
+                  fontSize: "0.75rem",
+                  textAlign: "center",
+                  border: "1px solid #fecaca",
                 }}
               >
-                <div style={{ textAlign: "center", paddingBottom: "0.4rem" }}>
-                  <span
-                    style={{
-                      fontWeight: 800,
-                      textTransform: "capitalize",
-                      fontSize: "0.9rem",
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    {monthLabel}
-                  </span>
+                {error}
+              </div>
+            )}
+
+            {/* Hero Financial Summary Card */}
+            <section
+              style={{
+                background: "linear-gradient(to bottom right, #4f46e5, #4338ca, #3730a3)",
+                borderRadius: "1rem",
+                padding: "1.25rem",
+                color: "white",
+                boxShadow: "0 10px 15px -3px rgba(99, 102, 241, 0.2), 0 4px 6px -2px rgba(99, 102, 241, 0.1)",
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              <div style={{ position: "relative", zIndex: 10, display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1rem" }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
+                    <span style={{ fontSize: "10px", letterSpacing: "0.05em", textTransform: "uppercase", fontWeight: 600, color: "#c7d2fe" }}>
+                      Cliente
+                    </span>
+                    <span style={{ padding: "2px 8px", borderRadius: "9999px", backgroundColor: "rgba(255,255,255,0.2)", fontSize: "10px", fontWeight: "bold", backdropFilter: "blur(4px)" }}>
+                      ID: #{loan.id}
+                    </span>
+                  </div>
+                  <h2 style={{ fontSize: "1.25rem", fontWeight: 800, color: "white", margin: 0, letterSpacing: "-0.025em" }}>
+                    {loan.clientName}
+                  </h2>
                 </div>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(7, 1fr)",
-                    gap: "4px",
-                    padding: "2px",
-                  }}
-                >
-                  {["LU", "MA", "MI", "JU", "VI", "SÁ", "DO"].map((d) => (
-                    <div
-                      key={d}
-                      style={{
-                        textAlign: "center",
-                        fontSize: "0.6rem",
-                        fontWeight: 900,
-                        color: "var(--text-secondary)",
-                      }}
-                    >
-                      {d}
-                    </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 10px", borderRadius: "9999px", backgroundColor: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)", fontSize: "11px", fontWeight: 500, color: "white" }}>
+                    <Calendar size={14} color="#c7d2fe" />
+                    <span>
+                      {format(parsedDates.start, "dd/MM/yy")} - {format(parsedDates.end, "dd/MM/yy")}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ position: "relative", zIndex: 10, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.5rem", padding: "0.75rem 0", borderTop: "1px solid rgba(255,255,255,0.15)", borderBottom: "1px solid rgba(255,255,255,0.15)" }}>
+                <div>
+                  <span style={{ display: "block", fontSize: "10px", fontWeight: 600, color: "#c7d2fe", textTransform: "uppercase", letterSpacing: "0.05em" }}>Total</span>
+                  <p style={{ fontSize: "0.875rem", fontWeight: "bold", marginTop: "2px", color: "white", margin: 0 }}>
+                    S/ {totalAmount.toFixed(0)}
+                  </p>
+                </div>
+                <div>
+                  <span style={{ display: "block", fontSize: "10px", fontWeight: 600, color: "#c7d2fe", textTransform: "uppercase", letterSpacing: "0.05em" }}>Cuota</span>
+                  <p style={{ fontSize: "0.875rem", fontWeight: "bold", marginTop: "2px", color: "white", margin: 0 }}>
+                    S/ {loan.fee.toFixed(0)}
+                  </p>
+                </div>
+                <div>
+                  <span style={{ display: "block", fontSize: "10px", fontWeight: 600, color: "#fde047", textTransform: "uppercase", letterSpacing: "0.05em" }}>Saldo</span>
+                  <p style={{ fontSize: "0.875rem", fontWeight: 800, marginTop: "2px", color: "#fde047", margin: 0 }}>
+                    S/ {remainingAmount.toFixed(0)}
+                  </p>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <span style={{ display: "block", fontSize: "10px", fontWeight: 600, color: "#c7d2fe", textTransform: "uppercase", letterSpacing: "0.05em" }}>Progreso</span>
+                  <p style={{ fontSize: "0.875rem", fontWeight: "bold", marginTop: "2px", color: "white", margin: 0 }}>
+                    {paidDays.toFixed(0)} <span style={{ fontSize: "0.75rem", fontWeight: 300, color: "#c7d2fe" }}>/ {totalDays} d</span>
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ position: "relative", zIndex: 10, marginTop: "0.875rem" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "11px", marginBottom: "6px", color: "#c7d2fe" }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                    <CheckCircle2 size={14} color="#34d399" /> Pagado: S/ {paidAmount.toFixed(2)}
+                  </span>
+                  <span style={{ fontWeight: 500, color: "white" }}>{progressPercent.toFixed(1)}% amortizado</span>
+                </div>
+                <div style={{ width: "100%", backgroundColor: "rgba(0,0,0,0.2)", borderRadius: "9999px", height: "8px", padding: "2px" }}>
+                  <div style={{ background: "linear-gradient(to right, #34d399, #5eead4)", height: "100%", borderRadius: "9999px", transition: "width 0.5s ease", width: `${Math.min(100, progressPercent)}%` }}></div>
+                </div>
+              </div>
+            </section>
+
+            {/* View Controller Tabs */}
+            <section style={{ backgroundColor: "rgba(226, 232, 240, 0.8)", padding: "4px", borderRadius: "0.75rem", display: "flex", alignItems: "center", fontSize: "0.75rem", fontWeight: 600 }}>
+              <button
+                onClick={() => setActiveTab("calendar")}
+                style={{
+                  flex: 1,
+                  padding: "0.5rem 0",
+                  borderRadius: "0.5rem",
+                  backgroundColor: activeTab === "calendar" ? "white" : "transparent",
+                  color: activeTab === "calendar" ? "#4338ca" : "#475569",
+                  boxShadow: activeTab === "calendar" ? "0 1px 2px 0 rgba(0, 0, 0, 0.05)" : "none",
+                  border: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+              >
+                <Calendar size={16} strokeWidth={2.2} />
+                <span>Calendario</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("list")}
+                style={{
+                  flex: 1,
+                  padding: "0.5rem 0",
+                  borderRadius: "0.5rem",
+                  backgroundColor: activeTab === "list" ? "white" : "transparent",
+                  color: activeTab === "list" ? "#4338ca" : "#475569",
+                  boxShadow: activeTab === "list" ? "0 1px 2px 0 rgba(0, 0, 0, 0.05)" : "none",
+                  border: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+              >
+                <Receipt size={16} strokeWidth={2} />
+                <span>Historial</span>
+              </button>
+            </section>
+
+            {/* Content Area */}
+            {activeTab === "calendar" ? (
+              <section style={{ backgroundColor: "white", borderRadius: "1rem", padding: "1rem", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)", border: "1px solid rgba(226, 232, 240, 0.8)" }}>
+                {/* Month Title */}
+                <div style={{ textAlign: "center", marginBottom: "1rem" }}>
+                  <div style={{ fontSize: "1rem", fontWeight: 800, color: "#1e293b", textTransform: "capitalize" }}>
+                    {format(parsedDates.start, "MMMM yyyy", { locale: es })}
+                    {parsedDates.start.getMonth() !== parsedDates.end.getMonth() && (
+                      <>
+                        <span style={{ color: "#94a3b8", margin: "0 0.3rem" }}>-</span>
+                        {format(parsedDates.end, "MMMM yyyy", { locale: es })}
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "4px", marginBottom: "4px", textAlign: "center" }}>
+                  {["LU", "MA", "MI", "JU", "VI", "SÁ", "DO"].map((d, i) => (
+                    <span key={d} style={{ fontSize: "11px", fontWeight: "bold", color: i === 6 ? "#fb7185" : "#94a3b8" }}>{d}</span>
                   ))}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "4px", textAlign: "center" }}>
                   {days.map((day) => {
                     const installment = getInstallmentForDay(day);
                     const isRelevant = isLoanDate(day);
@@ -722,260 +525,159 @@ function LoanDetailsModal({
                     const isTodayDate = isToday(day);
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
-                    const isOverdueUnpaid =
-                      isRelevant && day < today && !installment;
+                    const isOverdueUnpaid = isRelevant && day < today && !installment;
+                    const isSunday = getDay(day) === 0;
 
-                    let bgColor = "var(--bg-app)";
-                    let textColor = "var(--text-secondary)";
-
-                    if (installment) {
-                      bgColor = "#eff9ed";
-                      textColor = "#15803d";
-                    } else if (isOverdueUnpaid) {
-                      bgColor = "#fef2f2";
-                      textColor = "#b91c1c";
-                    } else if (isRelevant) {
-                      bgColor = "#f0f9ff";
-                      textColor = "#0369a1";
-                    }
+                    let bgColor = "transparent";
+                    let textColor = "#cbd5e1"; // default inactive
+                    let borderColor = "transparent";
+                    let shadow = "none";
+                    let label = "";
 
                     if (isStart) {
-                      bgColor = "#4f46e5";
+                      bgColor = "#4f46e5"; // indigo-600
                       textColor = "white";
+                      borderColor = "#4f46e5";
+                      shadow = "0 1px 2px 0 rgba(0, 0, 0, 0.05), 0 0 0 2px #4f46e5, 0 0 0 4px white"; // ring effect
+                      label = "INI";
                     } else if (isEnd) {
-                      bgColor = "#f43f5e";
+                      bgColor = "#f43f5e"; // rose-500
                       textColor = "white";
+                      borderColor = "#f43f5e";
+                      shadow = "0 1px 2px 0 rgba(0, 0, 0, 0.05), 0 0 0 2px #f43f5e, 0 0 0 4px white";
+                      label = "FIN";
+                    } else if (installment) {
+                      bgColor = "#ecfdf5"; // emerald-50
+                      textColor = "#065f46"; // emerald-800
+                      borderColor = "#10b981"; // emerald-500
+                      label = `S/ ${installment.amount?.toFixed(0)}`;
+                    } else if (isOverdueUnpaid) {
+                      bgColor = "#fff1f2"; // rose-50
+                      textColor = "#e11d48"; // rose-600
+                      borderColor = "#ffe4e6"; // rose-100
+                      label = `${loan.fee.toFixed(0)}`;
+                    } else if (isRelevant) {
+                      bgColor = "#f0f9ff"; // sky-50
+                      textColor = "#0c4a6e"; // sky-900
+                      borderColor = "#e0f2fe"; // sky-100
+                      label = `${loan.fee.toFixed(0)}`;
                     }
 
                     return (
                       <div
                         key={day.toISOString()}
                         style={{
-                          aspectRatio: "1",
+                          minHeight: "3.5rem",
                           display: "flex",
                           flexDirection: "column",
                           alignItems: "center",
                           justifyContent: "center",
+                          borderRadius: "0.75rem",
+                          padding: "0.25rem",
                           backgroundColor: bgColor,
-                          borderRadius: "0.5rem",
-                          border: isTodayDate ? "1.5px solid #4f46e5" : "none",
-                          opacity: isRelevant || installment ? 1 : 0.4,
+                          color: textColor,
+                          border: `1px solid ${borderColor}`,
+                          boxShadow: shadow,
+                          fontWeight: (installment || isStart || isEnd || isOverdueUnpaid) ? "bold" : "600",
+                          opacity: isSunday ? 0.6 : 1,
                         }}
                       >
-                        <span
-                          style={{
-                            fontSize: "0.8rem",
-                            fontWeight: 800,
-                            color: textColor,
-                          }}
-                        >
-                          {format(day, "d")}
-                        </span>
-                        {installment ? (
-                          <span
-                            style={{
-                              fontSize: "0.45rem",
-                              fontWeight: 900,
-                              color: textColor,
-                            }}
-                          >
-                            {installment.amount?.toFixed(0)}
+                        <span style={{ fontSize: "0.875rem", lineHeight: 1 }}>{format(day, "d")}</span>
+                        {label && (
+                          <span style={{ fontSize: "9px", marginTop: "4px", color: isStart ? "#c7d2fe" : (isEnd ? "#ffe4e6" : (installment ? "#047857" : (isOverdueUnpaid ? "#f43f5e" : "#0284c7"))), fontWeight: (isStart || isEnd || installment) ? 800 : 700 }}>
+                            {label}
                           </span>
-                        ) : isRelevant && !isStart && !isEnd ? (
-                          <span
-                            style={{
-                              fontSize: "0.45rem",
-                              fontWeight: 700,
-                              opacity: 0.8,
-                              color: textColor,
-                            }}
-                          >
-                            {loan.fee?.toFixed(0)}
-                          </span>
-                        ) : (isStart || isEnd) ? (
-                          <span
-                            style={{
-                              fontSize: "0.4rem",
-                              fontWeight: 900,
-                              textTransform: "uppercase",
-                              color: textColor,
-                            }}
-                          >
-                            {isStart ? "Ini" : "Fin"}
-                          </span>
-                        ) : null}
+                        )}
                       </div>
                     );
                   })}
                 </div>
-              </div>
+
+                {/* Legend */}
+                <div style={{ marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid #f1f5f9", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", fontSize: "11px", fontWeight: 500, color: "#475569" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#4f46e5" }}></span>
+                    <span>Inicio / Fin</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#10b981" }}></span>
+                    <span>Cobrado</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#e0f2fe", border: "1px solid #bae6fd" }}></span>
+                    <span>Pendiente</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#fef2f2", border: "1px solid #fecaca" }}></span>
+                    <span>Mora</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "transparent" }}></span>
+                    <span>Inactivo</span>
+                  </div>
+                </div>
+              </section>
             ) : (
-              /* Flat History List Grid */
-              <div style={{ padding: "0 0.2rem" }}>
+              <section>
                 {!details?.installments.length ? (
-                  <div
-                    style={{
-                      textAlign: "center",
-                      padding: "2rem",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
+                  <div style={{ textAlign: "center", padding: "2rem", color: "#64748b", backgroundColor: "white", borderRadius: "1rem", border: "1px solid #e2e8f0" }}>
                     No hay abonos aún.
                   </div>
                 ) : (
-                  (() => {
-                    const sorted = [...details.installments].sort(
-                      (a, b) =>
-                        new Date(b.date).getTime() - new Date(a.date).getTime(),
-                    );
-                    return (
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "repeat(2, 1fr)",
-                          gap: "6px",
-                        }}
-                      >
-                        {sorted.map((inst, idx) => (
-                          <div
-                            key={inst.id}
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              padding: "0.4rem 0.6rem",
-                              backgroundColor: "var(--bg-app)",
-                              borderRadius: "0.6rem",
-                              border: "1px solid var(--border-color)",
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "0.5rem",
-                              }}
-                            >
-                              <span
-                                style={{
-                                  fontSize: "0.65rem",
-                                  fontWeight: 900,
-                                  backgroundColor: "rgba(99,102,241,0.1)",
-                                  color: "#6366f1",
-                                  width: "20px",
-                                  height: "20px",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  borderRadius: "4px",
-                                }}
-                              >
-                                {sorted.length - idx}
-                              </span>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  flexDirection: "column",
-                                }}
-                              >
-                                <span
-                                  style={{
-                                    fontSize: "0.75rem",
-                                    fontWeight: 800,
-                                  }}
-                                >
-                                  {format(parseISO(inst.date), "dd/MM/yyyy")}
-                                </span>
-                                <span
-                                  style={{
-                                    fontSize: "0.55rem",
-                                    color: "var(--text-secondary)",
-                                  }}
-                                >
-                                  {format(parseISO(inst.date), "hh:mm a")}
-                                </span>
-                              </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {[...details.installments]
+                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                      .map((inst) => (
+                        <div
+                          key={inst.id}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            padding: "0.75rem",
+                            backgroundColor: "white",
+                            borderRadius: "0.75rem",
+                            border: "1px solid #e2e8f0",
+                            boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontWeight: 700, color: "#0f172a", fontSize: "0.875rem" }}>
+                              {formatMoney(inst.amount)}
                             </div>
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "0.6rem",
-                              }}
-                            >
-                              <span
-                                style={{
-                                  fontSize: "0.9rem",
-                                  fontWeight: 900,
-                                  color: "#16a34a",
-                                }}
-                              >
-                                S/{inst.amount}
-                              </span>
-                              {canDeletePayment(
-                                inst.date,
-                                inst.registeredByUserId,
-                              ) && (
-                                <button
-                                  onClick={() => openConfirmDelete(inst.date)}
-                                  style={{
-                                    padding: "4px",
-                                    border: "none",
-                                    background: "rgba(239,68,68,0.1)",
-                                    color: "#ef4444",
-                                    borderRadius: "4px",
-                                    cursor: "pointer",
-                                  }}
-                                >
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="12"
-                                    height="12"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2.5"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  >
-                                    <path d="M3 6h18"></path>
-                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                                  </svg>
-                                </button>
-                              )}
+                            <div style={{ fontSize: "0.75rem", color: "#64748b", marginTop: "2px" }}>
+                              {formatDateUTC(inst.date)}
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    );
-                  })()
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            {canDeletePayment(inst.date, inst.registeredByUserId) && (
+                              <button
+                                onClick={() => openConfirmDelete(inst.date)}
+                                title="Eliminar Pago"
+                                style={{
+                                  background: "#fee2e2",
+                                  border: "none",
+                                  padding: "6px 12px",
+                                  borderRadius: "6px",
+                                  cursor: "pointer",
+                                  color: "#b91c1c",
+                                  fontSize: "0.75rem",
+                                  fontWeight: 600,
+                                }}
+                              >
+                                Eliminar
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
                 )}
-              </div>
+              </section>
             )}
-          </div>
-
-          <div style={{ marginTop: "auto", paddingTop: "0.4rem" }}>
-            <button
-              onClick={onClose}
-              style={{
-                width: "100%",
-                padding: "0.7rem",
-                borderRadius: "0.75rem",
-                border: "1px solid var(--border-color)",
-                backgroundColor: "transparent",
-                color: "var(--text-secondary)",
-                fontSize: "0.85rem",
-                fontWeight: 800,
-                cursor: "pointer",
-              }}
-            >
-              Cerrar
-            </button>
-          </div>
+          </main>
         </div>
       </div>
-
       <ConfirmModal
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
