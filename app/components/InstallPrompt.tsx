@@ -16,12 +16,16 @@ export default function InstallPrompt() {
     useState<BeforeInstallPromptEvent | null>(null);
   const [showIOSPrompt, setShowIOSPrompt] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(false);
 
   useEffect(() => {
     // Check if already installed - Use timeout to avoid sync setState in effect
     const checkStandalone = () => {
       if (window.matchMedia("(display-mode: standalone)").matches) {
         setIsStandalone(true);
+      }
+      if (localStorage.getItem("androidInstallPromptDismissed") === "true") {
+        setIsDismissed(true);
       }
     };
 
@@ -31,10 +35,14 @@ export default function InstallPrompt() {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       
+      // Store globally for sidebar to access
+      (window as any).deferredInstallPrompt = e;
+      window.dispatchEvent(new Event("pwa-install-available"));
+      
       // Detectar si es un dispositivo móvil
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobi/i.test(window.navigator.userAgent);
       
-      // Solo mostrar el prompt de instalación si es móvil
+      // Solo mostrar el prompt de instalación de forma automática si es móvil
       if (isMobile) {
         setDeferredPrompt(e as BeforeInstallPromptEvent);
       }
@@ -79,11 +87,23 @@ export default function InstallPrompt() {
     localStorage.setItem("iosInstallPromptSeen", "true");
   };
 
+  const closeAndroidPrompt = () => {
+    setIsDismissed(true);
+    localStorage.setItem("androidInstallPromptDismissed", "true");
+  };
+
   // Always return a stable wrapper to prevent hydration errors on <body>
   return (
     <div id="install-prompt-wrapper" aria-live="polite">
-      {!isStandalone && deferredPrompt && (
-        <div className="install-prompt-container">
+      {!isStandalone && deferredPrompt && !isDismissed && (
+        <div className="install-prompt-container" style={{ position: "fixed" }}>
+          <button 
+            onClick={closeAndroidPrompt}
+            style={{ position: 'absolute', top: '-10px', right: '-10px', width: '24px', height: '24px', borderRadius: '50%', backgroundColor: 'white', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: '#64748b', cursor: 'pointer', padding: 0 }}
+            aria-label="Cerrar"
+          >
+            ✕
+          </button>
           <div className="install-prompt-content">
             <span className="install-prompt-icon">📱</span>
             <div className="install-prompt-text">

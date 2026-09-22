@@ -383,6 +383,7 @@ function LoanDetailsModal({
                 boxShadow: "0 10px 15px -3px rgba(99, 102, 241, 0.2), 0 4px 6px -2px rgba(99, 102, 241, 0.1)",
                 position: "relative",
                 overflow: "hidden",
+                flexShrink: 0,
               }}
             >
               <div style={{ position: "relative", zIndex: 10, display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1rem" }}>
@@ -450,7 +451,7 @@ function LoanDetailsModal({
             </section>
 
             {/* View Controller Tabs */}
-            <section style={{ backgroundColor: "rgba(226, 232, 240, 0.8)", padding: "4px", borderRadius: "0.75rem", display: "flex", alignItems: "center", fontSize: "0.75rem", fontWeight: 600 }}>
+            <section style={{ backgroundColor: "rgba(226, 232, 240, 0.8)", padding: "4px", borderRadius: "0.75rem", display: "flex", alignItems: "center", fontSize: "0.75rem", fontWeight: 600, flexShrink: 0 }}>
               <button
                 onClick={() => setActiveTab("calendar")}
                 style={{

@@ -13,6 +13,7 @@ import {
   LogOut,
   X,
   HelpCircle,
+  Download,
 } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { authService } from "@/lib/auth";
@@ -33,10 +34,39 @@ export default function Sidebar() {
     canViewReports,
   } = usePermissions();
 
+  const [canInstall, setCanInstall] = useState(false);
+
   useEffect(() => {
     const timer = setTimeout(() => setIsMounted(true), 0);
-    return () => clearTimeout(timer);
+    
+    const checkInstall = () => {
+      if ((window as any).deferredInstallPrompt) {
+        setCanInstall(true);
+      }
+    };
+    
+    // Verificar estado inicial y suscribirse a evento global
+    checkInstall();
+    window.addEventListener("pwa-install-available", checkInstall);
+    
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("pwa-install-available", checkInstall);
+    };
   }, []);
+
+  const handleInstallPWA = async () => {
+    const deferredPrompt = (window as any).deferredInstallPrompt;
+    if (!deferredPrompt) return;
+    
+    await deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    if (outcome === "accepted") {
+      setCanInstall(false);
+      (window as any).deferredInstallPrompt = null;
+    }
+  };
 
   const [manualConfigExpanded, setManualConfigExpanded] = useState<
     boolean | null
@@ -263,6 +293,26 @@ export default function Sidebar() {
               </div>
             )}
           </div>
+
+          {canInstall && (
+            <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
+              <button
+                className="sidebar-nav-item"
+                onClick={handleInstallPWA}
+                style={{
+                  width: "calc(100% - 1.5rem)",
+                  margin: "0 0.75rem",
+                  justifyContent: "flex-start",
+                  backgroundColor: "#e0e7ff",
+                  color: "#4338ca",
+                  border: "1px solid #c7d2fe",
+                }}
+              >
+                <Download size={20} strokeWidth={2.5} />
+                Instalar App
+              </button>
+            </div>
+          )}
         </nav>
 
         <div className="sidebar-footer">

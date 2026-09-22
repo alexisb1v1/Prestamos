@@ -40,7 +40,7 @@ function parseISOasUTC(dateString: string): Date {
   return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
 }
 
-function getCompanyNameFallback(loan?: any): string {
+async function resolveCompanyName(loan?: any): Promise<string> {
   if (loan && loan.companyName) return loan.companyName;
   if (typeof window === "undefined") return "Empresa de Cobranza";
   
@@ -64,6 +64,31 @@ function getCompanyNameFallback(loan?: any): string {
   }
   
   if (tenant) {
+    const cacheKey = `tenant_name_${tenant}`;
+    const cachedData = localStorage.getItem(cacheKey);
+    
+    if (cachedData) {
+      try {
+        const { name, timestamp } = JSON.parse(cachedData);
+        const now = new Date().getTime();
+        const oneDay = 24 * 60 * 60 * 1000;
+        if (now - timestamp < oneDay) {
+          return name;
+        }
+      } catch (e) {}
+    }
+    
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
+      const response = await fetch(`${apiUrl}/company/public-info/${tenant}`);
+      if (response.ok) {
+        const data = await response.json();
+        const companyName = data.companyName;
+        localStorage.setItem(cacheKey, JSON.stringify({ name: companyName, timestamp: new Date().getTime() }));
+        return companyName;
+      }
+    } catch (error) {}
+
     return tenant.charAt(0).toUpperCase() + tenant.slice(1);
   }
   
@@ -79,6 +104,7 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
     const [auditData, setAuditData] = useState<{
       loan: Loan;
       details: LoanDetails;
+      companyName: string;
     } | null>(null);
     const [generating, setGenerating] = useState(false);
     const [readyToCapture, setReadyToCapture] = useState(false);
@@ -91,6 +117,9 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
         try {
           setGenerating(true);
           setViewMode(mode);
+          
+          const resolvedCompanyName = await resolveCompanyName(loan);
+
           // 1. Fetch Details
           const result = await getLoanDetailsUseCase.execute(
             loan.id.toString(),
@@ -98,7 +127,7 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
 
           result.match(
             (details) => {
-              setAuditData({ loan, details });
+              setAuditData({ loan, details, companyName: resolvedCompanyName });
               setReadyToCapture(true); // Signal that data is ready for render & capture
             },
             (err) => {
@@ -310,7 +339,7 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
                 margin: "0.25rem 0 0 0",
               }}
             >
-              {getCompanyNameFallback(loan)}
+              {auditData.companyName}
             </h2>
             <p
               style={{
