@@ -34,17 +34,50 @@ export default function LoginPage() {
       if (hostname === "localhost" || parts[0] === "central" || (!isLocalWithSub && parts.length < 3)) {
         const devTenant = process.env.NEXT_PUBLIC_DEV_TENANT;
         if (hostname === "localhost" && devTenant && devTenant !== "central") {
-          setTenantName(devTenant.charAt(0).toUpperCase() + devTenant.slice(1));
+          fetchTenantName(devTenant);
         } else {
           setTenantName("NeoCobros");
         }
       } else {
-        // Ejemplo: empresa1.neocobros.com -> empresa1 -> Empresa1
         const sub = parts[0];
-        setTenantName(sub.charAt(0).toUpperCase() + sub.slice(1));
+        fetchTenantName(sub);
       }
     }
   }, []);
+
+  const fetchTenantName = async (sub: string) => {
+    const cacheKey = `tenant_name_${sub}`;
+    const cachedData = localStorage.getItem(cacheKey);
+    
+    if (cachedData) {
+      try {
+        const { name, timestamp } = JSON.parse(cachedData);
+        const now = new Date().getTime();
+        const oneDay = 24 * 60 * 60 * 1000;
+        if (now - timestamp < oneDay) {
+          setTenantName(name);
+          return;
+        }
+      } catch (e) {
+        // Ignorar error de parseo
+      }
+    }
+    
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
+      const response = await fetch(`${apiUrl}/company/public-info/${sub}`);
+      if (response.ok) {
+        const data = await response.json();
+        const companyName = data.companyName;
+        setTenantName(companyName);
+        localStorage.setItem(cacheKey, JSON.stringify({ name: companyName, timestamp: new Date().getTime() }));
+      } else {
+        setTenantName(sub.charAt(0).toUpperCase() + sub.slice(1));
+      }
+    } catch (error) {
+      setTenantName(sub.charAt(0).toUpperCase() + sub.slice(1));
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();

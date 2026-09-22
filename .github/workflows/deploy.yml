@@ -34,22 +34,4 @@ jobs:
           docker push ghcr.io/${{ github.repository_owner }}/neocobros-app:${{ github.sha }}
           docker push ghcr.io/${{ github.repository_owner }}/neocobros-app:latest
 
-      - name: Deploy on VPS
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: root
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            docker pull ghcr.io/${{ github.repository_owner }}/neocobros-app:${{ github.sha }}
 
-            docker rm -f neocobros-app || true
-
-            docker network ls | grep -q caddy || docker network create caddy
-
-            docker run -d \
-              --name neocobros-app \
-              --restart unless-stopped \
-              --network caddy \
-              ghcr.io/${{ github.repository_owner }}/neocobros-app:${{ github.sha }}
-            docker image prune -af --filter "until=72h"
