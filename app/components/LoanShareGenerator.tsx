@@ -40,6 +40,36 @@ function parseISOasUTC(dateString: string): Date {
   return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
 }
 
+function getCompanyNameFallback(loan?: any): string {
+  if (loan && loan.companyName) return loan.companyName;
+  if (typeof window === "undefined") return "Empresa de Cobranza";
+  
+  try {
+    const user = JSON.parse(localStorage.getItem("auth_user") || "{}");
+    if (user && user.companyName) return user.companyName;
+  } catch (e) {}
+
+  const hostname = window.location.hostname;
+  const parts = hostname.split(".");
+  const isLocalWithSub = hostname.endsWith(".localhost") && parts.length >= 2;
+  
+  let tenant = "";
+  if (hostname === "localhost" || parts[0] === "central" || (!isLocalWithSub && parts.length < 3)) {
+    const devTenant = process.env.NEXT_PUBLIC_DEV_TENANT;
+    if (hostname === "localhost" && devTenant && devTenant !== "central") {
+      tenant = devTenant;
+    }
+  } else {
+    tenant = parts[0];
+  }
+  
+  if (tenant) {
+    return tenant.charAt(0).toUpperCase() + tenant.slice(1);
+  }
+  
+  return "Empresa de Cobranza";
+}
+
 export interface LoanShareGeneratorRef {
   shareLoan: (loan: Loan, mode?: "calendar" | "list") => Promise<void>;
 }
@@ -272,9 +302,19 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
             >
               Ficha de Préstamo
             </h1>
+            <h2
+              style={{
+                fontSize: "0.85rem",
+                fontWeight: 700,
+                color: "#475569",
+                margin: "0.25rem 0 0 0",
+              }}
+            >
+              {getCompanyNameFallback(loan)}
+            </h2>
             <p
               style={{
-                margin: "0.15rem 0 0 0",
+                margin: "0.2rem 0 0 0",
                 color: "#94a3b8",
                 fontSize: "0.7rem",
               }}
@@ -712,7 +752,7 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
                     textColor = "white";
                     border = "none";
                   } else if (isOverdueUnpaid) {
-                    bg = "#f97316";
+                    bg = "#e11d48";
                     textColor = "white";
                     border = "none";
                   } else if (isToday && isRelevant) {
@@ -825,7 +865,7 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
                     style={{
                       width: "5px",
                       height: "5px",
-                      backgroundColor: "#f97316",
+                      backgroundColor: "#e11d48",
                       borderRadius: "50%",
                     }}
                   ></div>
@@ -966,29 +1006,32 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
               textAlign: "center",
               borderTop: "2px dashed #f1f5f9",
               paddingTop: "1rem",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: "0.4rem",
             }}
           >
-            <div
+            <span
               style={{
-                fontSize: "0.55rem",
+                fontSize: "0.6rem",
                 color: "#94a3b8",
                 textTransform: "uppercase",
                 letterSpacing: "0.1rem",
-                marginBottom: "0.2rem",
               }}
             >
               Potenciado por
-            </div>
-            <div
+            </span>
+            <span
               style={{
-                fontSize: "1rem",
+                fontSize: "0.9rem",
                 fontWeight: 900,
                 color: "#0f172a",
                 letterSpacing: "-0.04em",
               }}
             >
               Neo<span style={{ color: "#4f46e5" }}>Cobros</span>
-            </div>
+            </span>
           </div>
         </div>
       </div>
