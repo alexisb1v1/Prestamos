@@ -416,137 +416,84 @@ export default function DashboardPage() {
       {isAdmin && (
         <div
           style={{
+            backgroundColor: "var(--bg-app)",
+            margin: "-1.5rem -1rem 1rem -1rem",
+            padding: "0 1rem 0.6rem 1rem",
             display: "flex",
-            gap: "0.4rem",
-            marginBottom: "0.65rem",
-            flexWrap: "wrap",
+            gap: "0.5rem",
+            borderBottom: "1px solid var(--border-color)",
+            position: "relative",
+            zIndex: 10
           }}
         >
-          <div
+          {/* Ocultar el borde del header para fusionarlos visualmente */}
+          <div style={{ position: "absolute", top: "-1px", left: 0, right: 0, height: "2px", backgroundColor: "var(--bg-app)" }}></div>
+          
+          {currentUser?.profile === "OWNER" && (
+            <button
+              onClick={() => setIsFilterModalOpen(true)}
+              style={{
+                flex: 1,
+                backgroundColor: "white",
+                padding: "0.45rem 0.5rem",
+                borderRadius: "2rem",
+                fontSize: "0.7rem",
+                fontWeight: 600,
+                color: "#475569",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.3rem",
+                border: "1px solid var(--border-color)",
+                cursor: "pointer",
+                transition: "all 0.2s"
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#64748b" }}>
+                <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                <path d="M9 22v-4h6v4"></path>
+              </svg>
+              <span style={{ flex: 1, textAlign: "left", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {selectedCompanyId ? companies.find((c) => c.id === selectedCompanyId)?.companyName : "Todas las empresas"}
+              </span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#94a3b8" }}>
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+          )}
+
+          <button
+            onClick={() => setIsFilterModalOpen(true)}
             style={{
+              flex: 1,
               backgroundColor: "white",
-              padding: "0.3rem 0.65rem",
+              padding: "0.45rem 0.5rem",
               borderRadius: "2rem",
               fontSize: "0.7rem",
               fontWeight: 600,
-              color: "#64748b",
+              color: "#475569",
               display: "flex",
               alignItems: "center",
               gap: "0.3rem",
-              border: "1px solid #f1f5f9",
+              border: "1px solid var(--border-color)",
+              cursor: "pointer",
+              transition: "all 0.2s"
             }}
           >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
-              <path d="M9 22v-4h6v4"></path>
-            </svg>
-            {selectedCompanyId
-              ? companies.find((c) => c.id === selectedCompanyId)?.companyName
-              : "Todas las empresas"}
-          </div>
-          <div
-            style={{
-              backgroundColor: "white",
-              padding: "0.3rem 0.65rem",
-              borderRadius: "2rem",
-              fontSize: "0.7rem",
-              fontWeight: 600,
-              color: "#64748b",
-              display: "flex",
-              alignItems: "center",
-              gap: "0.3rem",
-              border: "1px solid #f1f5f9",
-            }}
-          >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#64748b" }}>
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
-            {selectedUserId
-              ? collectors.find((c) => c.id === selectedUserId)?.username
-              : "Todos los cobradores"}
-          </div>
+            <span style={{ flex: 1, textAlign: "left", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {selectedUserId ? collectors.find((c) => c.id === selectedUserId)?.username : "Todos los cobradores"}
+            </span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#94a3b8" }}>
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
         </div>
       )}
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "0.75rem",
-        }}
-      >
-        <h1 id="header-dashboard" style={{ fontSize: "1.35rem", fontWeight: 800, color: "#1e293b" }}>
-          Resumen
-        </h1>
-        {isAdmin && (
-          <button
-            id="filtro-dashboard"
-            onClick={() => setIsFilterModalOpen(true)}
-            style={{
-              width: "36px",
-              height: "36px",
-              borderRadius: "0.75rem",
-              background: "white",
-              border: "1.5px solid #f1f5f9",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              color: "#64748b",
-              position: "relative",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
-            }}
-            title="Filtros de Vista"
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-            </svg>
-            {(selectedCompanyId || selectedUserId) && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: "7px",
-                  right: "7px",
-                  width: "7px",
-                  height: "7px",
-                  backgroundColor: "#ef4444",
-                  borderRadius: "50%",
-                  border: "2px solid white",
-                }}
-              ></div>
-            )}
-          </button>
-        )}
-      </div>
+
 
       {loading ? (
         <div
@@ -562,496 +509,92 @@ export default function DashboardPage() {
         <>
           <div
             id="stats-dashboard"
+            className="card"
             style={{
-              display: "grid",
-              gridTemplateColumns: isMobile
-                ? "1fr"
-                : "repeat(auto-fit, minmax(280px, 1fr))",
-              gap: "0.75rem",
+              backgroundColor: "white",
+              borderRadius: "1.25rem",
+              padding: "1.25rem",
+              marginBottom: "1.25rem",
+              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)",
+              border: "1px solid #f1f5f9"
             }}
           >
-            {/* Main Minimal Stat Card */}
-            <div
-              className="card"
-              style={{
-                gridColumn: isMobile ? "span 1" : "span 2",
-                padding: "1.15rem",
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.85rem",
-              }}
-            >
+            {/* Header: Resumen del día */}
+            <div style={{ marginBottom: "1rem", textAlign: "center" }}>
+              <h2 style={{ fontSize: "1rem", fontWeight: 800, color: "#0f172a", textTransform: "uppercase", letterSpacing: "0.05em", margin: 0 }}>
+                RESUMEN DEL DÍA
+              </h2>
+            </div>
+
+            {/* Total Row */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginBottom: "1.25rem" }}>
               <div>
-                <div
-                  style={{
-                    fontSize: "0.62rem",
-                    fontWeight: 700,
-                    color: "#94a3b8",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                  }}
-                >
-                  Total Cobrado Hoy
-                </div>
-                <div
-                  style={{
-                    fontSize: "1.7rem",
-                    fontWeight: 800,
-                    color: "#1e293b",
-                    marginTop: "0.1rem",
-                  }}
-                >
+                <div style={{ fontSize: "0.65rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: "0.25rem" }}>TOTAL COBRADO</div>
+                <div style={{ fontSize: "2rem", fontWeight: 900, color: "#0f172a", lineHeight: 1 }}>
                   <AnimatedNumber value={data.collectedToday} isCurrency />
                 </div>
               </div>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "0.65rem",
-                }}
-              >
-                <div
-                  style={{
-                    backgroundColor: "rgba(65, 71, 235, 0.08)",
-                    borderRadius: "0.9rem",
-                    padding: "0.7rem 0.8rem",
-                    border: "1.5px solid rgba(65, 71, 235, 0.15)",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.6rem",
-                    flex: 1,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "28px",
-                      height: "28px",
-                      borderRadius: "0.45rem",
-                      backgroundColor: "#4147eb",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "white",
-                    }}
-                  >
-                    <svg
-                      width="15"
-                      height="15"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <rect
-                        x="5"
-                        y="2"
-                        width="14"
-                        height="20"
-                        rx="2"
-                        ry="2"
-                      ></rect>
-                      <line x1="12" y1="18" x2="12.01" y2="18"></line>
-                    </svg>
+              
+              <div style={{ display: "flex", width: "100%", gap: "0.5rem" }}>
+                {/* Yape Pill */}
+                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", backgroundColor: "#f5f3ff", padding: "0.5rem", borderRadius: "0.5rem", border: "1px solid #ede9fe" }}>
+                  <div style={{ width: "20px", height: "20px", borderRadius: "0.25rem", backgroundColor: "#8b5cf6", display: "flex", alignItems: "center", justifyContent: "center", color: "white" }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
                   </div>
-                  <div style={{ overflow: "hidden" }}>
-                    <div
-                      style={{
-                        fontSize: "0.55rem",
-                        fontWeight: 800,
-                        color: "#4147eb",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      YAPE
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "1rem",
-                        fontWeight: 800,
-                        color: "#1e293b",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {formatMoney(
-                        data.detailCollectedToday?.yape || 0,
-                      ).replace("S/ ", "S/")}
-                    </div>
+                  <div>
+                    <div style={{ fontSize: "0.5rem", fontWeight: 800, color: "#8b5cf6", textTransform: "uppercase" }}>YAPE</div>
+                    <div style={{ fontSize: "0.85rem", fontWeight: 900, color: "#0f172a" }}>{formatMoney(data.detailCollectedToday?.yape || 0).replace("S/ ", "S/")}</div>
                   </div>
                 </div>
-                <div
-                  style={{
-                    backgroundColor: "#f0fdf4",
-                    borderRadius: "0.9rem",
-                    padding: "0.7rem 0.8rem",
-                    border: "1.5px solid #dcfce7",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.6rem",
-                    flex: 1,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "28px",
-                      height: "28px",
-                      borderRadius: "0.45rem",
-                      backgroundColor: "#10b981",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "white",
-                    }}
-                  >
-                    <svg
-                      width="15"
-                      height="15"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <rect x="2" y="5" width="20" height="14" rx="2"></rect>
-                      <line x1="2" y1="10" x2="22" y2="10"></line>
-                    </svg>
+
+                {/* Efectivo Pill */}
+                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", backgroundColor: "#f0fdf4", padding: "0.5rem", borderRadius: "0.5rem", border: "1px solid #dcfce7" }}>
+                  <div style={{ width: "20px", height: "20px", borderRadius: "0.25rem", backgroundColor: "#10b981", display: "flex", alignItems: "center", justifyContent: "center", color: "white" }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
                   </div>
-                  <div style={{ overflow: "hidden" }}>
-                    <div
-                      style={{
-                        fontSize: "0.55rem",
-                        fontWeight: 800,
-                        color: "#10b981",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      EFECTIVO
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "1rem",
-                        fontWeight: 800,
-                        color: "#1e293b",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {formatMoney(
-                        data.detailCollectedToday?.efectivo || 0,
-                      ).replace("S/ ", "S/")}
-                    </div>
+                  <div>
+                    <div style={{ fontSize: "0.5rem", fontWeight: 800, color: "#10b981", textTransform: "uppercase" }}>EFECTIVO</div>
+                    <div style={{ fontSize: "0.85rem", fontWeight: 900, color: "#0f172a" }}>{formatMoney(data.detailCollectedToday?.efectivo || 0).replace("S/ ", "S/")}</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Status Cards Grid */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gridColumn: isMobile ? "span 1" : "span 2",
-                gap: "0.75rem",
-              }}
-            >
-              <div
-                className="card"
-                style={{
-                  padding: "0.9rem",
-                  borderRadius: "1rem",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.35rem",
-                }}
-              >
-                <div
-                  style={{
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "50%",
-                    backgroundColor: "#eff6ff",
-                    color: "#3b82f6",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                    <polyline points="17 6 23 6 23 12"></polyline>
-                  </svg>
-                </div>
-                <div>
-                  <div
-                    style={{
-                      fontSize: "0.6rem",
-                      fontWeight: 700,
-                      color: "#94a3b8",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Prestado
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "1.1rem",
-                      fontWeight: 800,
-                      color: "#1e293b",
-                    }}
-                  >
-                    {formatMoney(data.totalLentToday).replace("S/ ", "S/")}
-                  </div>
-                </div>
+            {/* Metrics Row */}
+            <div style={{ display: "flex", gap: "0.5rem", overflowX: "auto", paddingBottom: "0.25rem" }}>
+              {/* Prestado */}
+              <div style={{ flex: 1, minWidth: "90px", padding: "0.75rem", borderRadius: "0.75rem", border: "1px solid #f1f5f9", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backgroundColor: "#f8fafc" }}>
+                <div style={{ fontSize: "0.55rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: "0.25rem" }}>PRESTADO</div>
+                <div style={{ fontSize: "0.95rem", fontWeight: 900, color: "#0f172a" }}>{formatMoney(data.totalLentToday).replace("S/ ", "S/")}</div>
               </div>
-
-              <div
-                className="card"
-                style={{
-                  padding: "0.9rem",
-                  borderRadius: "1rem",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.35rem",
-                }}
-              >
-                <div
-                  style={{
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "50%",
-                    backgroundColor: "#f5f3ff",
-                    color: "#8b5cf6",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                  </svg>
-                </div>
-                <div>
-                  <div
-                    style={{
-                      fontSize: "0.6rem",
-                      fontWeight: 700,
-                      color: "#94a3b8",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Clientes
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "1.1rem",
-                      fontWeight: 800,
-                      color: "#1e293b",
-                    }}
-                  >
-                    {data.activeClients}
-                  </div>
-                </div>
+              {/* Clientes */}
+              <div style={{ flex: 1, minWidth: "90px", padding: "0.75rem", borderRadius: "0.75rem", border: "1px solid #f1f5f9", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backgroundColor: "#f8fafc" }}>
+                <div style={{ fontSize: "0.55rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: "0.25rem" }}>CLIENTES</div>
+                <div style={{ fontSize: "0.95rem", fontWeight: 900, color: "#4f46e5" }}>{data.activeClients}</div>
               </div>
-
-              <div
-                className="card"
-                style={{
-                  padding: "0.9rem",
-                  borderRadius: "1rem",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.35rem",
-                }}
-              >
-                <div
-                  style={{
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "50%",
-                    backgroundColor: "#fff1f2",
-                    color: "#f43f5e",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
-                    <polyline points="17 18 23 18 23 12"></polyline>
-                  </svg>
-                </div>
-                <div>
-                  <div
-                    style={{
-                      fontSize: "0.6rem",
-                      fontWeight: 700,
-                      color: "#94a3b8",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Gastos Hoy
+              
+              {/* Conditional Metrics for Admin */}
+              {isAdmin && (
+                <>
+                  {/* Gastos */}
+                  <div style={{ flex: 1, minWidth: "90px", padding: "0.75rem", borderRadius: "0.75rem", border: "1px solid #f1f5f9", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backgroundColor: "#f8fafc" }}>
+                    <div style={{ fontSize: "0.55rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: "0.25rem" }}>GASTOS</div>
+                    <div style={{ fontSize: "0.95rem", fontWeight: 900, color: "#ef4444" }}>{formatMoney(data.totalExpensesToday || 0).replace("S/ ", "S/")}</div>
                   </div>
-                  <div
-                    style={{
-                      fontSize: "1.1rem",
-                      fontWeight: 800,
-                      color: "#1e293b",
-                    }}
-                  >
-                    {formatMoney(data.totalExpensesToday || 0).replace(
-                      "S/ ",
-                      "S/",
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div
-                className="card"
-                style={{
-                  padding: "0.9rem",
-                  borderRadius: "1rem",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  position: "relative",
-                }}
-              >
-                <button
-                  onClick={() => setIsThermometerInfoOpen(true)}
-                  style={{
-                    position: "absolute",
-                    top: "0.5rem",
-                    right: "0.5rem",
-                    background: "none",
-                    border: "none",
-                    color: "#94a3b8",
-                    cursor: "pointer",
-                    padding: "0.2rem",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    zIndex: 5,
-                  }}
-                  title="Más información"
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                  </svg>
-                </button>
-                <div
-                  style={{
-                    position: "relative",
-                    width: "50px",
-                    height: "50px",
-                  }}
-                >
-                  <svg
-                    viewBox="0 0 36 36"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      transform: "rotate(-90deg)",
-                    }}
-                  >
-                    <path
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none"
-                      stroke="#f1f5f9"
-                      strokeWidth="3"
-                    />
-                    <path
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none"
-                      stroke={getThermometerColor(data.thermometer || 0)}
-                      strokeWidth="3"
-                      strokeDasharray={`${data.thermometer || 0}, 100`}
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <div
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: "0.75rem",
-                        fontWeight: 800,
-                        color: "#1e293b",
-                      }}
-                    >
+                  {/* Inversión */}
+                  <div style={{ flex: 1, minWidth: "90px", padding: "0.75rem", borderRadius: "0.75rem", border: "1px solid #f1f5f9", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backgroundColor: "#f8fafc", position: "relative" }}>
+                    <div style={{ fontSize: "0.55rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: "0.25rem", display: "flex", alignItems: "center", gap: "0.2rem" }}>
+                      INVERSIÓN
+                      <button onClick={() => setIsThermometerInfoOpen(true)} style={{ background: "none", border: "none", padding: 0, color: "#94a3b8", cursor: "pointer", display: "flex" }}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                      </button>
+                    </div>
+                    <div style={{ fontSize: "0.95rem", fontWeight: 900, color: getThermometerColor(data.thermometer || 0) }}>
                       {Math.round(data.thermometer || 0)}%
-                    </span>
+                    </div>
                   </div>
-                </div>
-                <div style={{ marginLeft: "0.6rem", flex: 1 }}>
-                  <div
-                    style={{
-                      fontSize: "0.55rem",
-                      fontWeight: 800,
-                      color: getThermometerColor(data.thermometer || 0),
-                      textTransform: "uppercase",
-                      lineHeight: 1.1,
-                    }}
-                  >
-                    {getThermometerLabel(data.thermometer || 0)}
-                  </div>
-                </div>
-              </div>
+                </>
+              )}
             </div>
           </div>
 

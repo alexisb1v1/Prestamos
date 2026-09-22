@@ -192,23 +192,23 @@ export default function CollectionRouteCard({
     <div
       style={{
         backgroundColor: "white",
-        borderRadius: "1.25rem",
-        border: "1px solid var(--border-color)",
+        borderRadius: "1rem",
+        border: "1px solid #f1f5f9",
         boxShadow: isDragging
-          ? "0 15px 30px -5px rgba(0,0,0,0.1)"
-          : "0 2px 8px rgba(0,0,0,0.04)",
+          ? "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)"
+          : "0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)",
         overflow: "hidden",
         transition: "all 0.2s ease",
         position: "relative",
-        marginBottom: "0.1rem",
+        marginBottom: "1rem",
         zIndex: isMenuOpen || showShareMenu || isDragging ? 50 : 1,
-        opacity: isDragging ? 0.7 : 1,
-        transform: isDragging ? "scale(1.01)" : "none",
+        opacity: isDragging ? 0.9 : 1,
+        transform: isDragging ? "scale(1.02)" : "none",
         display: "flex",
         flexDirection: "column",
       }}
     >
-      {/* Franja Lateral (recortada por overflow:hidden del padre) */}
+      {/* Franja Lateral estilo Stitch */}
       <div
         style={{
           position: "absolute",
@@ -217,198 +217,187 @@ export default function CollectionRouteCard({
           bottom: 0,
           width: "4px",
           backgroundColor: statusColor,
+          borderTopLeftRadius: "1rem",
+          borderBottomLeftRadius: "1rem",
         }}
       ></div>
 
-      {/* 1. Header: Estado, Manejador y Pendiente */}
+      {/* 1. Header: Estado, Drag Handle y Pendiente */}
       <div
         style={{
-          padding: "0.85rem 1.25rem 0.15rem",
+          padding: "1rem 1.25rem 0.5rem 1.25rem",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           position: "relative",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.35rem",
-            padding: "0.25rem 0.6rem",
-            backgroundColor: statusColor + "15",
-            borderRadius: "1rem",
-          }}
-        >
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          {/* Badge Estado */}
           <div
             style={{
-              width: "5px",
-              height: "5px",
-              borderRadius: "50%",
-              backgroundColor: statusColor,
+              display: "flex",
+              alignItems: "center",
+              gap: "0.35rem",
+              padding: "0.25rem 0.75rem",
+              backgroundColor: statusColor + "15",
+              borderRadius: "9999px",
+              border: `1px solid ${statusColor}30`,
             }}
-          ></div>
+          >
+            <div
+              style={{
+                width: "6px",
+                height: "6px",
+                borderRadius: "50%",
+                backgroundColor: statusColor,
+              }}
+            ></div>
+            <span
+              style={{
+                fontSize: "0.65rem",
+                fontWeight: 800,
+                textTransform: "uppercase",
+                color: statusColor,
+                letterSpacing: "0.05em",
+              }}
+            >
+              {status.label}
+            </span>
+          </div>
+
+          {/* Drag Handle a la derecha del badge */}
+          {showDragHandle && (
+            <div
+              {...dragHandleProps}
+              style={{
+                color: "#cbd5e1",
+                cursor: "grab",
+                display: "flex",
+                alignItems: "center",
+                padding: "0.25rem",
+                borderRadius: "0.25rem",
+              }}
+              onMouseDown={(e) => e.currentTarget.style.cursor = "grabbing"}
+              onMouseUp={(e) => e.currentTarget.style.cursor = "grab"}
+            >
+              <Menu size={16} strokeWidth={2.5} />
+            </div>
+          )}
+        </div>
+
+        {/* Pendiente */}
+        <div style={{ textAlign: "right", display: "flex", flexDirection: "column", gap: "0.1rem" }}>
           <span
             style={{
-              fontSize: "9px",
+              fontSize: "0.6rem",
               fontWeight: 800,
+              color: "#94a3b8",
               textTransform: "uppercase",
-              color: statusColor,
               letterSpacing: "0.05em",
             }}
           >
-            {status.label}
-          </span>
-        </div>
-
-        {showDragHandle && (
-          <div
-            {...dragHandleProps}
-            style={{
-              position: "absolute",
-              left: "50%",
-              transform: "translateX(-50%)",
-              color: "#cbd5e1",
-              cursor: "grab",
-              display: "flex",
-              alignItems: "center",
-              zIndex: 10,
-            }}
-          >
-            <Menu size={18} strokeWidth={2.5} />
-          </div>
-        )}
-
-        <div style={{ textAlign: "right" }}>
-          <p
-            style={{
-              fontSize: "8px",
-              fontWeight: 900,
-              color: "var(--text-secondary)",
-              textTransform: "uppercase",
-              marginBottom: "0.1rem",
-            }}
-          >
             Pendiente
-          </p>
-          <p
+          </span>
+          <span
             style={{
-              fontSize: "1.25rem",
+              fontSize: "1.1rem",
               fontWeight: 900,
-              color: "var(--text-primary)",
-              letterSpacing: "-0.04em",
+              color: "#0f172a",
+              letterSpacing: "-0.02em",
               lineHeight: 1,
             }}
           >
             {formatMoney(remainingAmount)}
-          </p>
+          </span>
         </div>
       </div>
 
-      {/* 2. Cuerpo: Cliente (con Abreviación) y Cobrar */}
+      {/* 2. Cuerpo: Cliente y Botón Cobrar */}
       <div
         style={{
-          padding: "0.15rem 1.25rem 0.65rem",
+          padding: "0.5rem 1.25rem 0.75rem",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          gap: "0.75rem",
+          gap: "1rem",
         }}
       >
-        <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div
             onClick={() => setShowFullName(!showFullName)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              marginBottom: "0.35rem",
-              cursor: "pointer",
-            }}
+            style={{ cursor: "pointer", position: "relative" }}
             title={loan.clientName}
           >
             <h3
               style={{
-                fontSize: "0.875rem",
-                fontWeight: 900,
-                color: showFullName ? "var(--color-primary)" : "var(--text-primary)",
-                margin: 0,
-                textTransform: "uppercase",
+                fontSize: "0.95rem",
+                fontWeight: 800,
+                color: showFullName ? "#1e293b" : "#0f172a",
+                margin: "0 0 0.4rem 0",
                 letterSpacing: "-0.01em",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
                 transition: "color 0.2s ease",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.25rem"
               }}
             >
-              <span
-                style={{
-                  color: "var(--color-primary)",
-                  marginRight: "0.4rem",
-                  fontWeight: 900,
-                }}
-              >
-                {index + 1}.
-              </span>
+              <span style={{ color: "#0f172a" }}>{index + 1}.</span>
               {showFullName ? loan.clientName : compactName}
             </h3>
-          </div>
 
-          {/* Tooltip flotante premium (Solo se muestra brevemente al hacer tap) */}
-          {showFullName && (
-            <div
-              style={{
-                position: "absolute",
-                top: "-32px",
-                left: "20px",
-                backgroundColor: "var(--text-primary)",
-                color: "white",
-                padding: "4px 10px",
-                borderRadius: "8px",
-                fontSize: "10px",
-                fontWeight: 600,
-                zIndex: 100,
-                whiteSpace: "nowrap",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-                pointerEvents: "none",
-                animation: "fadeInOut 0.3s ease",
-              }}
-            >
-              {loan.clientName}
+            {/* Tooltip nombre completo */}
+            {showFullName && (
               <div
                 style={{
                   position: "absolute",
-                  bottom: "-4px",
-                  left: "10px",
-                  width: "8px",
-                  height: "8px",
+                  top: "-30px",
+                  left: "0",
                   backgroundColor: "#1e293b",
-                  transform: "rotate(45deg)",
+                  color: "white",
+                  padding: "4px 10px",
+                  borderRadius: "6px",
+                  fontSize: "0.7rem",
+                  fontWeight: 600,
+                  zIndex: 100,
+                  whiteSpace: "nowrap",
+                  boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                  pointerEvents: "none",
+                  animation: "fadeInOut 0.2s ease",
                 }}
-              ></div>
-            </div>
-          )}
+              >
+                {loan.clientName}
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: "-4px",
+                    left: "10px",
+                    width: "8px",
+                    height: "8px",
+                    backgroundColor: "#1e293b",
+                    transform: "rotate(45deg)",
+                  }}
+                ></div>
+              </div>
+            )}
+          </div>
 
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "0.15rem" }}
-          >
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
             <div
               style={{
                 display: "flex",
                 alignItems: "flex-start",
-                gap: "0.4rem",
-                fontSize: "10px",
+                gap: "0.35rem",
+                fontSize: "0.7rem",
                 fontWeight: 600,
-                color: "var(--text-secondary)",
-                lineHeight: "1.2",
+                color: "#64748b",
               }}
             >
-              <MapPin
-                size={12}
-                strokeWidth={2.5}
-                style={{ opacity: 0.7, marginTop: "1px", flexShrink: 0 }}
-              />
-              <span style={{ textTransform: "uppercase" }}>
+              <MapPin size={12} strokeWidth={2.5} style={{ opacity: 0.8, marginTop: "0.1rem", flexShrink: 0 }} />
+              <span style={{ textTransform: "uppercase", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {loan.address || "Sin dirección"}
               </span>
             </div>
@@ -416,17 +405,14 @@ export default function CollectionRouteCard({
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "0.4rem",
-                fontSize: "10px",
+                gap: "0.35rem",
+                fontSize: "0.7rem",
                 fontWeight: 800,
-                color: "var(--color-primary)",
+                color: "#4f46e5",
               }}
             >
-              <Phone size={12} strokeWidth={2.5} style={{ opacity: 0.7 }} />
-              <a
-                href={`tel:${loan.phone}`}
-                style={{ color: "inherit", textDecoration: "none" }}
-              >
+              <Phone size={12} strokeWidth={2.5} />
+              <a href={`tel:${loan.phone}`} style={{ color: "inherit", textDecoration: "none" }}>
                 {loan.phone || "Sin teléfono"}
               </a>
             </div>
@@ -443,181 +429,87 @@ export default function CollectionRouteCard({
             padding: "0.6rem 1rem",
             backgroundColor: "#10b981",
             color: "white",
-            borderRadius: "14px",
+            borderRadius: "0.5rem",
             border: "none",
-            fontSize: "10px",
-            fontWeight: 900,
+            fontSize: "0.75rem",
+            fontWeight: 800,
             textTransform: "uppercase",
-            letterSpacing: "0.1em",
-            boxShadow: "0 4px 12px rgba(16, 185, 129, 0.2)",
+            letterSpacing: "0.05em",
+            boxShadow: "0 2px 4px rgba(16, 185, 129, 0.2)",
             cursor: "pointer",
+            transition: "all 0.2s ease"
           }}
+          onMouseDown={(e) => { e.currentTarget.style.transform = "scale(0.96)"; e.currentTarget.style.boxShadow = "none"; }}
+          onMouseUp={(e) => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 4px rgba(16, 185, 129, 0.2)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 4px rgba(16, 185, 129, 0.2)"; }}
         >
           <Wallet size={16} strokeWidth={2.5} /> COBRAR
         </button>
       </div>
 
       {/* 3. Barra de Progreso */}
-      <div
-        style={{
-          padding: "0.45rem 1.25rem 0.2rem",
-          borderTop: "1px solid #f8fafc",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginBottom: "0.35rem",
-          }}
-        >
-          <div
-            style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}
-          >
-            <span
-              style={{
-                fontSize: "10px",
-                fontWeight: 700,
-                color: "var(--text-secondary)",
-                textTransform: "uppercase",
-              }}
-            >
-              Progreso
-            </span>
+      <div style={{ padding: "0.5rem 1.25rem", display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+            <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>Progreso</span>
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowInfoModal(true);
-              }}
-              style={{
-                background: "none",
-                border: "none",
-                padding: 0,
-                display: "flex",
-                alignItems: "center",
-                color: "var(--text-secondary)",
-                cursor: "pointer",
-              }}
+              onClick={(e) => { e.stopPropagation(); setShowInfoModal(true); }}
+              style={{ background: "none", border: "none", padding: 0, color: "#cbd5e1", cursor: "pointer", display: "flex" }}
             >
               <Info size={12} strokeWidth={2.5} />
             </button>
           </div>
-          <span
-            style={{
-              fontSize: "10px",
-              fontWeight: 900,
-              color: "var(--color-primary)",
-              textTransform: "uppercase",
-            }}
-          >
-            {paidCuotas.toLocaleString("es-PE", {
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 1,
-            })}
-            /{totalCuotas} cuotas
+          <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "#4f46e5", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            {paidCuotas.toLocaleString("es-PE", { minimumFractionDigits: 0, maximumFractionDigits: 1 })} / {totalCuotas} CUOTAS
           </span>
         </div>
-        <div
-          style={{
-            width: "100%",
-            height: "4px",
-            backgroundColor: "#f1f5f9",
-            borderRadius: "10px",
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              width: `${progress}%`,
-              height: "100%",
-              backgroundColor: "#4f46e5",
-              borderRadius: "10px",
-              transition: "width 0.5s ease",
-            }}
-          ></div>
+        <div style={{ width: "100%", height: "4px", backgroundColor: "#e0e7ff", borderRadius: "9999px", overflow: "hidden" }}>
+          <div style={{ width: `${progress}%`, height: "100%", backgroundColor: "#4f46e5", borderRadius: "9999px", transition: "width 0.5s ease" }}></div>
         </div>
       </div>
 
       {/* 4. Footer: Estadísticas y Herramientas */}
       <div
         style={{
-          padding: "0.2rem 1.25rem",
+          padding: "0.75rem 1.25rem",
           borderTop: "1px solid #f1f5f9",
-          backgroundColor: "#f8fafc80",
+          backgroundColor: "#ffffff",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
         }}
       >
-        <div style={{ display: "flex", gap: "0.8rem", alignItems: "center" }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.3rem",
-              lineHeight: 1,
-            }}
-          >
-            <span
-              style={{
-                fontSize: "9px",
-                fontWeight: 700,
-                color: "#94a3b8",
-                textTransform: "uppercase",
-              }}
-            >
-              Plan
-            </span>
-            <span
-              style={{ fontSize: "0.75rem", fontWeight: 900, color: "#475569" }}
-            >
-              {formatMoney(totalAmount)}
-            </span>
+        <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+            <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase" }}>Plan:</span>
+            <span style={{ fontSize: "0.75rem", fontWeight: 900, color: "#0f172a" }}>{formatMoney(totalAmount)}</span>
           </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.3rem",
-              lineHeight: 1,
-            }}
-          >
-            <span
-              style={{
-                fontSize: "9px",
-                fontWeight: 700,
-                color: "#4f46e5",
-                textTransform: "uppercase",
-              }}
-            >
-              Cuota
-            </span>
-            <span
-              style={{ fontSize: "0.75rem", fontWeight: 900, color: "#4f46e5" }}
-            >
-              {formatMoney(loan.fee)}
-            </span>
+          <div style={{ width: "1px", height: "12px", backgroundColor: "#e2e8f0" }}></div>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+            <span style={{ fontSize: "0.65rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase" }}>Cuota:</span>
+            <span style={{ fontSize: "0.75rem", fontWeight: 900, color: "#4f46e5" }}>{formatMoney(loan.fee)}</span>
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "0.3rem", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
           <button
             onClick={() => onDetails(loan)}
             style={{
-              width: "28px",
-              height: "28px",
+              width: "32px",
+              height: "32px",
               backgroundColor: "white",
               border: "1px solid #e2e8f0",
-              borderRadius: "8px",
+              borderRadius: "0.5rem",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#94a3b8",
+              color: "#64748b",
               cursor: "pointer",
             }}
           >
-            <Eye size={16} strokeWidth={2.5} />
+            <Eye size={16} strokeWidth={2} />
           </button>
+          
           <div style={{ position: "relative" }}>
             <button
               ref={shareBtnRef}
@@ -625,87 +517,66 @@ export default function CollectionRouteCard({
               disabled={isSharing}
               title="Compartir"
               style={{
-                width: "28px",
-                height: "28px",
+                width: "32px",
+                height: "32px",
                 backgroundColor: "white",
                 border: "1px solid #e2e8f0",
-                borderRadius: "8px",
+                borderRadius: "0.5rem",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#6366f1",
+                color: "#64748b",
                 cursor: isSharing ? "wait" : "pointer",
               }}
             >
-              <Share2 size={16} strokeWidth={2.5} />
+              <Share2 size={16} strokeWidth={2} />
             </button>
 
-            {isMounted &&
-              showShareMenu &&
-              createPortal(
-                <div
+            {isMounted && showShareMenu && createPortal(
+              <div
+                style={{
+                  position: "fixed",
+                  bottom: `calc(100vh - ${(shareMenuPos?.top || 0) - 5}px)`,
+                  right: `${shareMenuPos?.right || 0}px`,
+                  backgroundColor: "white",
+                  borderRadius: "10px",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                  border: "1px solid #f1f5f9",
+                  zIndex: 10000,
+                  minWidth: "160px",
+                  overflow: "hidden",
+                  animation: "fadeInOut 0.2s ease",
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={(e) => handleShare(e, "calendar")}
                   style={{
-                    position: "fixed",
-                    bottom: `calc(100vh - ${(shareMenuPos?.top || 0) - 5}px)`,
-                    right: `${shareMenuPos?.right || 0}px`,
-                    backgroundColor: "white",
-                    borderRadius: "10px",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-                    border: "1px solid #f1f5f9",
-                    zIndex: 10000,
-                    minWidth: "160px",
-                    overflow: "hidden",
-                    animation: "fadeInOut 0.2s ease",
+                    display: "flex", alignItems: "center", gap: "0.75rem", width: "100%",
+                    padding: "0.75rem 1rem", border: "none", backgroundColor: "transparent",
+                    color: "#4f46e5", fontSize: "0.8rem", fontWeight: 600, cursor: "pointer",
+                    textAlign: "left", transition: "background 0.2s",
                   }}
-                  onClick={(e) => e.stopPropagation()}
                 >
-                  <button
-                    onClick={(e) => handleShare(e, "calendar")}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.75rem",
-                      width: "100%",
-                      padding: "0.75rem 1rem",
-                      border: "none",
-                      backgroundColor: "transparent",
-                      color: "#4f46e5",
-                      fontSize: "0.8rem",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      textAlign: "left",
-                      transition: "background 0.2s",
-                    }}
-                  >
-                    <Calendar size={14} />
-                    Calendario
-                  </button>
-                  <button
-                    onClick={(e) => handleShare(e, "list")}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.75rem",
-                      width: "100%",
-                      padding: "0.75rem 1rem",
-                      border: "none",
-                      backgroundColor: "transparent",
-                      color: "#10b981",
-                      fontSize: "0.8rem",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      textAlign: "left",
-                      borderTop: "1px solid #f8fafc",
-                    }}
-                  >
-                    <ClipboardList size={14} />
-                    Historial Abonos
-                  </button>
-                </div>,
-                document.body,
-              )}
+                  <Calendar size={14} /> Calendario
+                </button>
+                <button
+                  onClick={(e) => handleShare(e, "list")}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "0.75rem", width: "100%",
+                    padding: "0.75rem 1rem", border: "none", backgroundColor: "transparent",
+                    color: "#10b981", fontSize: "0.8rem", fontWeight: 600, cursor: "pointer",
+                    textAlign: "left", borderTop: "1px solid #f8fafc",
+                  }}
+                >
+                  <ClipboardList size={14} /> Historial Abonos
+                </button>
+              </div>,
+              document.body
+            )}
           </div>
-          <div style={{ scale: 0.85 }}>
+          
+          <div style={{ marginLeft: "0.25rem" }}>
             <LoanActions
               loan={loan}
               currentUser={currentUser}
