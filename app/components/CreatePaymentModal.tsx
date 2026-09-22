@@ -315,13 +315,17 @@ export default function CreatePaymentModal({
               </div>
             </div>
 
-            {/* Quick-Selection Chips */}
             <div className="no-scrollbar" style={{ display: "flex", alignItems: "center", gap: "0.375rem", overflowX: "auto", padding: "0.125rem 0", fontSize: "0.75rem", fontWeight: 600 }}>
               <button
                 type="button"
                 className="shortcut-chip"
                 onClick={() => setAmount(Math.round(loan.fee))}
-                style={{ whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", backgroundColor: "#4f46e5", color: "white", border: "none", fontWeight: "bold", cursor: "pointer" }}
+                style={{ whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", cursor: "pointer", 
+                  backgroundColor: amount === Math.round(loan.fee) ? "#4f46e5" : "white", 
+                  color: amount === Math.round(loan.fee) ? "white" : "#334155", 
+                  border: amount === Math.round(loan.fee) ? "none" : "1px solid #e2e8f0", 
+                  fontWeight: amount === Math.round(loan.fee) ? "bold" : 600 
+                }}
               >
                 Cuota: S/ {Math.round(loan.fee)}
               </button>
@@ -329,7 +333,12 @@ export default function CreatePaymentModal({
                 type="button"
                 className="shortcut-chip"
                 onClick={() => setAmount(Math.round(loan.fee * 2))}
-                style={{ whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", backgroundColor: "white", border: "1px solid #e2e8f0", color: "#334155", cursor: "pointer" }}
+                style={{ whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", cursor: "pointer",
+                  backgroundColor: amount === Math.round(loan.fee * 2) ? "#4f46e5" : "white", 
+                  color: amount === Math.round(loan.fee * 2) ? "white" : "#334155", 
+                  border: amount === Math.round(loan.fee * 2) ? "none" : "1px solid #e2e8f0", 
+                  fontWeight: amount === Math.round(loan.fee * 2) ? "bold" : 600 
+                 }}
               >
                 2 cuotas (S/ {Math.round(loan.fee * 2)})
               </button>
@@ -337,7 +346,12 @@ export default function CreatePaymentModal({
                 type="button"
                 className="shortcut-chip"
                 onClick={() => setAmount(50)}
-                style={{ whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", backgroundColor: "white", border: "1px solid #e2e8f0", color: "#334155", cursor: "pointer" }}
+                style={{ whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", cursor: "pointer",
+                  backgroundColor: amount === 50 ? "#4f46e5" : "white", 
+                  color: amount === 50 ? "white" : "#334155", 
+                  border: amount === 50 ? "none" : "1px solid #e2e8f0", 
+                  fontWeight: amount === 50 ? "bold" : 600 
+                 }}
               >
                 S/ 50
               </button>
@@ -345,7 +359,12 @@ export default function CreatePaymentModal({
                 type="button"
                 className="shortcut-chip"
                 onClick={() => setAmount(100)}
-                style={{ whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", backgroundColor: "white", border: "1px solid #e2e8f0", color: "#334155", cursor: "pointer" }}
+                style={{ whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", cursor: "pointer",
+                  backgroundColor: amount === 100 ? "#4f46e5" : "white", 
+                  color: amount === 100 ? "white" : "#334155", 
+                  border: amount === 100 ? "none" : "1px solid #e2e8f0", 
+                  fontWeight: amount === 100 ? "bold" : 600 
+                 }}
               >
                 S/ 100
               </button>
@@ -353,7 +372,12 @@ export default function CreatePaymentModal({
                 type="button"
                 className="shortcut-chip"
                 onClick={() => setAmount(Math.ceil(remainingAmount))}
-                style={{ whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", backgroundColor: "#eef2ff", border: "1px solid #c7d2fe", color: "#4338ca", fontWeight: "bold", cursor: "pointer" }}
+                style={{ whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", cursor: "pointer",
+                  backgroundColor: amount === Math.ceil(remainingAmount) ? "#4f46e5" : "#eef2ff", 
+                  color: amount === Math.ceil(remainingAmount) ? "white" : "#4338ca", 
+                  border: amount === Math.ceil(remainingAmount) ? "none" : "1px solid #c7d2fe", 
+                  fontWeight: "bold"
+                 }}
               >
                 Saldo total S/ {Math.ceil(remainingAmount)}
               </button>
