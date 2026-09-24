@@ -14,6 +14,7 @@ import {
   X,
   HelpCircle,
   Download,
+  BarChart,
 } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { authService } from "@/lib/auth";
@@ -38,17 +39,17 @@ export default function Sidebar() {
 
   useEffect(() => {
     const timer = setTimeout(() => setIsMounted(true), 0);
-    
+
     const checkInstall = () => {
       if ((window as any).deferredInstallPrompt) {
         setCanInstall(true);
       }
     };
-    
+
     // Verificar estado inicial y suscribirse a evento global
     checkInstall();
     window.addEventListener("pwa-install-available", checkInstall);
-    
+
     return () => {
       clearTimeout(timer);
       window.removeEventListener("pwa-install-available", checkInstall);
@@ -58,10 +59,10 @@ export default function Sidebar() {
   const handleInstallPWA = async () => {
     const deferredPrompt = (window as any).deferredInstallPrompt;
     if (!deferredPrompt) return;
-    
+
     await deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    
+
     if (outcome === "accepted") {
       setCanInstall(false);
       (window as any).deferredInstallPrompt = null;
@@ -72,13 +73,17 @@ export default function Sidebar() {
     boolean | null
   >(null);
 
-  // Derived state: Use manual override if present, otherwise default to true for admins/owners
+  // Derived state: Use manual override if present, otherwise default to collapsed
   const isConfigExpanded =
-    manualConfigExpanded !== null ? manualConfigExpanded : isAdmin || isOwner;
+    manualConfigExpanded !== null ? manualConfigExpanded : false;
 
   const toggleConfig = () => {
     setManualConfigExpanded(!isConfigExpanded);
   };
+
+  const [manualReportesExpanded, setManualReportesExpanded] = useState<boolean | null>(null);
+  const isReportesExpanded = manualReportesExpanded !== null ? manualReportesExpanded : false;
+  const toggleReportes = () => setManualReportesExpanded(!isReportesExpanded);
 
   const [manualHelpExpanded, setManualHelpExpanded] = useState<boolean | null>(null);
   const isHelpExpanded = manualHelpExpanded !== null ? manualHelpExpanded : false;
@@ -207,6 +212,55 @@ export default function Sidebar() {
             Gastos
           </Link>
 
+          {/* Reportes Avanzados - Only for Admin/Owner */}
+          {(isAdmin || isOwner) && (
+            <>
+              <button
+                className={`sidebar-accordion-header ${isReportesExpanded ? "sidebar-active" : ""}`}
+                onClick={toggleReportes}
+              >
+                <BarChart
+                  size={20}
+                  strokeWidth={isReportesExpanded ? 2.5 : 2}
+                />
+                <span style={{ flex: 1, textAlign: "left" }}>
+                  Reportes
+                </span>
+                {isReportesExpanded ? (
+                  <ChevronDown size={16} />
+                ) : (
+                  <ChevronRight size={16} />
+                )}
+              </button>
+
+              {isReportesExpanded && (
+                <div className="sidebar-accordion-content">
+                  <Link
+                    href="/reportes/vision-general"
+                    className={`sidebar-sub-item ${isActive("/reportes/vision-general") ? "sidebar-active" : ""}`}
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Visión General
+                  </Link>
+                  <Link
+                    href="/reportes/por-cobrador"
+                    className={`sidebar-sub-item ${isActive("/reportes/por-cobrador") ? "sidebar-active" : ""}`}
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Por Cobrador
+                  </Link>
+                  <Link
+                    href="/reportes/por-cliente"
+                    className={`sidebar-sub-item ${isActive("/reportes/por-cliente") ? "sidebar-active" : ""}`}
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Salud por Cliente
+                  </Link>
+                </div>
+              )}
+            </>
+          )}
+
           {/* Administration Section - Only for Admin/Owner */}
           {(isAdmin || isOwner) && (
             <>
@@ -249,15 +303,6 @@ export default function Sidebar() {
                         onClick={() => setIsOpen(false)}
                       >
                         Empresas
-                      </Link>
-                    )}
-                    {canViewReports && (
-                      <Link
-                        href="/reportes"
-                        className={`sidebar-sub-item ${isActive("/reportes") ? "sidebar-active" : ""}`}
-                        onClick={() => setIsOpen(false)}
-                      >
-                        Reportes
                       </Link>
                     )}
                   </div>

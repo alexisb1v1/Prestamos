@@ -32,7 +32,10 @@ export default function DashboardLayout({
 
   useEffect(() => {
     const user = authService.getUser();
-    if (!user) return;
+    if (!user) {
+      router.push("/login");
+      return;
+    }
 
     const timer = setTimeout(() => {
       setShowShareButton(

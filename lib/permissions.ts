@@ -11,10 +11,10 @@ export const getPermissions = (user: User | null): UserPermissions => {
 
     return {
         // Loan Management
-        canDeleteLoan: profile === 'ADMIN' || profile === 'OWNER',
-        canReassignLoan: profile === 'ADMIN' || profile === 'OWNER',
-        canCreateLoan: true, // Everyone can currently create loans
-        canRenewLoan: true, // Everyone can currently renew loans
+        canDeleteLoan: profile === 'ADMIN',
+        canReassignLoan: profile === 'ADMIN',
+        canCreateLoan: profile === 'ADMIN' || profile === 'COBRADOR',
+        canRenewLoan: profile === 'ADMIN' || profile === 'COBRADOR',
 
         // Payment/Installment Management
         canDeletePayment: (paymentDate: string, registeredByUserId?: string) => {
@@ -35,8 +35,12 @@ export const getPermissions = (user: User | null): UserPermissions => {
                 return isSameDay && isOwnPayment;
             }
 
-            // Admin/Owner: up to 2 days (diff 0 or 1)
-            return diff < 2;
+            // Admin: up to 2 days (diff 0 or 1). Owner can't delete.
+            if (profile === 'ADMIN') {
+                return diff < 2;
+            }
+
+            return false;
         },
 
         // User/Collector Management
@@ -48,6 +52,6 @@ export const getPermissions = (user: User | null): UserPermissions => {
         // Reports & Expenses
         canViewReports: profile === 'ADMIN' || profile === 'OWNER',
         canViewExpenses: true, // Specific filtering logic still applies in the page
-        canCreateExpense: true,
+        canCreateExpense: profile === 'ADMIN' || profile === 'COBRADOR',
     };
 };
