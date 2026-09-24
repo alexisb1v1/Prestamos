@@ -9,7 +9,7 @@ import { apiRequest } from '@/lib/api';
 import {
   CalendarRange, Download, ChevronDown, UserRound, Banknote, Receipt,
   CheckCircle2, CreditCard, ChevronLeft, ChevronRight, Search,
-  Settings2, Navigation, Phone, BadgeInfo, RefreshCw,
+  Settings2, Navigation, BadgeInfo, RefreshCw,
   ArrowLeft, Calendar, PiggyBank, FileText, Lock, Clock,
   Users, TrendingUp, Bike, Share2, Fuel, Coffee, Map, ArrowLeftRight
 } from 'lucide-react';
@@ -297,9 +297,7 @@ export default function PorCobradorPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', marginTop: '4px' }}>
                         <BadgeInfo size={14} /> DNI: {data.documentNumber || '---'}
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', marginTop: '4px' }}>
-                        <Phone size={14} /> {currentCollector?.phone || '---'}
-                      </div>
+
                     </div>
                   </div>
                   <CheckCircle2 size={24} color="#4147eb" />
@@ -428,7 +426,7 @@ export default function PorCobradorPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <span style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>{currentCollector?.firstName} {currentCollector?.lastName}</span>
                     <span style={{ fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}><BadgeInfo size={12} /> DNI: {data.documentNumber || '---'}</span>
-                    <span style={{ fontSize: '12px', color: '#4147eb', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}><Phone size={12} /> {currentCollector?.phone || '---'}</span>
+
                   </div>
                 </div>
                 <span style={{ background: '#e0e0ff', color: '#4147eb', fontSize: '11px', fontWeight: 700, padding: '4px 8px', borderRadius: '8px' }}>
