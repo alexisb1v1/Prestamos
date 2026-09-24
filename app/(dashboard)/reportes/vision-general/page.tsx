@@ -43,6 +43,7 @@ interface CollectorData {
   prestamosActivos: number;
   gastosRuta: number;
   netoEntregar: number;
+  expectedAmount?: number;
 }
 
 export default function VisionGeneralPage() {
