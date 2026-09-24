@@ -249,13 +249,13 @@ export default function Sidebar() {
                   >
                     Por Cobrador
                   </Link>
-                  <Link
+                  {/* <Link
                     href="/reportes/por-cliente"
                     className={`sidebar-sub-item ${isActive("/reportes/por-cliente") ? "sidebar-active" : ""}`}
                     onClick={() => setIsOpen(false)}
                   >
                     Salud por Cliente
-                  </Link>
+                  </Link> */}
                 </div>
               )}
             </>
