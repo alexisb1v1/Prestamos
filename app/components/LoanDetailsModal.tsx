@@ -24,7 +24,7 @@ import { LoanShareGeneratorRef } from "./LoanShareGenerator";
 import ConfirmModal from "./ConfirmModal";
 import LoadingSpinner from "./LoadingSpinner";
 import { logger } from "@/lib/logging-service";
-import { ArrowLeft, Share2, Calendar, Receipt, ChevronLeft, ChevronRight, Clock, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Share2, Calendar, Receipt, ChevronLeft, ChevronRight, Clock, CheckCircle2, X } from "lucide-react";
 
 interface LoanDetailsModalProps {
   isOpen: boolean;
@@ -303,31 +303,16 @@ function LoanDetailsModal({
               paddingTop: "max(12px, env(safe-area-inset-top))",
               paddingLeft: "1rem",
               paddingRight: "1rem",
-              paddingBottom: "0.75rem",
+              paddingBottom: "1rem",
               display: "flex",
-              alignItems: "center",
+              alignItems: "flex-start",
               justifyContent: "space-between",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-              <button
-                onClick={onClose}
-                aria-label="Volver"
-                style={{
-                  padding: "0.5rem",
-                  marginLeft: "-0.25rem",
-                  color: "#475569",
-                  background: "transparent",
-                  border: "none",
-                  borderRadius: "9999px",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <ArrowLeft size={20} strokeWidth={2.4} />
-              </button>
+              <div style={{ width: "2.75rem", height: "2.75rem", borderRadius: "0.75rem", backgroundColor: "#e0e7ff", color: "#4f46e5", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Receipt size={20} strokeWidth={2.5} />
+              </div>
               <div>
                 <h1 style={{ fontSize: "1rem", fontWeight: "bold", color: "#0f172a", margin: 0, lineHeight: 1.25 }}>
                   Detalle de Pagos
@@ -337,26 +322,25 @@ function LoanDetailsModal({
                 </p>
               </div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-              <button
-                onClick={handleShare}
-                disabled={isSharing}
-                aria-label="Compartir estado"
-                style={{
-                  padding: "0.5rem",
-                  color: "#475569",
-                  background: "transparent",
-                  border: "none",
-                  borderRadius: "9999px",
-                  cursor: isSharing ? "wait" : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Share2 size={20} strokeWidth={2} />
-              </button>
-            </div>
+            <button
+              onClick={onClose}
+              type="button"
+              style={{
+                width: "2rem",
+                height: "2rem",
+                borderRadius: "50%",
+                backgroundColor: "#f1f5f9",
+                color: "#64748b",
+                border: "none",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                padding: 0,
+              }}
+            >
+              <X size={18} strokeWidth={2.5} />
+            </button>
           </header>
 
           {/* Main Content */}
@@ -691,6 +675,63 @@ function LoanDetailsModal({
               </section>
             )}
           </main>
+          
+          {/* Footer */}
+          <footer
+            style={{
+              padding: "1rem",
+              backgroundColor: "white",
+              borderTop: "1px solid #e2e8f0",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              zIndex: 20,
+            }}
+          >
+            <button
+              onClick={onClose}
+              style={{
+                flex: 1,
+                padding: "0.75rem",
+                borderRadius: "0.75rem",
+                backgroundColor: "#f1f5f9",
+                color: "#475569",
+                fontWeight: 600,
+                fontSize: "0.875rem",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleShare}
+              disabled={isSharing}
+              style={{
+                flex: 1,
+                padding: "0.75rem",
+                borderRadius: "0.75rem",
+                backgroundColor: "#4f46e5",
+                color: "white",
+                fontWeight: 600,
+                fontSize: "0.875rem",
+                border: "none",
+                cursor: isSharing ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.5rem",
+                opacity: isSharing ? 0.7 : 1,
+              }}
+            >
+              {isSharing ? (
+                <LoadingSpinner message="" />
+              ) : (
+                <Share2 size={18} />
+              )}
+              <span style={{ marginLeft: isSharing ? "0.5rem" : "0" }}>Compartir</span>
+            </button>
+          </footer>
         </div>
       </div>
       <ConfirmModal

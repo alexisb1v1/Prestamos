@@ -22,7 +22,8 @@ import LoanShareGenerator, {
 } from "../../components/LoanShareGenerator";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import AnimatedNumber from "../../components/AnimatedNumber";
-import CollectionRouteCard from "../../components/CollectionRouteCard";
+import ClientCard from "../../components/ClientCard";
+import LoanActions from "../../components/LoanActions";
 import DashboardFilterModal from "../../components/DashboardFilterModal";
 import UpdateLoanInfoModal from "../../components/UpdateLoanInfoModal";
 import {
@@ -383,15 +384,36 @@ export default function DashboardPage() {
 
     return (
       <div ref={setNodeRef} style={style}>
-        <CollectionRouteCard
-          loan={loan}
-          index={index}
-          today={today}
-          currentUser={currentUser}
-          onPay={handleOpenPayment}
-          onDetails={handleOpenDetails}
-          onUpdateInfo={handleOpenUpdateInfo}
-          shareRef={shareRef}
+        <ClientCard
+          loan={loan as any}
+          onPayClick={handleOpenPayment}
+          onDetailsClick={handleOpenDetails}
+          renderMenu={() => (
+            <div style={{ marginLeft: "0.25rem" }}>
+              <LoanActions
+                loan={loan as any}
+                currentUser={currentUser}
+                isMobile={true}
+                today={today}
+                onPay={handleOpenPayment}
+                onDetails={handleOpenDetails}
+                onEdit={(l) => {
+                  setSelectedLoanForUpdateInfo(l as any);
+                  setIsUpdateInfoModalOpen(true);
+                }}
+                onReassign={(l) => {
+                  setSelectedLoanForReassign(l as any);
+                  setIsReassignModalOpen(true);
+                }}
+                onDelete={(l) => {
+                  setSelectedLoanForDelete(l as any);
+                  setIsDeleteModalOpen(true);
+                }}
+                shareRef={shareRef}
+                minimal={true}
+              />
+            </div>
+          )}
           showDragHandle={!searchTermLocal.trim()}
           dragHandleProps={{ ...attributes, ...listeners }}
           isDragging={isDragging}
@@ -428,7 +450,7 @@ export default function DashboardPage() {
         >
           {/* Ocultar el borde del header para fusionarlos visualmente */}
           <div style={{ position: "absolute", top: "-1px", left: 0, right: 0, height: "2px", backgroundColor: "var(--bg-app)" }}></div>
-          
+
           {currentUser?.profile === "OWNER" && (
             <button
               onClick={() => setIsFilterModalOpen(true)}
@@ -507,209 +529,290 @@ export default function DashboardPage() {
         </div>
       ) : !data ? null : (
         <>
-          <div
-            id="stats-dashboard"
-            className="card"
-            style={{
-              backgroundColor: "white",
-              borderRadius: "1.25rem",
-              padding: "1.25rem",
-              marginBottom: "1.25rem",
-              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)",
-              border: "1px solid #f1f5f9"
-            }}
-          >
-            {/* Header: Resumen del día */}
-            <div style={{ marginBottom: "1rem", textAlign: "center" }}>
-              <h2 style={{ fontSize: "1rem", fontWeight: 800, color: "#0f172a", textTransform: "uppercase", letterSpacing: "0.05em", margin: 0 }}>
-                RESUMEN DEL DÍA
-              </h2>
+          <section style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 0.25rem 0.75rem 0.25rem" }}>
+            <h1 style={{ fontSize: "1.25rem", fontWeight: 800, color: "#0f172a", margin: 0, letterSpacing: "-0.025em" }}>Resumen del Día</h1>
+            <div style={{ backgroundColor: "#f1f5f9", color: "#475569", padding: "0.25rem 0.6rem", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: 600 }}>
+              {(() => {
+                const d = new Date();
+                const str = new Intl.DateTimeFormat("es-PE", { weekday: "short", day: "numeric", month: "short" }).format(d);
+                return str.charAt(0).toUpperCase() + str.slice(1);
+              })()}
             </div>
-
-            {/* Total Row */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginBottom: "1.25rem" }}>
-              <div>
-                <div style={{ fontSize: "0.65rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: "0.25rem" }}>TOTAL COBRADO</div>
-                <div style={{ fontSize: "2rem", fontWeight: 900, color: "#0f172a", lineHeight: 1 }}>
-                  <AnimatedNumber value={data.collectedToday} isCurrency />
-                </div>
-              </div>
-              
-              <div style={{ display: "flex", width: "100%", gap: "0.5rem" }}>
-                {/* Yape Pill */}
-                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", backgroundColor: "#f5f3ff", padding: "0.5rem", borderRadius: "0.5rem", border: "1px solid #ede9fe" }}>
-                  <div style={{ width: "20px", height: "20px", borderRadius: "0.25rem", backgroundColor: "#8b5cf6", display: "flex", alignItems: "center", justifyContent: "center", color: "white" }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: "0.5rem", fontWeight: 800, color: "#8b5cf6", textTransform: "uppercase" }}>YAPE</div>
-                    <div style={{ fontSize: "0.85rem", fontWeight: 900, color: "#0f172a" }}>{formatMoney(data.detailCollectedToday?.yape || 0).replace("S/ ", "S/")}</div>
-                  </div>
-                </div>
-
-                {/* Efectivo Pill */}
-                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem", backgroundColor: "#f0fdf4", padding: "0.5rem", borderRadius: "0.5rem", border: "1px solid #dcfce7" }}>
-                  <div style={{ width: "20px", height: "20px", borderRadius: "0.25rem", backgroundColor: "#10b981", display: "flex", alignItems: "center", justifyContent: "center", color: "white" }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: "0.5rem", fontWeight: 800, color: "#10b981", textTransform: "uppercase" }}>EFECTIVO</div>
-                    <div style={{ fontSize: "0.85rem", fontWeight: 900, color: "#0f172a" }}>{formatMoney(data.detailCollectedToday?.efectivo || 0).replace("S/ ", "S/")}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Metrics Row */}
-            <div style={{ display: "flex", gap: "0.5rem", overflowX: "auto", paddingBottom: "0.25rem" }}>
-              {/* Prestado */}
-              <div style={{ flex: 1, minWidth: "90px", padding: "0.75rem", borderRadius: "0.75rem", border: "1px solid #f1f5f9", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backgroundColor: "#f8fafc" }}>
-                <div style={{ fontSize: "0.55rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: "0.25rem" }}>PRESTADO</div>
-                <div style={{ fontSize: "0.95rem", fontWeight: 900, color: "#0f172a" }}>{formatMoney(data.totalLentToday).replace("S/ ", "S/")}</div>
-              </div>
-              {/* Clientes */}
-              <div style={{ flex: 1, minWidth: "90px", padding: "0.75rem", borderRadius: "0.75rem", border: "1px solid #f1f5f9", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backgroundColor: "#f8fafc" }}>
-                <div style={{ fontSize: "0.55rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: "0.25rem" }}>CLIENTES</div>
-                <div style={{ fontSize: "0.95rem", fontWeight: 900, color: "#4f46e5" }}>{data.activeClients}</div>
-              </div>
-              
-              {/* Conditional Metrics for Admin */}
-              {isAdmin && (
-                <>
-                  {/* Gastos */}
-                  <div style={{ flex: 1, minWidth: "90px", padding: "0.75rem", borderRadius: "0.75rem", border: "1px solid #f1f5f9", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backgroundColor: "#f8fafc" }}>
-                    <div style={{ fontSize: "0.55rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: "0.25rem" }}>GASTOS</div>
-                    <div style={{ fontSize: "0.95rem", fontWeight: 900, color: "#ef4444" }}>{formatMoney(data.totalExpensesToday || 0).replace("S/ ", "S/")}</div>
-                  </div>
-                  {/* Inversión */}
-                  <div style={{ flex: 1, minWidth: "90px", padding: "0.75rem", borderRadius: "0.75rem", border: "1px solid #f1f5f9", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backgroundColor: "#f8fafc", position: "relative" }}>
-                    <div style={{ fontSize: "0.55rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", marginBottom: "0.25rem", display: "flex", alignItems: "center", gap: "0.2rem" }}>
-                      INVERSIÓN
-                      <button onClick={() => setIsThermometerInfoOpen(true)} style={{ background: "none", border: "none", padding: 0, color: "#94a3b8", cursor: "pointer", display: "flex" }}>
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                      </button>
-                    </div>
-                    <div style={{ fontSize: "0.95rem", fontWeight: 900, color: getThermometerColor(data.thermometer || 0) }}>
-                      {Math.round(data.thermometer || 0)}%
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div id="lista-rutas-dashboard" style={{ marginTop: "1.25rem" }}>
-            {/* Sticky Header Container */}
+          </section>
+          {isMobile ? (
             <div
+              id="stats-dashboard"
               style={{
-                position: "sticky",
-                top: isMobile ? "4rem" : "0.5rem",
-                zIndex: 20,
                 backgroundColor: "white",
-                margin: isMobile ? "0 -1rem" : "0",
-                padding: "0.85rem 1rem",
-                borderRadius: isMobile ? "0" : "1.25rem",
-                borderTop: "1px solid #f1f5f9",
-                borderBottom: "1px solid #f1f5f9",
-                boxShadow: "0 10px 30px -10px rgba(0,0,0,0.05)",
-                transition: "all 0.3s ease",
+                borderRadius: "1rem",
+                padding: "1rem",
+                marginBottom: "1rem",
+                boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.875rem"
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "0.55rem",
-                }}
-              >
-                <h2
-                  style={{
-                    fontSize: "1.25rem",
-                    fontWeight: 800,
-                    color: "#1e293b",
-                    margin: 0,
-                  }}
-                >
-                  Ruta de Cobro
-                </h2>
-                <div
-                  style={{
-                    backgroundColor: "#fff1f2",
-                    color: "#f43f5e",
-                    padding: "0.25rem 0.6rem",
-                    borderRadius: "2rem",
-                    fontSize: "0.62rem",
-                    fontWeight: 800,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.3rem",
-                    border: "1px solid #ffe4e6",
-                  }}
-                >
-                  <svg
-                    width="11"
-                    height="11"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polyline points="12 6 12 12 16 14"></polyline>
-                  </svg>
-                  {filteredLoans.length} PENDIENTES
+              {/* Total Cobrado y Detalle */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500 }}>Total Cobrado Hoy</span>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "0.25rem", marginTop: "0.25rem" }}>
+                    <span style={{ fontSize: "1rem", color: "#64748b", fontWeight: 600 }}>S/</span>
+                    <span style={{ fontSize: "1.875rem", color: "#0f172a", fontWeight: 800, letterSpacing: "-0.025em", lineHeight: 1 }}>
+                      <AnimatedNumber value={data.collectedToday} isCurrency={false} forceDecimals={true} />
+                    </span>
+                  </div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.25rem", textAlign: "right" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", backgroundColor: "#f8fafc", padding: "0.25rem 0.5rem", borderRadius: "0.5rem" }}>
+                    <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#732282" }}></span>
+                    <span style={{ fontSize: "0.75rem", color: "#475569", fontWeight: 500 }}>Yape/Plin: <b style={{ color: "#0f172a" }}>{formatMoney(data.detailCollectedToday?.yape || 0).replace("S/ ", "S/")}</b></span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", backgroundColor: "#f8fafc", padding: "0.25rem 0.5rem", borderRadius: "0.5rem" }}>
+                    <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#10b981" }}></span>
+                    <span style={{ fontSize: "0.75rem", color: "#475569", fontWeight: 500 }}>Efectivo: <b style={{ color: "#0f172a" }}>{formatMoney(data.detailCollectedToday?.efectivo || 0).replace("S/ ", "S/")}</b></span>
+                  </div>
                 </div>
               </div>
 
-              <div style={{ position: "relative" }}>
-                <input
-                  type="text"
-                  className="input"
-                  placeholder="Nombre o DNI..."
-                  value={searchTermLocal}
-                  onChange={(e) => setSearchTermLocal(e.target.value)}
-                  style={{
-                    width: "100%",
-                    backgroundColor: "#f8fafc",
-                    height: "2.4rem",
-                    fontSize: "0.85rem",
-                    paddingLeft: "2.5rem",
-                    borderRadius: "0.85rem",
-                    border: "1.5px solid #e2e8f0",
-                    color: "#1e293b",
-                    boxShadow: isMobile
-                      ? "none"
-                      : "inset 0 2px 4px rgba(0,0,0,0.02)",
-                  }}
-                />
-                <div
-                  style={{
-                    position: "absolute",
-                    left: "0.9rem",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    color: "#94a3b8",
-                  }}
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                  </svg>
+              {/* Metrics Row */}
+              <div style={{ display: "grid", gridTemplateColumns: isAdmin ? "repeat(4, 1fr)" : "repeat(3, 1fr)", gap: "0.5rem", paddingTop: "0.25rem" }}>
+                {/* Clientes (Por Cobrar) */}
+                <div style={{ backgroundColor: "#f1f4fa", padding: "0.5rem", borderRadius: "0.75rem", textAlign: "center" }}>
+                  <span style={{ fontSize: "0.75rem", color: "#64748b", display: "block", lineHeight: 1.2 }}>Por Cobrar</span>
+                  <span style={{ fontSize: "1rem", fontWeight: 700, color: "#4147eb" }}>{data.activeClients}</span>
+                  <span style={{ fontSize: "0.625rem", color: "#64748b", display: "block" }}>pendientes</span>
                 </div>
+
+                {/* Prestado */}
+                <div style={{ backgroundColor: "#f1f4fa", padding: "0.5rem", borderRadius: "0.75rem", textAlign: "center" }}>
+                  <span style={{ fontSize: "0.75rem", color: "#64748b", display: "block", lineHeight: 1.2 }}>Prestado</span>
+                  <span style={{ fontSize: "1rem", fontWeight: 600, color: "#0f172a" }}>{formatMoney(data.totalLentToday).replace("S/ ", "S/")}</span>
+                  <span style={{ fontSize: "0.625rem", color: "#64748b", display: "block" }}>hoy</span>
+                </div>
+
+                {/* Gastos diarios (visible for everyone per design) */}
+                <div style={{ backgroundColor: "#f1f4fa", padding: "0.5rem", borderRadius: "0.75rem", textAlign: "center" }}>
+                  <span style={{ fontSize: "0.75rem", color: "#64748b", display: "block", lineHeight: 1.2 }}>Gastos diarios</span>
+                  <span style={{ fontSize: "1rem", fontWeight: 600, color: "#aa3a00" }}>{formatMoney(data.totalExpensesToday || 0).replace("S/ ", "S/")}</span>
+                </div>
+
+                {/* Conditional Metrics for Admin */}
+                {isAdmin && (
+                  <>
+                    {/* Inversión */}
+                    <div style={{ backgroundColor: "#f1f4fa", padding: "0.5rem", borderRadius: "0.75rem", textAlign: "center", position: "relative" }}>
+                      <div style={{ fontSize: "0.75rem", color: "#64748b", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.2rem", lineHeight: 1.2 }}>
+                        Inversión
+                        <button onClick={() => setIsThermometerInfoOpen(true)} style={{ background: "none", border: "none", padding: 0, color: "#94a3b8", cursor: "pointer", display: "flex" }}>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        </button>
+                      </div>
+                      <span style={{ fontSize: "1rem", fontWeight: 700, color: getThermometerColor(data.thermometer || 0) }}>
+                        {Math.round(data.thermometer || 0)}%
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
+          ) : (
+            <div
+              id="stats-dashboard-desktop"
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(6, 1fr)",
+                gap: "1.5rem",
+                marginBottom: "1.5rem"
+              }}
+            >
+              {/* Gran Tarjeta de Recaudación del Día */}
+              <div style={{ gridColumn: "span 2", backgroundColor: "white", borderRadius: "1.5rem", padding: "1.5rem", boxShadow: "0 4px 20px rgba(35,38,212,0.05)", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
+                <div style={{ position: "absolute", right: "-2rem", top: "-2rem", width: "10rem", height: "10rem", backgroundColor: "rgba(65, 71, 235, 0.05)", borderRadius: "50%", filter: "blur(24px)", pointerEvents: "none" }}></div>
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: "0.5rem" }}>
+                    <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Total Cobrado</span>
+
+                  </div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "0.375rem", marginTop: "0.25rem" }}>
+                    <span style={{ fontSize: "2.5rem", fontWeight: 800, color: "#0f172a", letterSpacing: "-0.025em", lineHeight: 1 }}>
+                      <AnimatedNumber value={data.collectedToday} isCurrency={true} forceDecimals={true} />
+                    </span>
+                  </div>
+                </div>
+                {/* Desglose Métodos de Cobro */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", paddingTop: "1.5rem" }}>
+                  <div style={{ backgroundColor: "#f8fafc", padding: "0.75rem", borderRadius: "1rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                    <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.5rem", backgroundColor: "rgba(116, 34, 132, 0.15)", color: "#742284", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                    </div>
+                    <div>
+                      <span style={{ display: "block", fontSize: "0.7rem", color: "#64748b", lineHeight: 1.2 }}>Yape / Plin</span>
+                      <span style={{ display: "block", fontSize: "0.9rem", fontWeight: 700, color: "#0f172a" }}>{formatMoney(data.detailCollectedToday?.yape || 0)}</span>
+                    </div>
+                  </div>
+                  <div style={{ backgroundColor: "#f8fafc", padding: "0.75rem", borderRadius: "1rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                    <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.5rem", backgroundColor: "rgba(0, 135, 90, 0.15)", color: "#00875a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></svg>
+                    </div>
+                    <div>
+                      <span style={{ display: "block", fontSize: "0.7rem", color: "#64748b", lineHeight: 1.2 }}>Efectivo</span>
+                      <span style={{ display: "block", fontSize: "0.9rem", fontWeight: 700, color: "#0f172a" }}>{formatMoney(data.detailCollectedToday?.efectivo || 0)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 4 KPIs Operativos en Grid (Cada uno toma 1 columna) */}
+              <div style={{ gridColumn: "span 1", backgroundColor: "white", borderRadius: "1.5rem", padding: "1.25rem", boxShadow: "0 4px 16px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "50%", backgroundColor: "#eff6ff", color: "#3b82f6", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                </div>
+                <div style={{ marginTop: "1rem" }}>
+                  <span style={{ fontSize: "0.875rem", color: "#64748b", fontWeight: 500, display: "block", marginBottom: "0.25rem" }}>Prestado</span>
+                  <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "#0f172a", display: "block", letterSpacing: "-0.025em" }}>{formatMoney(data.totalLentToday)}</span>
+                  <span style={{ fontSize: "0.75rem", color: "#64748b", display: "flex", alignItems: "center", gap: "0.25rem", marginTop: "0.5rem" }}>
+                    <span style={{ width: "8px", height: "1px", backgroundColor: "#64748b" }}></span> 0 colocaciones
+                  </span>
+                </div>
+              </div>
+
+              <div style={{ gridColumn: "span 1", backgroundColor: "white", borderRadius: "1.5rem", padding: "1.25rem", boxShadow: "0 4px 16px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "50%", backgroundColor: "#eff6ff", color: "#8b5cf6", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                </div>
+                <div style={{ marginTop: "1rem" }}>
+                  <span style={{ fontSize: "0.875rem", color: "#64748b", fontWeight: 500, display: "block", marginBottom: "0.25rem" }}>Clientes Asignados</span>
+                  <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "#0f172a", display: "block", letterSpacing: "-0.025em" }}>
+                    {data.activeClients} <span style={{ fontSize: "1rem", color: "#64748b", fontWeight: 500 }}>/ {data.activeClients}</span>
+                  </span>
+                  <span style={{ fontSize: "0.875rem", color: "#d97706", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.25rem", marginTop: "0.5rem" }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    {filteredLoans.length} pendientes
+                  </span>
+                </div>
+              </div>
+
+              <div style={{ gridColumn: "span 1", backgroundColor: "white", borderRadius: "1.5rem", padding: "1.25rem", boxShadow: "0 4px 16px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "50%", backgroundColor: "#fef2f2", color: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+                </div>
+                <div style={{ marginTop: "1rem" }}>
+                  <span style={{ fontSize: "0.875rem", color: "#64748b", fontWeight: 500, display: "block", marginBottom: "0.25rem" }}>Gastos</span>
+                  <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "#ef4444", display: "block", letterSpacing: "-0.025em" }}>{formatMoney(data.totalExpensesToday || 0)}</span>
+                </div>
+              </div>
+
+              <div style={{ gridColumn: "span 1", backgroundColor: "white", borderRadius: "1.5rem", padding: "1.25rem", boxShadow: "0 4px 16px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "50%", backgroundColor: "#ecfdf5", color: "#10b981", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
+                </div>
+                <div style={{ marginTop: "1rem" }}>
+                  <span style={{ fontSize: "0.875rem", color: "#64748b", fontWeight: 500, display: "block", marginBottom: "0.25rem" }}>
+                    {isAdmin ? (
+                      <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                        Inversión
+                        <button onClick={() => setIsThermometerInfoOpen(true)} style={{ background: "none", border: "none", padding: 0, color: "#94a3b8", cursor: "pointer", display: "flex" }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        </button>
+                      </span>
+                    ) : "Cumplimiento"}
+                  </span>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: "0.25rem" }}>
+                    <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "#10b981", letterSpacing: "-0.025em" }}>
+                      {isAdmin ? Math.round(data.thermometer || 0) : Math.round((1 - (filteredLoans.length / (data.activeClients || 1))) * 100)}%
+                    </span>
+                    {!isAdmin && <span style={{ fontSize: "0.75rem", color: "#64748b" }}>de ruta hoy</span>}
+                  </div>
+                  <div style={{ width: "100%", height: "0.375rem", backgroundColor: "#e2e8f0", borderRadius: "9999px", marginTop: "0.5rem", overflow: "hidden" }}>
+                    <div style={{ width: `${isAdmin ? Math.round(data.thermometer || 0) : Math.round((1 - (filteredLoans.length / (data.activeClients || 1))) * 100)}%`, height: "100%", backgroundColor: "#10b981", borderRadius: "9999px" }}></div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          <div id="lista-rutas-dashboard" style={{ marginTop: "1rem" }}>
+            {/* Buscador alineado al diseño de Stitch */}
+            {isMobile ? (
+              <div
+                style={{
+                  position: "sticky",
+                  top: "4rem",
+                  zIndex: 20,
+                  backgroundColor: "transparent",
+                  margin: "0 -0.25rem",
+                  padding: "0.25rem 0.25rem 0.5rem 0.25rem",
+                  transition: "all 0.3s ease",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem", padding: "0 0.25rem" }}>
+                  <h2 style={{ fontSize: "1.125rem", fontWeight: 700, color: "#0f172a", margin: 0 }}>
+                    Clientes por cobrar
+                  </h2>
+                  <div style={{ backgroundColor: "#e0e7ff", color: "#3730a3", padding: "0.25rem 0.6rem", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    {filteredLoans.length} pendientes
+                  </div>
+                </div>
+
+                <div style={{ position: "relative" }}>
+                  <input
+                    type="search"
+                    className="input"
+                    placeholder="Buscar por Nombre o DNI..."
+                    value={searchTermLocal}
+                    onChange={(e) => setSearchTermLocal(e.target.value)}
+                    style={{ width: "100%", backgroundColor: "#ffffff", height: "2.75rem", fontSize: "0.875rem", paddingLeft: "2.75rem", paddingRight: "1rem", borderRadius: "0.75rem", border: "none", color: "#0f172a", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)", outline: "none" }}
+                  />
+                  <div style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", color: "#94a3b8", pointerEvents: "none" }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div style={{ backgroundColor: "white", borderRadius: "1.5rem", padding: "1.5rem", boxShadow: "0 4px 20px rgba(35,38,212,0.05)", marginBottom: "1.5rem", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                  <div style={{ width: "2.5rem", height: "2.5rem", backgroundColor: "#eff6ff", color: "#3b82f6", borderRadius: "0.5rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                      <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#0f172a", margin: 0 }}>Cobros del Día</h2>
+                      <span style={{ backgroundColor: "#fee2e2", color: "#b91c1c", padding: "0.125rem 0.5rem", borderRadius: "9999px", fontSize: "0.7rem", fontWeight: 700 }}>{filteredLoans.length} PENDIENTES</span>
+                    </div>
+                    <span style={{ fontSize: "0.75rem", color: "#64748b" }}>Ordena tus clientes asignados arrastrando el ícono ≡ de cada tarjeta</span>
+                  </div>
+                </div>
+
+                <div style={{ position: "relative" }}>
+                  <input
+                    type="search"
+                    className="input"
+                    placeholder="Buscar por Nombre, DNI, dirección o celular..."
+                    value={searchTermLocal}
+                    onChange={(e) => setSearchTermLocal(e.target.value)}
+                    style={{
+                      width: "100%",
+                      backgroundColor: "#f1f5f9",
+                      height: "2.75rem",
+                      fontSize: "0.875rem",
+                      paddingLeft: "2.75rem",
+                      paddingRight: "1rem",
+                      borderRadius: "0.75rem",
+                      border: "none",
+                      color: "#0f172a",
+                      outline: "none",
+                    }}
+                  />
+                  <div style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", color: "#94a3b8", pointerEvents: "none" }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div style={{ marginTop: "0.75rem" }}>
               {orderedLoans.length === 0 ? (

@@ -4,9 +4,9 @@ import { useState, useEffect } from "react";
 import {
   X,
   AlertCircle,
-  HelpCircle,
-  ChevronLeft
+  Banknote
 } from "lucide-react";
+import styles from "./CreateLoanModal.module.css";
 import { paymentService } from "@/lib/paymentService";
 import { Loan } from "@/lib/types";
 import { authService } from "@/lib/auth";
@@ -43,11 +43,20 @@ export default function CreatePaymentModal({
 
   // When modal opens
   useEffect(() => {
-    if (isOpen && loan) {
-      setAmount(Math.round(loan.fee || 0));
-      setError("");
-      setPaymentType("YAPE");
+    if (isOpen) {
+      document.body.classList.add("modal-open");
+      if (loan) {
+        setAmount(Math.round(loan.fee || 0));
+        setError("");
+        setPaymentType("YAPE");
+      }
+    } else {
+      document.body.classList.remove("modal-open");
     }
+
+    return () => {
+      document.body.classList.remove("modal-open");
+    };
   }, [isOpen, loan]);
 
   const handlePayment = async () => {
@@ -95,7 +104,7 @@ export default function CreatePaymentModal({
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 50,
+        zIndex: 101,
         backgroundColor: isMobile ? "rgba(15, 23, 42, 0.8)" : "rgba(15, 23, 42, 0.4)",
         display: "flex",
         justifyContent: isMobile ? "center" : "flex-end",
@@ -137,57 +146,18 @@ export default function CreatePaymentModal({
         </style>
 
         {/* TopBar */}
-        <header
-          style={{
-            position: "sticky",
-            top: 0,
-            zIndex: 30,
-            backgroundColor: "rgba(255, 255, 255, 0.95)",
-            backdropFilter: "blur(12px)",
-            borderBottom: "1px solid #f1f5f9",
-            padding: "1rem",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <button
-              onClick={onClose}
-              style={{
-                width: "2.25rem",
-                height: "2.25rem",
-                borderRadius: "9999px",
-                backgroundColor: "#f1f5f9",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#334155",
-                border: "none",
-                cursor: "pointer"
-              }}
-            >
-              <ChevronLeft size={20} strokeWidth={2.5} />
-            </button>
-            <div style={{ textAlign: "center" }}>
-              <h1 style={{ fontSize: "1rem", fontWeight: "bold", color: "#0f172a", margin: 0 }}>Registrar Abono</h1>
-              <span style={{ fontSize: "0.75rem", fontWeight: 500, color: "#4338ca" }}>
-                Préstamo #{loan.id} • {loan.days} días
-              </span>
+        <header className={styles.header}>
+          <div className={styles.headerLeft}>
+            <div className={styles.iconContainer}>
+              <Banknote size={20} strokeWidth={2.5} />
             </div>
-            <button
-              style={{
-                width: "2.25rem",
-                height: "2.25rem",
-                borderRadius: "9999px",
-                backgroundColor: "#f8fafc",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#94a3b8",
-                border: "none"
-              }}
-            >
-              <HelpCircle size={20} />
-            </button>
+            <div>
+              <h1 className={styles.title}>Registrar Abono</h1>
+            </div>
           </div>
+          <button className={styles.closeBtn} onClick={onClose} type="button">
+            <X size={18} strokeWidth={2.5} />
+          </button>
         </header>
 
         {/* MainContent */}

@@ -23,6 +23,7 @@ interface LoanActionsProps {
   onMenuToggle?: (isOpen: boolean) => void;
   isDraggingParent?: boolean;
   currentUser?: User | null;
+  iconOnly?: boolean;
 }
 
 export default function LoanActions({
@@ -39,6 +40,7 @@ export default function LoanActions({
   minimal = false,
   onMenuToggle,
   isDraggingParent = false,
+  iconOnly = false,
 }: LoanActionsProps) {
   const [activeMenu, setActiveMenu] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -188,7 +190,7 @@ export default function LoanActions({
             onClick={() => onRenew && onRenew(loan)}
             title="Renovar Préstamo"
             className="btn-icon"
-            style={{ color: "var(--color-primary)" }}
+            style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", backgroundColor: "#eef2ff", color: "#6366f1", display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -217,18 +219,7 @@ export default function LoanActions({
                   ? "Restringido"
                   : "Registrar Pago"
             }
-            style={{
-              padding: "0.35rem",
-              border: "none",
-              backgroundColor: "transparent",
-              cursor: !isActionEnabled ? "not-allowed" : "pointer",
-              borderRadius: "0.375rem",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: !isActionEnabled ? "#94a3b8" : "#22c55e",
-              opacity: !isActionEnabled ? 0.5 : 1,
-            }}
+            style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", backgroundColor: !isActionEnabled ? "#f1f5f9" : "#ecfdf5", color: !isActionEnabled ? "#94a3b8" : "#10b981", display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: !isActionEnabled ? "not-allowed" : "pointer", opacity: !isActionEnabled ? 0.5 : 1 }}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -251,17 +242,7 @@ export default function LoanActions({
         <button
           onClick={() => onDetails(loan)}
           title="Ver Detalles"
-          style={{
-            padding: "0.35rem",
-            border: "none",
-            backgroundColor: "transparent",
-            cursor: "pointer",
-            borderRadius: "0.375rem",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#f59e0b",
-          }}
+          style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", backgroundColor: "#fffbeb", color: "#f59e0b", display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -289,19 +270,7 @@ export default function LoanActions({
           onClick={() => handleShare("calendar")}
           disabled={isSharing}
           title="Compartir Calendario"
-          style={{
-            padding: "0.35rem",
-            border: "none",
-            backgroundColor: "transparent",
-            cursor: isSharing ? "wait" : "pointer",
-            borderRadius: "0.375rem",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#4f46e5",
-            opacity: isSharing ? 0.6 : 1,
-            transition: "all 0.2s",
-          }}
+          style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", backgroundColor: "#eef2ff", color: "#6366f1", display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: isSharing ? "wait" : "pointer", opacity: isSharing ? 0.6 : 1, transition: "all 0.2s" }}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -324,19 +293,7 @@ export default function LoanActions({
           onClick={() => handleShare("list")}
           disabled={isSharing}
           title="Compartir Listado"
-          style={{
-            padding: "0.35rem",
-            border: "none",
-            backgroundColor: "transparent",
-            cursor: isSharing ? "wait" : "pointer",
-            borderRadius: "0.375rem",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#10b981",
-            opacity: isSharing ? 0.6 : 1,
-            transition: "all 0.2s",
-          }}
+          style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", backgroundColor: "#ecfdf5", color: "#10b981", display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: isSharing ? "wait" : "pointer", opacity: isSharing ? 0.6 : 1, transition: "all 0.2s" }}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -379,17 +336,7 @@ export default function LoanActions({
               if (nextState) calcMenuPosition("below");
             }}
             title="Más opciones"
-            style={{
-              padding: "0.35rem",
-              border: "none",
-              backgroundColor: "transparent",
-              cursor: "pointer",
-              borderRadius: "0.375rem",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "var(--text-secondary)",
-            }}
+            style={{ width: "2rem", height: "2rem", borderRadius: "0.5rem", backgroundColor: "#f1f5f9", color: "#64748b", display: "flex", alignItems: "center", justifyContent: "center", border: "none", cursor: "pointer" }}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -714,16 +661,18 @@ export default function LoanActions({
           if (nextState) calcMenuPosition("above");
         }}
         style={{
-          padding: "0.5rem 0.25rem",
+          padding: iconOnly ? "0" : "0.5rem 0.25rem",
           border: "none",
-          backgroundColor: "transparent",
+          backgroundColor: iconOnly ? "#f1f5f9" : "transparent",
           cursor: "pointer",
-          borderRadius: "0.5rem",
+          borderRadius: iconOnly ? "0.75rem" : "0.5rem",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "var(--text-secondary)",
-          flex: 1,
+          color: iconOnly ? "#0f172a" : "var(--text-secondary)",
+          flex: iconOnly ? "none" : 1,
+          width: iconOnly ? "2.5rem" : "auto",
+          height: iconOnly ? "2.5rem" : "auto",
         }}
       >
         <div
@@ -740,8 +689,8 @@ export default function LoanActions({
             viewBox="0 0 24 24"
             strokeWidth={1.5}
             stroke="currentColor"
-            width="22"
-            height="22"
+            width={iconOnly ? "20" : "22"}
+            height={iconOnly ? "20" : "22"}
           >
             <path
               strokeLinecap="round"
@@ -749,7 +698,7 @@ export default function LoanActions({
               d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z"
             />
           </svg>
-          <span style={{ fontSize: "0.65rem", fontWeight: 500 }}>Más</span>
+          {!iconOnly && <span style={{ fontSize: "0.65rem", fontWeight: 500 }}>Más</span>}
         </div>
       </button>
 

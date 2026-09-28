@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 interface AnimatedNumberProps {
   value: number;
   isCurrency?: boolean;
+  forceDecimals?: boolean;
   duration?: number;
 }
 
@@ -14,6 +15,7 @@ const easeOutExpo = (t: number): number => {
 export default function AnimatedNumber({
   value,
   isCurrency = false,
+  forceDecimals = false,
   duration = 1200,
 }: AnimatedNumberProps) {
   const [displayValue, setDisplayValue] = useState<string>("");
@@ -26,6 +28,9 @@ export default function AnimatedNumber({
     const formatValue = (val: number) => {
       if (isCurrency) {
         return `S/ ${val.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      }
+      if (forceDecimals) {
+        return val.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       }
       return Math.floor(val).toString();
     };

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { authService } from "@/lib/auth";
 import Sidebar from "../components/Sidebar";
-import FabMenu from "../components/FabMenu";
+import BottomNav from "../components/BottomNav";
 import TourRunner from "../components/TourRunner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -79,7 +79,7 @@ export default function DashboardLayout({
             right: 0,
             height: "4rem",
             backgroundColor: "var(--bg-app)",
-            zIndex: 40,
+            zIndex: 30,
             borderBottom: "1px solid var(--border-color)",
             display: "flex",
             alignItems: "center",
@@ -172,7 +172,7 @@ export default function DashboardLayout({
         >
           {children}
         </main>
-        {showShareButton && <FabMenu />}
+        {showShareButton && isMobile && <BottomNav />}
       </div>
       <TourRunner />
     </div>

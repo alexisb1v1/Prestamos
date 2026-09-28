@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { createExpenseUseCase } from "@/app/features/expenses";
 import { authService } from "@/lib/auth";
-import { ChevronLeft } from "lucide-react";
+import { X, Receipt } from "lucide-react";
+import styles from "./CreateLoanModal.module.css";
 
 interface CreateExpenseModalProps {
   isOpen: boolean;
@@ -96,7 +97,7 @@ export default function CreateExpenseModal({
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 50,
+        zIndex: 101,
         backgroundColor: isMobile ? "rgba(15, 23, 42, 0.8)" : "rgba(15, 23, 42, 0.4)",
         display: "flex",
         justifyContent: isMobile ? "center" : "flex-end",
@@ -136,48 +137,22 @@ export default function CreateExpenseModal({
           `}
         </style>
 
-        {/* TopBar */}
-        <header
-          style={{
-            position: "sticky",
-            top: 0,
-            zIndex: 30,
-            backgroundColor: "rgba(248, 250, 252, 0.9)",
-            backdropFilter: "blur(12px)",
-            padding: "1rem",
-            borderBottom: "1px solid rgba(226, 232, 240, 0.7)",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <button
-              onClick={onClose}
-              style={{
-                width: "2.5rem",
-                height: "2.5rem",
-                borderRadius: "9999px",
-                backgroundColor: "white",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#475569",
-                border: "1px solid rgba(226, 232, 240, 0.8)",
-                boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-                cursor: "pointer",
-              }}
-            >
-              <ChevronLeft size={20} strokeWidth={2.2} />
-            </button>
-            <div style={{ textAlign: "center", flex: 1, padding: "0 0.5rem" }}>
-              <h1 style={{ fontSize: "1rem", fontWeight: "bold", color: "#0f172a", margin: 0, lineHeight: 1.2 }}>
-                Registrar Gasto
-              </h1>
-              <p style={{ fontSize: "0.6875rem", fontWeight: 500, color: "#64748b", margin: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", marginTop: "2px", textTransform: "capitalize" }}>
-                <span style={{ display: "inline-block", width: "6px", height: "6px", borderRadius: "50%", backgroundColor: "#10b981" }}></span>
-                {todayDate}
+        {/* TopBar Homologada */}
+        <header className={styles.header}>
+          <div className={styles.headerLeft}>
+            <div className={styles.iconContainer}>
+              <Receipt size={20} strokeWidth={2.5} />
+            </div>
+            <div>
+              <h1 className={styles.title}>Registrar Gasto</h1>
+              <p className={styles.subtitle}>
+                Registro manual de salida
               </p>
             </div>
-            <div style={{ width: "2.5rem" }}></div> {/* Placeholder for balance */}
           </div>
+          <button className={styles.closeBtn} onClick={onClose} type="button">
+            <X size={18} strokeWidth={2.5} />
+          </button>
         </header>
 
         {/* Form Content */}

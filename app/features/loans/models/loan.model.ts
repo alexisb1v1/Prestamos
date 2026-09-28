@@ -12,6 +12,7 @@ export interface Loan {
   documentNumber: string;
   clientName: string;
   collectorName: string;
+  collectorDocumentNumber?: string;
   paidToday: number;
   inIntervalPayment: number;
   remainingAmount?: number;

@@ -55,7 +55,7 @@ export default function CreateLoanModal({
   const [searchPerformed, setSearchPerformed] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [createdLoan, setCreatedLoan] = useState<Loan | null>(null);
-  
+
   const shareRef = useRef<LoanShareGeneratorRef>(null);
 
   // --- State: Cliente ---
@@ -224,7 +224,7 @@ export default function CreateLoanModal({
       return next;
     });
   };
-  
+
   const handleShare = async () => {
     if (createdLoan && shareRef.current) {
       setLoading(true);
@@ -261,11 +261,11 @@ export default function CreateLoanModal({
             <div>
               <h1 className={styles.title}>Nuevo Préstamo</h1>
               <p className={styles.subtitle}>
-                {createdLoan 
+                {createdLoan
                   ? "Paso 3: Confirmación"
                   : searchPerformed && person
-                  ? "Paso 2: Detalles & Confirmación"
-                  : "Búsqueda o registro rápido"}
+                    ? "Paso 2: Detalles & Confirmación"
+                    : "Búsqueda o registro rápido"}
               </p>
             </div>
           </div>
@@ -294,9 +294,8 @@ export default function CreateLoanModal({
 
         <div className={styles.contentWrapper}>
           <div
-            className={`${styles.slidesContainer} ${
-              createdLoan ? styles.step3 : searchPerformed && person ? styles.step2 : styles.step1
-            }`}
+            className={`${styles.slidesContainer} ${createdLoan ? styles.step3 : searchPerformed && person ? styles.step2 : styles.step1
+              }`}
           >
             {/* ============================================================== */}
             {/* PASO 1: BÚSQUEDA / REGISTRO COMPACTO                           */}
@@ -321,7 +320,7 @@ export default function CreateLoanModal({
                   <label className={styles.searchLabel}>Documento de Identidad</label>
                   <span className={styles.onlineBadge}>En línea</span>
                 </div>
-                
+
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -408,7 +407,7 @@ export default function CreateLoanModal({
               )}
 
               {/* Footer de información extra */}
-              <footer className={styles.infoFooter}>
+              {/*  <footer className={styles.infoFooter}>
                 <div className={styles.infoIcon}>
                   <AlertCircle size={14} strokeWidth={2.5} />
                 </div>
@@ -416,7 +415,7 @@ export default function CreateLoanModal({
                   NeoCobros valida la identidad automáticamente con RENIEC para
                   agilizar la evaluación de crédito.
                 </p>
-              </footer>
+              </footer> */}
             </div>
 
             {/* ============================================================== */}
@@ -426,7 +425,7 @@ export default function CreateLoanModal({
               {person && (
                 <>
                   <div className={styles.stepHeader}>
-                    <span className={styles.stepCircle} style={{width: 20, height: 20}}>1</span>
+                    <span className={styles.stepCircle} style={{ width: 20, height: 20 }}>1</span>
                     <h2>Identificación del Cliente</h2>
                   </div>
 
@@ -438,7 +437,7 @@ export default function CreateLoanModal({
                           className="w-3.5 h-3.5"
                           fill="currentColor"
                           viewBox="0 0 20 20"
-                          style={{width: 14, height: 14}}
+                          style={{ width: 14, height: 14 }}
                         >
                           <path
                             fillRule="evenodd"
@@ -465,7 +464,7 @@ export default function CreateLoanModal({
                   </div>
 
                   <div className={styles.stepHeader}>
-                    <span className={styles.stepCircle} style={{width: 20, height: 20}}>2</span>
+                    <span className={styles.stepCircle} style={{ width: 20, height: 20 }}>2</span>
                     <h2>Detalles del Préstamo</h2>
                   </div>
 
@@ -594,12 +593,12 @@ export default function CreateLoanModal({
                 <div className={styles.successIconWrapper}>
                   <CheckCircle2 size={40} strokeWidth={2.5} />
                 </div>
-                
+
                 <div>
                   <h3 className={styles.successTitle}>¡Préstamo Creado!</h3>
                   <p className={styles.successSubtitle}>El crédito ha sido registrado correctamente.</p>
                 </div>
-                
+
                 <div className={styles.successSummaryCard}>
                   <div className={styles.summaryRow}>
                     <span className={styles.summaryLabel}>Cliente</span>
@@ -611,27 +610,27 @@ export default function CreateLoanModal({
                   </div>
                   <div className={styles.summaryRow}>
                     <span className={styles.summaryLabel}>Total a pagar</span>
-                    <span className={styles.summaryValue} style={{color: '#10b981'}}>S/. {totalToPay}</span>
+                    <span className={styles.summaryValue} style={{ color: '#10b981' }}>S/. {totalToPay}</span>
                   </div>
                 </div>
 
                 <div className={styles.successActions}>
-                  <button 
-                    type="button" 
-                    className={styles.shareBtn} 
+                  <button
+                    type="button"
+                    className={styles.shareBtn}
                     onClick={handleShare}
                     disabled={loading}
                   >
                     <Share2 size={18} />
                     {loading ? "Generando..." : "Compartir Tarjeta"}
                   </button>
-                  <button 
-                    type="button" 
-                    className={styles.doneBtn} 
+                  <button
+                    type="button"
+                    className={styles.doneBtn}
                     onClick={() => {
                       onClose();
                       // Reiniciar después de que la animación termine
-                      setTimeout(resetState, 400); 
+                      setTimeout(resetState, 400);
                     }}
                   >
                     Finalizar
@@ -674,7 +673,7 @@ export default function CreateLoanModal({
           </footer>
         )}
       </div>
-      
+
       {/* Componente invisible para generar imágenes de compartir */}
       <LoanShareGenerator ref={shareRef} />
     </div>

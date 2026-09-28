@@ -156,9 +156,10 @@ export default function Sidebar() {
       <div
         className={`sidebar-backdrop ${isOpen ? "sidebar-open" : ""}`}
         onClick={() => setIsOpen(false)}
+        style={{ zIndex: 101 }}
       />
 
-      <aside className={`sidebar-container ${isOpen ? "sidebar-open" : ""}`}>
+      <aside className={`sidebar-container ${isOpen ? "sidebar-open" : ""}`} style={{ zIndex: 101 }}>
         {/* Close Button for Mobile */}
         <button
           className="sidebar-close-btn"

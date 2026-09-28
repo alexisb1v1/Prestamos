@@ -1,0 +1,253 @@
+.card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.headerInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.avatar.vencido { background: #fee2e2; color: #991b1b; }
+.avatar.mora { background: #fef3c7; color: #92400e; }
+.avatar.aldia { background: #d1fae5; color: #065f46; }
+
+.clientDetails {
+  min-width: 0;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.clientName {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge.vencido { background: #fee2e2; color: #991b1b; }
+.badge.mora { background: #fef3c7; color: #92400e; }
+.badge.aldia { background: #d1fae5; color: #065f46; }
+
+.document {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+  display: block;
+}
+
+.loanData {
+  background-color: #f8fafc;
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gridData {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  align-items: baseline;
+}
+
+.gridItem {
+  min-width: 0;
+}
+.gridItem.center { text-align: center; }
+.gridItem.right { text-align: right; }
+
+.dataLabel {
+  font-size: 11px;
+  color: #64748b;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dataValue {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.progressContainer {
+  margin-top: 2px;
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.progressBarBg {
+  width: 100%;
+  background-color: #e2e8f0;
+  height: 6px;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+.progressBarFill.vencido { background: #ef4444; }
+.progressBarFill.mora { background: #f59e0b; }
+.progressBarFill.aldia { background: #10b981; }
+
+.contactRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #64748b;
+  padding-top: 4px;
+  gap: 8px;
+}
+
+.contactAddress {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.addressText {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+  color: #334155;
+}
+
+.contactActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.phoneBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  background-color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #334155;
+  transition: background 0.2s;
+  text-decoration: none;
+}
+.phoneBtn:hover { background-color: #e2e8f0; }
+
+.actionsRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btnCobrar {
+  flex: 1;
+  height: 40px;
+  background-color: #10b981;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btnCobrar:hover { background-color: #059669; }
+.btnCobrar:active { transform: scale(0.98); }
+
+.btnIcon {
+  width: 40px;
+  height: 40px;
+  background-color: #f1f5f9;
+  color: #334155;
+  border: none;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btnIcon:hover { background-color: #e2e8f0; }
+.btnIcon:active { transform: scale(0.95); }
+.dragging {
+  opacity: 0.7;
+  z-index: 1000;
+  transform: scale(1.02);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+.dragHandle {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 4px;
+  cursor: grab;
+  touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dragHandle:active {
+  cursor: grabbing;
+}

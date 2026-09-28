@@ -30,7 +30,7 @@ export default function LoginPage() {
       const parts = hostname.split(".");
       // Si estamos en localhost (puro), o en central, o sin subdominio real
       const isLocalWithSub = hostname.endsWith(".localhost") && parts.length >= 2;
-      
+
       if (hostname === "localhost" || parts[0] === "central" || (!isLocalWithSub && parts.length < 3)) {
         const devTenant = process.env.NEXT_PUBLIC_DEV_TENANT;
         if (hostname === "localhost" && devTenant && devTenant !== "central") {
@@ -48,7 +48,7 @@ export default function LoginPage() {
   const fetchTenantName = async (sub: string) => {
     const cacheKey = `tenant_name_${sub}`;
     const cachedData = localStorage.getItem(cacheKey);
-    
+
     if (cachedData) {
       try {
         const { name, timestamp } = JSON.parse(cachedData);
@@ -62,7 +62,7 @@ export default function LoginPage() {
         // Ignorar error de parseo
       }
     }
-    
+
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
       const response = await fetch(`${apiUrl}/company/public-info/${sub}`);
@@ -89,7 +89,7 @@ export default function LoginPage() {
       const hostname = window.location.hostname;
       const parts = hostname.split(".");
       const isLocalWithSub = hostname.endsWith(".localhost") && parts.length >= 2;
-      
+
       if (hostname !== "localhost" && parts[0] !== "central" && (isLocalWithSub || parts.length >= 3)) {
         rawTenant = parts[0];
       } else if (hostname === "localhost" && process.env.NEXT_PUBLIC_DEV_TENANT) {
@@ -135,10 +135,10 @@ export default function LoginPage() {
                   <span aria-label="Bolsa de dinero" style={{ fontSize: "1.875rem", userSelect: "none" }} role="img">💰</span>
                 </div>
               </div>
-              <span 
-                style={{ 
-                  position: "absolute", bottom: "-4px", right: "-4px", 
-                  backgroundColor: "#10b981", color: "white", 
+              <span
+                style={{
+                  position: "absolute", bottom: "-4px", right: "-4px",
+                  backgroundColor: "#10b981", color: "white",
                   borderRadius: "50%", padding: "4px", border: "2px solid white",
                   display: "flex", alignItems: "center", justifyContent: "center"
                 }}
@@ -184,10 +184,10 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }} autoComplete="off">
-            
+
             <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
               <label style={{ fontSize: "0.75rem", fontWeight: 600, color: "#334155", textTransform: "uppercase", letterSpacing: "0.05em" }} htmlFor="usuario">
-                Usuario o ID de Agente
+                Usuario
               </label>
               <div className="login-input-group">
                 <span className="login-input-icon">
@@ -231,8 +231,8 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   style={{
-                    position: "absolute", right: "0.5rem", background: "none", border: "none", 
-                    color: "#94a3b8", cursor: "pointer", display: "flex", alignItems: "center", 
+                    position: "absolute", right: "0.5rem", background: "none", border: "none",
+                    color: "#94a3b8", cursor: "pointer", display: "flex", alignItems: "center",
                     justifyContent: "center", padding: "0.25rem"
                   }}
                   aria-label="Mostrar u ocultar contraseña"

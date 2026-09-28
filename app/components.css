@@ -115,8 +115,13 @@
 }
 
 @keyframes confirmModalFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes confirmModalSlideInDesktop {
@@ -124,6 +129,7 @@
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -131,8 +137,13 @@
 }
 
 @keyframes confirmModalSlideUpMobile {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
 }
 
 
@@ -206,8 +217,13 @@
 }
 
 @keyframes createCompanyFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes createCompanySlideInDesktop {
@@ -215,6 +231,7 @@
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -222,8 +239,13 @@
 }
 
 @keyframes createCompanySlideUpMobile {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
 }
 
 
@@ -349,8 +371,13 @@
 }
 
 @keyframes createExpenseFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes createExpenseSlideInDesktop {
@@ -358,6 +385,7 @@
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -365,8 +393,13 @@
 }
 
 @keyframes createExpenseSlideUpMobile {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
 }
 
 
@@ -521,19 +554,19 @@
   font-size: 0.85rem;
 }
 
-.create-payment-type-card input:checked + .create-payment-card-content {
+.create-payment-type-card input:checked+.create-payment-card-content {
   border-color: #6366f1;
   background-color: #ffffff;
   box-shadow: 0 8px 20px -4px rgba(99, 102, 241, 0.1);
 }
 
-.create-payment-type-card input:checked + .create-payment-card-content .create-payment-icon-wrapper {
+.create-payment-type-card input:checked+.create-payment-card-content .create-payment-icon-wrapper {
   background-color: #6366f1;
   color: white;
   box-shadow: 0 4px 10px rgba(99, 102, 241, 0.25);
 }
 
-.create-payment-type-card input:checked + .create-payment-card-content .create-payment-type-name {
+.create-payment-type-card input:checked+.create-payment-card-content .create-payment-type-name {
   color: #4f46e5;
 }
 
@@ -641,7 +674,7 @@
   .create-payment-overlay {
     align-items: flex-end;
   }
-  
+
   /* Move modal up when the input is focused (keyboard is open) */
   .create-payment-overlay.keyboard-open {
     align-items: flex-start;
@@ -692,7 +725,7 @@
     width: 32px;
     height: 32px;
   }
-  
+
   .create-payment-icon-wrapper svg {
     width: 18px;
     height: 18px;
@@ -708,15 +741,21 @@
     gap: 0.5rem;
   }
 
-  .create-payment-primary-btn, .create-payment-secondary-btn {
+  .create-payment-primary-btn,
+  .create-payment-secondary-btn {
     padding: 0.85rem;
     font-size: 0.95rem;
   }
 }
 
 @keyframes createPaymentFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes createPaymentSlideInDesktop {
@@ -724,6 +763,7 @@
     opacity: 0;
     transform: translateY(20px) scale(0.98);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -731,15 +771,37 @@
 }
 
 @keyframes createPaymentSlideUpMobile {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
 }
 
 @keyframes createPaymentShake {
-  10%, 90% { transform: translate3d(-1px, 0, 0); }
-  20%, 80% { transform: translate3d(2px, 0, 0); }
-  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-  40%, 60% { transform: translate3d(4px, 0, 0); }
+
+  10%,
+  90% {
+    transform: translate3d(-1px, 0, 0);
+  }
+
+  20%,
+  80% {
+    transform: translate3d(2px, 0, 0);
+  }
+
+  30%,
+  50%,
+  70% {
+    transform: translate3d(-4px, 0, 0);
+  }
+
+  40%,
+  60% {
+    transform: translate3d(4px, 0, 0);
+  }
 }
 
 
@@ -968,8 +1030,13 @@
 }
 
 @keyframes createUserFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes createUserSlideInDesktop {
@@ -977,6 +1044,7 @@
     transform: translateY(10px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -1275,8 +1343,13 @@
 }
 
 @keyframes installPromptSlideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
 }
 
 @keyframes installPromptFadeIn {
@@ -1284,6 +1357,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1431,7 +1505,7 @@
   width: 280px;
   background-color: #ffffff;
   border-right: 1px solid #f1f5f9;
-  z-index: 50;
+  z-index: 100;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
@@ -1448,7 +1522,7 @@
   inset: 0;
   background-color: rgba(15, 23, 42, 0.3);
   backdrop-filter: blur(4px);
-  z-index: 40;
+  z-index: 90;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
@@ -1708,6 +1782,7 @@
 }
 
 @media (min-width: 768px) {
+
   .sidebar-backdrop,
   .sidebar-close-btn,
   .sidebar-toggle-btn {
@@ -1756,6 +1831,7 @@
     transform: translateY(20px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -1859,4 +1935,74 @@
 
 .status-legend-btn-primary:hover {
   opacity: 0.9;
+}
+
+/* ================================================== */
+/* BOTTOM NAV STYLES                                  */
+/* ================================================== */
+.bottom-nav-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 100;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+  border-top: 1px solid #f1f5f9;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (min-width: 768px) {
+  .bottom-nav-container {
+    display: none;
+  }
+}
+
+.bottom-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: 4.5rem;
+  padding: 0 0.5rem;
+}
+
+.bottom-nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  min-height: 44px;
+  gap: 0.25rem;
+  color: #94a3b8;
+  transition: color 0.2s ease;
+  background: none;
+  border: none;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.bottom-nav-btn:hover,
+.bottom-nav-btn:active {
+  color: #4f46e5;
+}
+
+.bottom-nav-btn.active {
+  color: #4f46e5;
+}
+
+.bottom-nav-btn.danger:hover,
+.bottom-nav-btn.danger:active {
+  color: #ef4444;
+}
+
+.bottom-nav-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+body.modal-open .bottom-nav-container {
+  display: none !important;
 }

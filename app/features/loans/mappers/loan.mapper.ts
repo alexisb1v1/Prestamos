@@ -37,6 +37,7 @@ export class LoanMapper {
       documentNumber: dto.documentNumber,
       clientName: dto.clientName,
       collectorName: dto.collectorName,
+      collectorDocumentNumber: dto.collectorDocumentNumber,
       paidToday: dto.paidToday,
       inIntervalPayment: dto.inIntervalPayment,
       remainingAmount: dto.remainingAmount,
