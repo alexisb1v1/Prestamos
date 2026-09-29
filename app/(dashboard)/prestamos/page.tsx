@@ -737,12 +737,12 @@ export default function PrestamosPage() {
                               <span style={{ color: "#4f46e5" }}>{formatDateUTC(loan.endDate)}</span>
                             </div>
                             <div style={{ marginTop: "0.5rem" }}>
-                              <span style={{
-                                display: "inline-flex", alignItems: "center", padding: "0.125rem 0.625rem", borderRadius: "9999px",
-                                fontSize: "11px", fontWeight: 700, backgroundColor: badgeColors.bg, color: badgeColors.text, border: `1px solid ${badgeColors.border}`
-                              }}>
-                                {status.label} {status.daysText ? `(${status.daysText})` : ""}
-                              </span>
+                                <span style={{
+                                  display: "inline-flex", alignItems: "center", padding: "0.125rem 0.625rem", borderRadius: "9999px",
+                                  fontSize: "11px", fontWeight: 700, backgroundColor: badgeColors.bg, color: badgeColors.text, border: `1px solid ${badgeColors.border}`
+                                }}>
+                                  {status.label}
+                                </span>
                             </div>
                           </div>
                         </td>
