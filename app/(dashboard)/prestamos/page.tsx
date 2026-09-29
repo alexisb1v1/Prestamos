@@ -25,6 +25,7 @@ export default function PrestamosPage() {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const today = useMemo(() => new Date(), []);
 
@@ -116,7 +117,10 @@ export default function PrestamosPage() {
         );
 
         result.match(
-          (data) => setLoans(data),
+          (data) => {
+            setLoans(data);
+            setCurrentPage(1);
+          },
           (err) => {
             logger.error("Error loading loans:", err);
             setError("Error al cargar la lista de préstamos.");
@@ -227,6 +231,13 @@ export default function PrestamosPage() {
 
   const cuotasPagadasHoy = loans.filter((l) => (l as any).paidToday > 0).length;
   const totalActivos = loans.length;
+
+  // Paginación
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(loans.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentLoans = loans.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <div style={{ position: 'relative' }}>
@@ -597,7 +608,7 @@ export default function PrestamosPage() {
               No se encontraron préstamos.
             </div>
           ) : (
-            loans.map((loan) => (
+            currentLoans.map((loan) => (
               <LoanMobileCard
                 key={loan.id}
                 loan={loan}
@@ -644,7 +655,7 @@ export default function PrestamosPage() {
                     </td>
                   </tr>
                 ) : (
-                  loans.map((loan) => {
+                  currentLoans.map((loan) => {
                     const status = getLoanStatus(loan, today);
                     
                     const getStatusColor = (val: string) => {
@@ -830,8 +841,45 @@ export default function PrestamosPage() {
               </tbody>
             </table>
           </div>
+
         </div>
       )}
+
+      {/* Pagination Controls */}
+      {loans.length > itemsPerPage && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem", borderTop: "1px solid #f1f5f9", marginTop: "1rem" }}>
+          <div style={{ fontSize: "0.875rem", color: "#64748b" }}>
+            Mostrando {indexOfFirstItem + 1} a {Math.min(indexOfLastItem, loans.length)} de {loans.length} préstamos
+          </div>
+          <div style={{ display: "flex", gap: "0.25rem" }}>
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              style={{
+                padding: "0.5rem 0.75rem", borderRadius: "0.375rem", fontSize: "0.875rem", fontWeight: 500,
+                backgroundColor: currentPage === 1 ? "#f8fafc" : "#ffffff",
+                color: currentPage === 1 ? "#cbd5e1" : "#475569",
+                border: "1px solid #e2e8f0", cursor: currentPage === 1 ? "not-allowed" : "pointer"
+              }}
+            >
+              Anterior
+            </button>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              style={{
+                padding: "0.5rem 0.75rem", borderRadius: "0.375rem", fontSize: "0.875rem", fontWeight: 500,
+                backgroundColor: currentPage === totalPages ? "#f8fafc" : "#ffffff",
+                color: currentPage === totalPages ? "#cbd5e1" : "#475569",
+                border: "1px solid #e2e8f0", cursor: currentPage === totalPages ? "not-allowed" : "pointer"
+              }}
+            >
+              Siguiente
+            </button>
+          </div>
+        </div>
+      )}
+
       <CreateLoanModal
         isOpen={isCreateModalOpen}
         onClose={() => {
