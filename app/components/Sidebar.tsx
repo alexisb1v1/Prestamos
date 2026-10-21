@@ -9,23 +9,27 @@ import {
   ReceiptText,
   Settings,
   ChevronDown,
-  ChevronRight,
   LogOut,
   X,
-  HelpCircle,
+  BookOpen,
   Download,
   BarChart,
+  KeyRound,
+  Users,
+  Building2,
 } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { authService } from "@/lib/auth";
 import { formatUserName } from "@/lib/utils";
 import { TOURS } from "@/lib/tours.config";
+import ChangePasswordModal from "./ChangePasswordModal";
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const {
     user,
     isAdmin,
@@ -46,7 +50,6 @@ export default function Sidebar() {
       }
     };
 
-    // Verificar estado inicial y suscribirse a evento global
     checkInstall();
     window.addEventListener("pwa-install-available", checkInstall);
 
@@ -69,24 +72,19 @@ export default function Sidebar() {
     }
   };
 
-  const [manualConfigExpanded, setManualConfigExpanded] = useState<
+  const [manualReportesExpanded, setManualReportesExpanded] = useState<
     boolean | null
   >(null);
+  const isReportesExpanded =
+    manualReportesExpanded !== null ? manualReportesExpanded : false;
+  const toggleReportes = () =>
+    setManualReportesExpanded(!isReportesExpanded);
 
-  // Derived state: Use manual override if present, otherwise default to collapsed
-  const isConfigExpanded =
-    manualConfigExpanded !== null ? manualConfigExpanded : false;
-
-  const toggleConfig = () => {
-    setManualConfigExpanded(!isConfigExpanded);
-  };
-
-  const [manualReportesExpanded, setManualReportesExpanded] = useState<boolean | null>(null);
-  const isReportesExpanded = manualReportesExpanded !== null ? manualReportesExpanded : false;
-  const toggleReportes = () => setManualReportesExpanded(!isReportesExpanded);
-
-  const [manualHelpExpanded, setManualHelpExpanded] = useState<boolean | null>(null);
-  const isHelpExpanded = manualHelpExpanded !== null ? manualHelpExpanded : false;
+  const [manualHelpExpanded, setManualHelpExpanded] = useState<boolean | null>(
+    null,
+  );
+  const isHelpExpanded =
+    manualHelpExpanded !== null ? manualHelpExpanded : false;
   const toggleHelp = () => setManualHelpExpanded(!isHelpExpanded);
 
   const handleStartTour = (path: string) => {
@@ -106,10 +104,10 @@ export default function Sidebar() {
     window.location.href = "/login";
   };
 
-  // Helper to get initials for avatar
+  // Obtener iniciales o dos dígitos de identificación
   const getInitials = (name?: string) => {
-    if (!name) return "??";
-    const parts = name.split(" ");
+    if (!name) return "45";
+    const parts = name.trim().split(" ");
     if (parts.length >= 2) {
       return (parts[0][0] + parts[1][0]).toUpperCase();
     }
@@ -121,11 +119,15 @@ export default function Sidebar() {
   if (!isMounted) {
     return (
       <aside className="sidebar-container">
-        <div className="sidebar-logo">
-          <div className="sidebar-logo-main">
-            Neo<span className="sidebar-logo-accent">Cobros</span>
+        <div className="sidebar-header">
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <div className="sidebar-brand-text">
+              <span className="sidebar-brand-title">
+                Neo<span>Cobros</span>
+              </span>
+              <span className="sidebar-brand-subtitle">SAAS DE COBRANZA</span>
+            </div>
           </div>
-          <div className="sidebar-logo-sub">CARGANDO...</div>
         </div>
       </aside>
     );
@@ -133,14 +135,13 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile Toggle Button (Burger) - Hidden when sidebar is open */}
+      {/* Botón flotante para abrir menú en móvil */}
       {!isOpen && (
         <button
           className="sidebar-toggle-btn"
           onClick={() => setIsOpen(true)}
           aria-label="Abrir Menú"
         >
-          {/* Using a simple div instead of Menu icon as it was removed or just use a square */}
           <div
             style={{
               width: 20,
@@ -152,236 +153,533 @@ export default function Sidebar() {
         </button>
       )}
 
-      {/* Backdrop for mobile */}
+      {/* Backdrop para móvil */}
       <div
         className={`sidebar-backdrop ${isOpen ? "sidebar-open" : ""}`}
         onClick={() => setIsOpen(false)}
         style={{ zIndex: 101 }}
       />
 
-      <aside className={`sidebar-container ${isOpen ? "sidebar-open" : ""}`} style={{ zIndex: 101 }}>
-        {/* Close Button for Mobile */}
-        <button
-          className="sidebar-close-btn"
-          onClick={() => setIsOpen(false)}
-          aria-label="Cerrar Menú"
-        >
-          <X size={18} strokeWidth={2.5} />
-        </button>
-
-        {/* Logo Section */}
-        <div className="sidebar-logo">
-          <div className="sidebar-logo-main">
-            Neo<span className="sidebar-logo-accent">Cobros</span>
+      <aside
+        className={`sidebar-container ${isOpen ? "sidebar-open" : ""}`}
+        style={{ zIndex: 101 }}
+      >
+        {/* 1. Cabecera del Menú */}
+        <div className="sidebar-header">
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.75rem",
+              minWidth: 0,
+            }}
+          >
+            <div className="sidebar-brand-text">
+              <span className="sidebar-brand-title">
+                Neo<span>Cobros</span>
+              </span>
+              <span className="sidebar-brand-subtitle">SAAS DE COBRANZA</span>
+            </div>
           </div>
-          <div className="sidebar-logo-sub">SAAS DE COBRANZA</div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <button
+              className="sidebar-close-btn"
+              onClick={() => setIsOpen(false)}
+              aria-label="Cerrar Menú"
+              style={{ display: isOpen ? "flex" : "none" }}
+            >
+              <X size={16} strokeWidth={2.5} />
+            </button>
+          </div>
         </div>
 
+        {/* 2. Contenido de Navegación */}
         <nav className="sidebar-nav">
-          <div className="sidebar-group-label">PRINCIPAL</div>
+          {/* SECCIÓN: OPERACIONES DEL DÍA */}
+          <div className="sidebar-nav-section">
+            <p className="sidebar-section-title">Operaciones del Día</p>
 
-          <Link
-            href="/dashboard"
-            className={`sidebar-nav-item ${isActive("/dashboard") ? "sidebar-active" : ""}`}
-            onClick={() => setIsOpen(false)}
-          >
-            <LayoutDashboard
-              size={20}
-              strokeWidth={isActive("/dashboard") ? 2.5 : 2}
-            />
-            Resumen
-          </Link>
-
-          <Link
-            href="/prestamos"
-            className={`sidebar-nav-item ${isActive("/prestamos") ? "sidebar-active" : ""}`}
-            onClick={() => setIsOpen(false)}
-          >
-            <Wallet size={20} strokeWidth={isActive("/prestamos") ? 2.5 : 2} />
-            Préstamos
-          </Link>
-
-          <Link
-            href="/gastos"
-            className={`sidebar-nav-item ${isActive("/gastos") ? "sidebar-active" : ""}`}
-            onClick={() => setIsOpen(false)}
-          >
-            <ReceiptText
-              size={20}
-              strokeWidth={isActive("/gastos") ? 2.5 : 2}
-            />
-            Gastos
-          </Link>
-
-          {/* Reportes Avanzados - Only for Admin/Owner */}
-          {(isAdmin || isOwner) && (
-            <>
-              <button
-                className={`sidebar-accordion-header ${isReportesExpanded ? "sidebar-active" : ""}`}
-                onClick={toggleReportes}
+            {/* Resumen del Día */}
+            <Link
+              href="/dashboard"
+              className={`sidebar-item ${isActive("/dashboard") ? "sidebar-active" : ""}`}
+              onClick={() => setIsOpen(false)}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                }}
               >
-                <BarChart
-                  size={20}
-                  strokeWidth={isReportesExpanded ? 2.5 : 2}
+                <LayoutDashboard
+                  size={19}
+                  strokeWidth={isActive("/dashboard") ? 2.5 : 2}
+                  color={isActive("/dashboard") ? "#4147eb" : "#94a3b8"}
                 />
-                <span style={{ flex: 1, textAlign: "left" }}>
-                  Reportes
-                </span>
-                {isReportesExpanded ? (
-                  <ChevronDown size={16} />
-                ) : (
-                  <ChevronRight size={16} />
-                )}
-              </button>
+                <span>Resumen del Día</span>
+              </div>
+              {isActive("/dashboard") && <span className="sidebar-item-pill" />}
+            </Link>
 
-              {isReportesExpanded && (
-                <div className="sidebar-accordion-content">
-                  <Link
-                    href="/reportes/vision-general"
-                    className={`sidebar-sub-item ${isActive("/reportes/vision-general") ? "sidebar-active" : ""}`}
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Visión General
-                  </Link>
-                  <Link
-                    href="/reportes/por-cobrador"
-                    className={`sidebar-sub-item ${isActive("/reportes/por-cobrador") ? "sidebar-active" : ""}`}
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Por Cobrador
-                  </Link>
-                  {/* <Link
-                    href="/reportes/por-cliente"
-                    className={`sidebar-sub-item ${isActive("/reportes/por-cliente") ? "sidebar-active" : ""}`}
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Salud por Cliente
-                  </Link> */}
-                </div>
-              )}
-            </>
-          )}
+            {/* Préstamos con Badge */}
+            <Link
+              href="/prestamos"
+              className={`sidebar-item ${isActive("/prestamos") ? "sidebar-active" : ""}`}
+              onClick={() => setIsOpen(false)}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                }}
+              >
+                <Wallet
+                  size={19}
+                  strokeWidth={isActive("/prestamos") ? 2.5 : 2}
+                  color={isActive("/prestamos") ? "#4147eb" : "#94a3b8"}
+                />
+                <span>Préstamos</span>
+              </div>
+            </Link>
 
-          {/* Administration Section - Only for Admin/Owner */}
-          {(isAdmin || isOwner) && (
-            <>
-              <div className="sidebar-group-label">ADMINISTRACIÓN</div>
+            {/* Gastos */}
+            <Link
+              href="/gastos"
+              className={`sidebar-item ${isActive("/gastos") ? "sidebar-active" : ""}`}
+              onClick={() => setIsOpen(false)}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                }}
+              >
+                <ReceiptText
+                  size={19}
+                  strokeWidth={isActive("/gastos") ? 2.5 : 2}
+                  color={isActive("/gastos") ? "#4147eb" : "#94a3b8"}
+                />
+                <span>Gastos</span>
+              </div>
+              {isActive("/gastos") && <span className="sidebar-item-pill" />}
+            </Link>
+          </div>
 
-              <div>
-                <button
-                  className={`sidebar-accordion-header ${isConfigExpanded ? "sidebar-active" : ""}`}
-                  onClick={toggleConfig}
-                >
-                  <Settings
-                    size={20}
-                    strokeWidth={isConfigExpanded ? 2.5 : 2}
-                  />
-                  <span style={{ flex: 1, textAlign: "left" }}>
-                    Configuración
-                  </span>
-                  {isConfigExpanded ? (
-                    <ChevronDown size={16} />
-                  ) : (
-                    <ChevronRight size={16} />
-                  )}
-                </button>
+          {/* SECCIÓN: CONSULTAS Y GESTIÓN */}
+          {(canViewReports ||
+            canManageUsers ||
+            canManageCompanies ||
+            isAdmin ||
+            isOwner) && (
+              <div className="sidebar-nav-section">
+                <p className="sidebar-section-title">Consultas y Gestión</p>
 
-                {isConfigExpanded && (
-                  <div className="sidebar-accordion-content">
-                    {canManageUsers && (
-                      <Link
-                        href="/cobradores"
-                        className={`sidebar-sub-item ${isActive("/cobradores") ? "sidebar-active" : ""}`}
-                        onClick={() => setIsOpen(false)}
+                {/* Reportes */}
+                {canViewReports && (
+                  <div>
+                    <button
+                      className={`sidebar-item ${isReportesExpanded ? "sidebar-active" : ""}`}
+                      onClick={toggleReportes}
+                      style={{
+                        width: "100%",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.75rem",
+                        }}
                       >
-                        Usuarios
-                      </Link>
-                    )}
-                    {canManageCompanies && (
-                      <Link
-                        href="/empresas"
-                        className={`sidebar-sub-item ${isActive("/empresas") ? "sidebar-active" : ""}`}
-                        onClick={() => setIsOpen(false)}
+                        <BarChart
+                          size={19}
+                          strokeWidth={isReportesExpanded ? 2.5 : 2}
+                          color={isReportesExpanded ? "#4147eb" : "#94a3b8"}
+                        />
+                        <span>Reportes</span>
+                      </div>
+                      <ChevronDown
+                        size={16}
+                        style={{
+                          transition: "transform 0.2s ease",
+                          transform: isReportesExpanded
+                            ? "rotate(180deg)"
+                            : "rotate(0deg)",
+                          color: "#94a3b8",
+                        }}
+                      />
+                    </button>
+
+                    {isReportesExpanded && (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "0.2rem",
+                          paddingLeft: "1.75rem",
+                          paddingTop: "0.35rem",
+                        }}
                       >
-                        Empresas
-                      </Link>
+                        <Link
+                          href="/reportes/vision-general"
+                          className={`sidebar-tutorial-item ${isActive("/reportes/vision-general") ? "sidebar-active" : ""}`}
+                          onClick={() => setIsOpen(false)}
+                        >
+                          <span className="sidebar-tutorial-dot" />
+                          <span>Visión General</span>
+                        </Link>
+                        <Link
+                          href="/reportes/por-cobrador"
+                          className={`sidebar-tutorial-item ${isActive("/reportes/por-cobrador") ? "sidebar-active" : ""}`}
+                          onClick={() => setIsOpen(false)}
+                        >
+                          <span className="sidebar-tutorial-dot" />
+                          <span>Por Cobrador</span>
+                        </Link>
+                      </div>
                     )}
                   </div>
                 )}
-              </div>
-            </>
-          )}
 
-          {/* Sección de Ayuda / Tutoriales */}
-          <div className="sidebar-group-label" style={{ marginTop: '1rem' }}>AYUDA</div>
-          <div>
-            <button
-              className={`sidebar-accordion-header ${isHelpExpanded ? "sidebar-active" : ""}`}
-              onClick={toggleHelp}
-            >
-              <HelpCircle size={20} strokeWidth={isHelpExpanded ? 2.5 : 2} />
-              <span style={{ flex: 1, textAlign: "left" }}>Tutoriales</span>
-              {isHelpExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-            </button>
-
-            {isHelpExpanded && (
-              <div className="sidebar-accordion-content">
-                {Object.values(TOURS).map((tour) => (
-                  <button
-                    key={tour.id}
-                    className="sidebar-sub-item"
-                    style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 'none' }}
-                    onClick={() => handleStartTour(tour.path)}
+                {/* Usuarios */}
+                {canManageUsers && (
+                  <Link
+                    href="/cobradores"
+                    className={`sidebar-item ${isActive("/cobradores") ? "sidebar-active" : ""}`}
+                    onClick={() => setIsOpen(false)}
                   >
-                    {tour.title}
-                  </button>
-                ))}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.75rem",
+                      }}
+                    >
+                      <Users
+                        size={19}
+                        strokeWidth={isActive("/cobradores") ? 2.5 : 2}
+                        color={isActive("/cobradores") ? "#4147eb" : "#94a3b8"}
+                      />
+                      <span>Usuarios</span>
+                    </div>
+                    {isActive("/cobradores") && (
+                      <span className="sidebar-item-pill" />
+                    )}
+                  </Link>
+                )}
+
+                {/* Empresas */}
+                {canManageCompanies && (
+                  <Link
+                    href="/empresas"
+                    className={`sidebar-item ${isActive("/empresas") ? "sidebar-active" : ""}`}
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.75rem",
+                      }}
+                    >
+                      <Building2
+                        size={19}
+                        strokeWidth={isActive("/empresas") ? 2.5 : 2}
+                        color={isActive("/empresas") ? "#4147eb" : "#94a3b8"}
+                      />
+                      <span>Empresas</span>
+                    </div>
+                    {isActive("/empresas") && (
+                      <span className="sidebar-item-pill" />
+                    )}
+                  </Link>
+                )}
+
+                {/* Configuración */}
+                {(isAdmin || isOwner) && (
+                  <Link
+                    href="/configuracion"
+                    className={`sidebar-item ${isActive("/configuracion") ? "sidebar-active" : ""}`}
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.75rem",
+                      }}
+                    >
+                      <Settings
+                        size={19}
+                        strokeWidth={isActive("/configuracion") ? 2.5 : 2}
+                        color={isActive("/configuracion") ? "#4147eb" : "#94a3b8"}
+                      />
+                      <span>Configuración</span>
+                    </div>
+                    {isActive("/configuracion") && (
+                      <span className="sidebar-item-pill" />
+                    )}
+                  </Link>
+                )}
               </div>
             )}
-          </div>
 
-          {canInstall && (
-            <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
+          {/* SECCIÓN: AYUDA Y SOPORTE */}
+          <div className="sidebar-nav-section">
+            <p className="sidebar-section-title">Ayuda y Soporte</p>
+            <div>
               <button
-                className="sidebar-nav-item"
-                onClick={handleInstallPWA}
+                className="sidebar-tutorial-header"
+                onClick={toggleHelp}
+                type="button"
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.75rem",
+                  }}
+                >
+                  <BookOpen size={19} strokeWidth={2.2} />
+                  <span>Tutoriales</span>
+                </div>
+                <ChevronDown
+                  size={16}
+                  style={{
+                    transition: "transform 0.2s ease",
+                    transform: isHelpExpanded
+                      ? "rotate(180deg)"
+                      : "rotate(0deg)",
+                    color: isHelpExpanded ? "#4147eb" : "#94a3b8",
+                  }}
+                />
+              </button>
+
+              {isHelpExpanded && (
+                <div className="sidebar-tutorial-sublist">
+                  {Object.values(TOURS).map((tour) => (
+                    <button
+                      key={tour.id}
+                      className="sidebar-tutorial-item"
+                      onClick={() => handleStartTour(tour.path)}
+                      type="button"
+                    >
+                      <span className="sidebar-tutorial-dot" />
+                      <span>{tour.title}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </nav>
+
+        {/* 3. Bloque Inferior: PWA, Perfil y Sesión */}
+        <div className="sidebar-footer">
+          {/* Tarjeta Instalar App Móvil / PWA */}
+          {canInstall && (
+            <div className="sidebar-pwa-card">
+              <div
                 style={{
-                  width: "calc(100% - 1.5rem)",
-                  margin: "0 0.75rem",
-                  justifyContent: "flex-start",
-                  backgroundColor: "#e0e7ff",
-                  color: "#4338ca",
-                  border: "1px solid #c7d2fe",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.625rem",
+                  minWidth: 0,
                 }}
               >
-                <Download size={20} strokeWidth={2.5} />
-                Instalar App
+                <div
+                  style={{
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "0.65rem",
+                    backgroundColor: "rgba(65, 71, 235, 0.1)",
+                    color: "#4147eb",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Download size={17} strokeWidth={2.5} />
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                      color: "#0f172a",
+                      lineHeight: 1.2,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    Instalar App Móvil
+                  </p>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: "0.625rem",
+                      color: "#64748b",
+                      lineHeight: 1.2,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    Versión PWA Offline
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleInstallPWA}
+                type="button"
+                style={{
+                  padding: "0.3rem 0.65rem",
+                  borderRadius: "0.5rem",
+                  backgroundColor: "#4147eb",
+                  color: "white",
+                  border: "none",
+                  fontSize: "0.6875rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  flexShrink: 0,
+                  boxShadow: "0 2px 4px rgba(65, 71, 235, 0.2)",
+                }}
+              >
+                Instalar
               </button>
             </div>
           )}
-        </nav>
 
-        <div className="sidebar-footer">
-          <div className="sidebar-profile-card">
-            <div className="sidebar-avatar">{getInitials(user?.username)}</div>
-            <div className="sidebar-profile-info">
-              <div className="sidebar-user-name">{formatUserName(user)}</div>
-              <div className="sidebar-user-role">
-                {isOwner
-                  ? "PROPIETARIO / ADMIN"
-                  : isAdmin
-                    ? "ADMINISTRADOR"
-                    : "COBRADOR"}
+          {/* Tarjeta de Usuario & Acciones */}
+          <div className="sidebar-user-card">
+            {/* Usuario info */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.75rem",
+              }}
+            >
+              <div
+                style={{
+                  position: "relative",
+                  width: "38px",
+                  height: "38px",
+                  borderRadius: "9999px",
+                  backgroundColor: "#4147eb",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 800,
+                  color: "white",
+                  fontSize: "0.85rem",
+                  flexShrink: 0,
+                  boxShadow: "0 2px 6px rgba(65, 71, 235, 0.25)",
+                }}
+              >
+                {getInitials(user?.username)}
+                <span
+                  style={{
+                    position: "absolute",
+                    bottom: 0,
+                    right: 0,
+                    width: "10px",
+                    height: "10px",
+                    borderRadius: "9999px",
+                    backgroundColor: "#10b981",
+                    border: "2px solid #ffffff",
+                  }}
+                  title="Estado activo"
+                />
+              </div>
+
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "0.875rem",
+                    fontWeight: 800,
+                    color: "#0f172a",
+                    lineHeight: 1.2,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {formatUserName(user)}
+                </p>
+                <p
+                  style={{
+                    margin: "0.15rem 0 0 0",
+                    fontSize: "0.625rem",
+                    fontWeight: 700,
+                    color: "#94a3b8",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                    lineHeight: 1,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {isOwner
+                    ? "PROPIETARIO / ADMIN"
+                    : isAdmin
+                      ? "ADMINISTRADOR"
+                      : "COBRADOR"}
+                </p>
               </div>
             </div>
-          </div>
 
-          <button className="sidebar-logout-btn" onClick={handleLogout}>
-            <LogOut size={20} strokeWidth={2.5} />
-            Cerrar Sesión
-          </button>
+            <div style={{ height: "1px", backgroundColor: "#f1f5f9" }} />
+
+            {/* Links Cambiar Clave y Cerrar Sesión */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.15rem",
+              }}
+            >
+              <button
+                className="sidebar-action-link"
+                onClick={() => {
+                  setIsChangePasswordOpen(true);
+                  setIsOpen(false);
+                }}
+                type="button"
+              >
+                <KeyRound size={15} color="#94a3b8" />
+                <span>Cambiar Clave</span>
+              </button>
+
+              <button
+                className="sidebar-logout-link"
+                onClick={handleLogout}
+                type="button"
+              >
+                <LogOut size={15} />
+                <span>Cerrar Sesión</span>
+              </button>
+            </div>
+          </div>
         </div>
       </aside>
+
+      <ChangePasswordModal
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+      />
     </>
   );
 }

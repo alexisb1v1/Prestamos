@@ -8,6 +8,8 @@ import {
   UpdateUserUseCase,
   DeleteUserUseCase,
   ToggleDayStatusUseCase,
+  ResetUserPasswordUseCase,
+  ChangePasswordUseCase,
 } from "./use-cases/user-mutations.use-case";
 
 // Export Models
@@ -23,5 +25,11 @@ export const createUserUseCase = new CreateUserUseCase(userRepository);
 export const updateUserUseCase = new UpdateUserUseCase(userRepository);
 export const deleteUserUseCase = new DeleteUserUseCase(userRepository);
 export const toggleDayStatusUseCase = new ToggleDayStatusUseCase(
+  userRepository,
+);
+export const resetUserPasswordUseCase = new ResetUserPasswordUseCase(
+  userRepository,
+);
+export const changePasswordUseCase = new ChangePasswordUseCase(
   userRepository,
 );

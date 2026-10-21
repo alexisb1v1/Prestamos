@@ -19,4 +19,8 @@ export abstract class UserRepository {
     id: string,
     isDayClosed: boolean,
   ): ResultAsync<void, DomainError>;
+  abstract resetPassword(id: string): ResultAsync<void, DomainError>;
+  abstract changePassword(
+    data: import("../dto/user.dto").ChangePasswordRequestDto,
+  ): ResultAsync<void, DomainError>;
 }

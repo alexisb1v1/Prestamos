@@ -31,6 +31,7 @@ interface LoanDetailsModalProps {
   onClose: () => void;
   loan: Loan | null;
   shareRef?: React.RefObject<LoanShareGeneratorRef | null>;
+  onPaymentDeleted?: () => void;
 }
 
 function LoanDetailsModal({
@@ -38,6 +39,7 @@ function LoanDetailsModal({
   onClose,
   loan,
   shareRef,
+  onPaymentDeleted,
 }: LoanDetailsModalProps) {
   const [details, setDetails] = useState<LoanDetails | null>(null);
   const [loading, setLoading] = useState(false);
@@ -47,6 +49,7 @@ function LoanDetailsModal({
   const { canDeletePayment } = usePermissions();
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
+  const [isDeletingPayment, setIsDeletingPayment] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -211,23 +214,27 @@ function LoanDetailsModal({
     }
   };
 
-  const openConfirmDelete = (paymentDate: string) => {
-    setPaymentToDelete(paymentDate);
+  const openConfirmDelete = (paymentId: string) => {
+    setPaymentToDelete(paymentId);
     setIsConfirmOpen(true);
   };
 
   const handleDeletePayment = async () => {
-    if (!paymentToDelete) return;
+    if (!paymentToDelete || isDeletingPayment) return;
 
+    setIsDeletingPayment(true);
     const result = await deleteInstallmentUseCase.execute(paymentToDelete);
 
     result.match(
-      () => {
-        loadDetails();
+      async () => {
+        await loadDetails();
         setIsConfirmOpen(false);
         setPaymentToDelete(null);
+        setIsDeletingPayment(false);
+        onPaymentDeleted?.();
       },
       (err) => {
+        setIsDeletingPayment(false);
         logger.error("Error deleting payment:", err);
         alert("Error al eliminar el pago: " + err.message);
       },
@@ -495,7 +502,21 @@ function LoanDetailsModal({
             </section>
 
             {/* Content Area */}
-            {activeTab === "calendar" ? (
+            {loading ? (
+              <div
+                style={{
+                  padding: "3rem 1rem",
+                  backgroundColor: "white",
+                  borderRadius: "1rem",
+                  border: "1px solid #e2e8f0",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <LoadingSpinner message="Cargando información de pagos..." />
+              </div>
+            ) : activeTab === "calendar" ? (
               <section style={{ backgroundColor: "white", borderRadius: "1rem", padding: "1rem", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)", border: "1px solid rgba(226, 232, 240, 0.8)" }}>
                 {/* Month Title */}
                 <div style={{ textAlign: "center", marginBottom: "1rem" }}>
@@ -651,7 +672,7 @@ function LoanDetailsModal({
                           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                             {canDeletePayment(inst.date, inst.registeredByUserId) && (
                               <button
-                                onClick={() => openConfirmDelete(inst.date)}
+                                onClick={() => openConfirmDelete(inst.id)}
                                 title="Eliminar Pago"
                                 style={{
                                   background: "#fee2e2",
@@ -736,13 +757,19 @@ function LoanDetailsModal({
       </div>
       <ConfirmModal
         isOpen={isConfirmOpen}
-        onClose={() => setIsConfirmOpen(false)}
+        onClose={() => {
+          if (!isDeletingPayment) {
+            setIsConfirmOpen(false);
+            setPaymentToDelete(null);
+          }
+        }}
         onConfirm={handleDeletePayment}
         title="Eliminar Pago"
         message="¿Estás seguro de que deseas eliminar este pago?"
         confirmText="Eliminar"
         cancelText="Cancelar"
         isDestructive={true}
+        isLoading={isDeletingPayment}
       />
     </>
   );

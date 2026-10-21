@@ -1,4 +1,12 @@
+"use client";
+
+import { useState } from "react";
+import { KeyRound, ShieldCheck } from "lucide-react";
+import ChangePasswordModal from "@/app/components/ChangePasswordModal";
+
 export default function ConfiguracionPage() {
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+
   return (
     <div style={{ maxWidth: "800px" }}>
       <h1
@@ -12,6 +20,51 @@ export default function ConfiguracionPage() {
       </h1>
 
       <div style={{ display: "grid", gap: "2rem" }}>
+        {/* Seguridad y Contraseña */}
+        <section className="card">
+          <h2
+            style={{
+              fontSize: "1.25rem",
+              fontWeight: "600",
+              marginBottom: "1rem",
+              borderBottom: "1px solid var(--border-color)",
+              paddingBottom: "1rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+            }}
+          >
+            <ShieldCheck size={22} color="#4f46e5" />
+            Seguridad de la Cuenta
+          </h2>
+          <p
+            style={{
+              color: "var(--text-secondary)",
+              fontSize: "0.9rem",
+              marginBottom: "1.25rem",
+              lineHeight: 1.5,
+            }}
+          >
+            Mantén tu cuenta protegida actualizando periódicamente tu contraseña de acceso a la plataforma.
+          </p>
+          <div>
+            <button
+              onClick={() => setIsChangePasswordOpen(true)}
+              className="btn btn-primary"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.65rem 1.25rem",
+                fontWeight: 600,
+              }}
+            >
+              <KeyRound size={18} />
+              Cambiar mi Contraseña
+            </button>
+          </div>
+        </section>
+
         {/* General Settings */}
         <section className="card">
           <h2
@@ -87,6 +140,11 @@ export default function ConfiguracionPage() {
           </div>
         </section>
       </div>
+
+      <ChangePasswordModal
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+      />
     </div>
   );
 }

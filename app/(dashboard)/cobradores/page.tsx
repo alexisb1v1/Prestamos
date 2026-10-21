@@ -6,6 +6,7 @@ import {
   getUserByIdUseCase,
   deleteUserUseCase,
   toggleDayStatusUseCase,
+  resetUserPasswordUseCase,
 } from "@/app/features/users";
 import { User as UserModel } from "@/app/features/users/models/user.model";
 import { authService } from "@/lib/auth";
@@ -14,6 +15,7 @@ import CreateUserModal from "@/app/components/CreateUserModal";
 import ConfirmModal from "@/app/components/ConfirmModal";
 import LoadingSpinner from "@/app/components/LoadingSpinner";
 import { logger } from "@/lib/logging-service";
+import { KeyRound } from "lucide-react";
 
 export default function CobradoresPage() {
   const [users, setUsers] = useState<UserModel[]>([]);
@@ -27,7 +29,7 @@ export default function CobradoresPage() {
   const [editingUser, setEditingUser] = useState<UserModel | null>(null);
   const [confirmation, setConfirmation] = useState<{
     isOpen: boolean;
-    action: "DELETE" | "TOGGLE_DAY" | null;
+    action: "DELETE" | "TOGGLE_DAY" | "RESET_PASSWORD" | null;
     user: UserModel | null;
   }>({ isOpen: false, action: null, user: null });
   const [isMobile, setIsMobile] = useState(false);
@@ -134,6 +136,10 @@ export default function CobradoresPage() {
     setConfirmation({ isOpen: true, action: "TOGGLE_DAY", user });
   };
 
+  const handleResetPassword = (user: UserModel) => {
+    setConfirmation({ isOpen: true, action: "RESET_PASSWORD", user });
+  };
+
   const executeAction = async () => {
     if (!confirmation.user || !confirmation.action) return;
 
@@ -143,10 +149,12 @@ export default function CobradoresPage() {
     const actionResult =
       confirmation.action === "DELETE"
         ? await deleteUserUseCase.execute(confirmation.user.id)
-        : await toggleDayStatusUseCase.execute(
-            confirmation.user.id,
-            !confirmation.user.isDayClosed,
-          );
+        : confirmation.action === "TOGGLE_DAY"
+          ? await toggleDayStatusUseCase.execute(
+              confirmation.user.id,
+              !confirmation.user.isDayClosed,
+            )
+          : await resetUserPasswordUseCase.execute(confirmation.user.id);
 
     actionResult.match(
       () => {
@@ -576,6 +584,26 @@ export default function CobradoresPage() {
                     </svg>
                   </button>
 
+                  {/* Reset Password */}
+                  <button
+                    onClick={() => handleResetPassword(user)}
+                    title="Restablecer Contraseña (DNI)"
+                    style={{
+                      padding: "0.6rem",
+                      border: "none",
+                      backgroundColor: "transparent",
+                      cursor: "pointer",
+                      borderRadius: "0.5rem",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#d97706",
+                      flex: 1,
+                    }}
+                  >
+                    <KeyRound size={22} strokeWidth={1.75} />
+                  </button>
+
                   {/* Delete */}
                   <button
                     onClick={() => handleDelete(user.id)}
@@ -850,6 +878,20 @@ export default function CobradoresPage() {
                             </svg>
                           </button>
 
+                          {/* Reset Password */}
+                          <button
+                            onClick={() => handleResetPassword(user)}
+                            className="btn-icon warning"
+                            title="Restablecer Contraseña (DNI)"
+                            style={{
+                              padding: "0.6rem",
+                              borderRadius: "10px",
+                              color: "#d97706",
+                            }}
+                          >
+                            <KeyRound size={20} strokeWidth={2} />
+                          </button>
+
                           {/* Delete */}
                           <button
                             onClick={() => handleDelete(user.id)}
@@ -895,6 +937,7 @@ export default function CobradoresPage() {
 
       <ConfirmModal
         isOpen={confirmation.isOpen}
+        isLoading={loading}
         onClose={() =>
           setConfirmation({ isOpen: false, action: null, user: null })
         }
@@ -906,17 +949,21 @@ export default function CobradoresPage() {
               ? confirmation.user?.isDayClosed
                 ? "Abrir Día"
                 : "Cerrar Día"
-              : ""
+              : "Restablecer Contraseña"
         }
         message={
           confirmation.action === "DELETE"
             ? "¿Estás seguro de que deseas eliminar este usuario? Esta acción lo desactivará."
             : confirmation.action === "TOGGLE_DAY"
               ? `¿Estás seguro de que deseas ${confirmation.user?.isDayClosed ? "abrir" : "cerrar"} el día para ${confirmation.user?.username}?`
-              : ""
+              : `¿Estás seguro de que deseas restablecer la contraseña para ${confirmation.user?.firstName || confirmation.user?.username} ${confirmation.user?.lastName || ""}? Su contraseña volverá a ser su número de documento (${confirmation.user?.documentNumber || "DNI"}).`
         }
         confirmText={
-          confirmation.action === "DELETE" ? "Eliminar" : "Confirmar"
+          confirmation.action === "DELETE"
+            ? "Eliminar"
+            : confirmation.action === "RESET_PASSWORD"
+              ? "Restablecer"
+              : "Confirmar"
         }
         cancelText="Cancelar"
       />

@@ -41,3 +41,9 @@ export interface UpdateUserRequestDto {
   status: "ACTIVE" | "INACTIVE";
   birthday?: string | null;
 }
+
+export interface ChangePasswordRequestDto {
+  currentPassword: string;
+  newPassword: string;
+}
+

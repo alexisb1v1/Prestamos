@@ -10,6 +10,8 @@ import styles from "./CreateLoanModal.module.css";
 import { paymentService } from "@/lib/paymentService";
 import { Loan } from "@/lib/types";
 import { authService } from "@/lib/auth";
+import { getLoanStatus } from "@/lib/loanUtils";
+import ConfirmModal from "./ConfirmModal";
 
 interface CreatePaymentModalProps {
   isOpen: boolean;
@@ -30,6 +32,7 @@ export default function CreatePaymentModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isMobile, setIsMobile] = useState(false);
+  const [showLiquidationConfirm, setShowLiquidationConfirm] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -45,6 +48,7 @@ export default function CreatePaymentModal({
   useEffect(() => {
     if (isOpen) {
       document.body.classList.add("modal-open");
+      setShowLiquidationConfirm(false);
       if (loan) {
         setAmount(Math.round(loan.fee || 0));
         setError("");
@@ -52,6 +56,7 @@ export default function CreatePaymentModal({
       }
     } else {
       document.body.classList.remove("modal-open");
+      setShowLiquidationConfirm(false);
     }
 
     return () => {
@@ -77,6 +82,7 @@ export default function CreatePaymentModal({
         userId: String(user.id),
         paymentType: paymentType as any,
       });
+      setShowLiquidationConfirm(false);
       onSuccess();
       onClose();
     } catch (err: unknown) {
@@ -89,12 +95,33 @@ export default function CreatePaymentModal({
     }
   };
 
+  const handlePreSubmit = () => {
+    if (!loan || !amount) return;
+
+    const parsedAmount = Number(amount) || 0;
+    const remaining = loan.remainingAmount ?? 0;
+    const status = getLoanStatus(loan);
+    const isOverdue =
+      status.value === "red" ||
+      status.value === "yellow" ||
+      Boolean(status.overdueDays && status.overdueDays > 0);
+    const willLiquidate = parsedAmount >= remaining && remaining > 0;
+
+    // Si el préstamo está retrasado y el pago va a liquidar el total, pedir confirmación
+    if (isOverdue && willLiquidate) {
+      setShowLiquidationConfirm(true);
+      return;
+    }
+
+    handlePayment();
+  };
+
   if (!isOpen || !loan) return null;
 
   // Derived Values
   const initial = loan.clientName?.substring(0, 2).toUpperCase() || "CL";
   const remainingAmount = loan.remainingAmount ?? 0;
-  
+
   // Predict new remaining balance
   const parsedAmount = Number(amount) || 0;
   const newRemainingAmount = Math.max(0, remainingAmount - parsedAmount);
@@ -111,7 +138,7 @@ export default function CreatePaymentModal({
         alignItems: isMobile ? "flex-end" : "stretch",
       }}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (!loading && e.target === e.currentTarget) onClose();
       }}
     >
       <div
@@ -155,14 +182,23 @@ export default function CreatePaymentModal({
               <h1 className={styles.title}>Registrar Abono</h1>
             </div>
           </div>
-          <button className={styles.closeBtn} onClick={onClose} type="button">
+          <button
+            className={styles.closeBtn}
+            onClick={onClose}
+            type="button"
+            disabled={loading}
+            style={{
+              opacity: loading ? 0.4 : 1,
+              cursor: loading ? "not-allowed" : "pointer",
+            }}
+          >
             <X size={18} strokeWidth={2.5} />
           </button>
         </header>
 
         {/* MainContent */}
         <main style={{ flex: 1, padding: "1rem", display: "flex", flexDirection: "column", gap: "1rem", overflowX: "hidden" }}>
-          
+
           {/* ClientContextCard */}
           <section
             style={{
@@ -177,7 +213,7 @@ export default function CreatePaymentModal({
           >
             {/* Watermark circle */}
             <div style={{ position: "absolute", right: "-1.5rem", bottom: "-1.5rem", width: "7rem", height: "7rem", borderRadius: "9999px", backgroundColor: "rgba(255,255,255,0.05)", pointerEvents: "none" }} />
-            
+
             <div style={{ position: "relative", zIndex: 10, display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                 <div style={{ width: "2.75rem", height: "2.75rem", borderRadius: "0.75rem", backgroundColor: "rgba(255,255,255,0.1)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "1rem", border: "1px solid rgba(255,255,255,0.2)" }}>
@@ -207,7 +243,7 @@ export default function CreatePaymentModal({
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <label style={{ fontSize: "0.75rem", fontWeight: "bold", color: "#334155", textTransform: "uppercase", letterSpacing: "0.05em" }}>Tipo de Pago</label>
             </div>
-            
+
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "0.5rem" }}>
               {/* Efectivo */}
               <button
@@ -222,7 +258,7 @@ export default function CreatePaymentModal({
               >
                 {paymentType === "EFECTIVO" && (
                   <div style={{ position: "absolute", top: "-6px", right: "-6px", width: "16px", height: "16px", borderRadius: "50%", backgroundColor: "#10b981", color: "white", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid white" }}>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
                   </div>
                 )}
                 <div style={{ width: "2rem", height: "2rem", borderRadius: "50%", backgroundColor: "#d1fae5", color: "#059669", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "4px" }}>
@@ -244,7 +280,7 @@ export default function CreatePaymentModal({
               >
                 {paymentType === "YAPE" && (
                   <div style={{ position: "absolute", top: "-6px", right: "-6px", width: "16px", height: "16px", borderRadius: "50%", backgroundColor: "#742384", color: "white", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid white" }}>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
                   </div>
                 )}
                 <div style={{ width: "2rem", height: "2rem", borderRadius: "50%", backgroundColor: "#f3e8f5", color: "#742384", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "4px" }}>
@@ -259,11 +295,11 @@ export default function CreatePaymentModal({
           {/* AmountDisplaySection */}
           <section style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             <label style={{ fontSize: "0.75rem", fontWeight: "bold", color: "#334155", textTransform: "uppercase", letterSpacing: "0.05em" }}>Monto a Cobrar</label>
-            
+
             <div style={{ backgroundColor: "white", borderRadius: "1rem", padding: "0.75rem", border: "2px solid rgba(67, 56, 202, 0.7)", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05), 0 0 0 4px #eef2ff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", flex: 1, paddingLeft: "0.25rem" }}>
                 <span style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#94a3b8" }}>S/</span>
-                <input 
+                <input
                   type="number"
                   value={amount}
                   onChange={(e) => {
@@ -306,11 +342,12 @@ export default function CreatePaymentModal({
                 type="button"
                 className="shortcut-chip"
                 onClick={() => setAmount(Math.round(loan.fee))}
-                style={{ whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", cursor: "pointer", 
-                  backgroundColor: amount === Math.round(loan.fee) ? "#4f46e5" : "white", 
-                  color: amount === Math.round(loan.fee) ? "white" : "#334155", 
-                  border: amount === Math.round(loan.fee) ? "none" : "1px solid #e2e8f0", 
-                  fontWeight: amount === Math.round(loan.fee) ? "bold" : 600 
+                style={{
+                  whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", cursor: "pointer",
+                  backgroundColor: amount === Math.round(loan.fee) ? "#4f46e5" : "white",
+                  color: amount === Math.round(loan.fee) ? "white" : "#334155",
+                  border: amount === Math.round(loan.fee) ? "none" : "1px solid #e2e8f0",
+                  fontWeight: amount === Math.round(loan.fee) ? "bold" : 600
                 }}
               >
                 Cuota: S/ {Math.round(loan.fee)}
@@ -319,12 +356,13 @@ export default function CreatePaymentModal({
                 type="button"
                 className="shortcut-chip"
                 onClick={() => setAmount(Math.round(loan.fee * 2))}
-                style={{ whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", cursor: "pointer",
-                  backgroundColor: amount === Math.round(loan.fee * 2) ? "#4f46e5" : "white", 
-                  color: amount === Math.round(loan.fee * 2) ? "white" : "#334155", 
-                  border: amount === Math.round(loan.fee * 2) ? "none" : "1px solid #e2e8f0", 
-                  fontWeight: amount === Math.round(loan.fee * 2) ? "bold" : 600 
-                 }}
+                style={{
+                  whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", cursor: "pointer",
+                  backgroundColor: amount === Math.round(loan.fee * 2) ? "#4f46e5" : "white",
+                  color: amount === Math.round(loan.fee * 2) ? "white" : "#334155",
+                  border: amount === Math.round(loan.fee * 2) ? "none" : "1px solid #e2e8f0",
+                  fontWeight: amount === Math.round(loan.fee * 2) ? "bold" : 600
+                }}
               >
                 2 cuotas (S/ {Math.round(loan.fee * 2)})
               </button>
@@ -332,12 +370,13 @@ export default function CreatePaymentModal({
                 type="button"
                 className="shortcut-chip"
                 onClick={() => setAmount(50)}
-                style={{ whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", cursor: "pointer",
-                  backgroundColor: amount === 50 ? "#4f46e5" : "white", 
-                  color: amount === 50 ? "white" : "#334155", 
-                  border: amount === 50 ? "none" : "1px solid #e2e8f0", 
-                  fontWeight: amount === 50 ? "bold" : 600 
-                 }}
+                style={{
+                  whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", cursor: "pointer",
+                  backgroundColor: amount === 50 ? "#4f46e5" : "white",
+                  color: amount === 50 ? "white" : "#334155",
+                  border: amount === 50 ? "none" : "1px solid #e2e8f0",
+                  fontWeight: amount === 50 ? "bold" : 600
+                }}
               >
                 S/ 50
               </button>
@@ -345,12 +384,13 @@ export default function CreatePaymentModal({
                 type="button"
                 className="shortcut-chip"
                 onClick={() => setAmount(100)}
-                style={{ whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", cursor: "pointer",
-                  backgroundColor: amount === 100 ? "#4f46e5" : "white", 
-                  color: amount === 100 ? "white" : "#334155", 
-                  border: amount === 100 ? "none" : "1px solid #e2e8f0", 
-                  fontWeight: amount === 100 ? "bold" : 600 
-                 }}
+                style={{
+                  whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", cursor: "pointer",
+                  backgroundColor: amount === 100 ? "#4f46e5" : "white",
+                  color: amount === 100 ? "white" : "#334155",
+                  border: amount === 100 ? "none" : "1px solid #e2e8f0",
+                  fontWeight: amount === 100 ? "bold" : 600
+                }}
               >
                 S/ 100
               </button>
@@ -358,12 +398,13 @@ export default function CreatePaymentModal({
                 type="button"
                 className="shortcut-chip"
                 onClick={() => setAmount(Math.ceil(remainingAmount))}
-                style={{ whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", cursor: "pointer",
-                  backgroundColor: amount === Math.ceil(remainingAmount) ? "#4f46e5" : "#eef2ff", 
-                  color: amount === Math.ceil(remainingAmount) ? "white" : "#4338ca", 
-                  border: amount === Math.ceil(remainingAmount) ? "none" : "1px solid #c7d2fe", 
+                style={{
+                  whiteSpace: "nowrap", padding: "0.375rem 0.75rem", borderRadius: "9999px", cursor: "pointer",
+                  backgroundColor: amount === Math.ceil(remainingAmount) ? "#4f46e5" : "#eef2ff",
+                  color: amount === Math.ceil(remainingAmount) ? "white" : "#4338ca",
+                  border: amount === Math.ceil(remainingAmount) ? "none" : "1px solid #c7d2fe",
                   fontWeight: "bold"
-                 }}
+                }}
               >
                 Saldo total S/ {Math.ceil(remainingAmount)}
               </button>
@@ -380,7 +421,7 @@ export default function CreatePaymentModal({
               </div>
             </div>
           </section>
-          
+
           {error && (
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#dc2626", backgroundColor: "#fef2f2", padding: "0.75rem", borderRadius: "0.5rem", fontSize: "0.875rem" }}>
               <AlertCircle size={18} />
@@ -398,13 +439,23 @@ export default function CreatePaymentModal({
               type="button"
               onClick={onClose}
               disabled={loading}
-              style={{ padding: "0.75rem", borderRadius: "0.75rem", border: "1px solid #e2e8f0", backgroundColor: "white", color: "#334155", fontWeight: "bold", fontSize: "0.875rem", cursor: "pointer" }}
+              style={{
+                padding: "0.75rem",
+                borderRadius: "0.75rem",
+                border: "1px solid #e2e8f0",
+                backgroundColor: "white",
+                color: "#334155",
+                fontWeight: "bold",
+                fontSize: "0.875rem",
+                cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.6 : 1,
+              }}
             >
               Cancelar
             </button>
             <button
               type="button"
-              onClick={handlePayment}
+              onClick={handlePreSubmit}
               disabled={loading || !amount || amount <= 0}
               style={{ padding: "0.75rem", borderRadius: "0.75rem", border: "none", backgroundColor: loading || !amount || amount <= 0 ? "#818cf8" : "#4f46e5", color: "white", fontWeight: "bold", fontSize: "0.875rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", cursor: (loading || !amount || amount <= 0) ? "not-allowed" : "pointer" }}
             >
@@ -412,7 +463,80 @@ export default function CreatePaymentModal({
             </button>
           </div>
         </footer>
+
+        {/* Loading Overlay Shield */}
+        {loading && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              backgroundColor: "rgba(255, 255, 255, 0.8)",
+              backdropFilter: "blur(4px)",
+              zIndex: 50,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.75rem",
+              borderRadius: "inherit",
+              cursor: "wait",
+            }}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              style={{
+                width: "36px",
+                height: "36px",
+                color: "#4f46e5",
+                animation: "spin_payment 1s linear infinite",
+              }}
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+                style={{ opacity: 0.2 }}
+              ></circle>
+              <path
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                style={{ opacity: 0.9 }}
+              ></path>
+            </svg>
+            <span style={{ fontSize: "0.9375rem", fontWeight: 700, color: "#1e293b" }}>
+              Registrando abono...
+            </span>
+            <span style={{ fontSize: "0.75rem", color: "#64748b" }}>
+              Por favor espera un momento
+            </span>
+            <style>
+              {`
+                @keyframes spin_payment {
+                  from { transform: rotate(0deg); }
+                  to { transform: rotate(360deg); }
+                }
+              `}
+            </style>
+          </div>
+        )}
       </div>
+      <ConfirmModal
+        isOpen={showLiquidationConfirm}
+        onClose={() => {
+          if (!loading) setShowLiquidationConfirm(false);
+        }}
+        onConfirm={handlePayment}
+        title="¿Confirmar Liquidación de Préstamo?"
+        message={`Este préstamo presenta días de retraso y el monto ingresado (S/ ${Number(amount || 0).toFixed(2)}) cubrirá la totalidad de la deuda restante (S/ ${remainingAmount.toFixed(2)}), marcando el préstamo como LIQUIDADO. ¿Deseas confirmar la liquidación?`}
+        confirmText="Sí, Liquidar Préstamo"
+        cancelText="Revisar Monto"
+        isDestructive={false}
+        isLoading={loading}
+      />
     </div>
   );
 }

@@ -53,4 +53,14 @@ export class UserRepositoryImpl implements UserRepository {
       isDayClosed,
     });
   }
+
+  resetPassword(id: string): ResultAsync<void, DomainError> {
+    return api.safe.patch<void>(`/user/${id}/reset-password`, {});
+  }
+
+  changePassword(
+    data: import("../dto/user.dto").ChangePasswordRequestDto,
+  ): ResultAsync<void, DomainError> {
+    return api.safe.put<void>("/user/change-password", data);
+  }
 }

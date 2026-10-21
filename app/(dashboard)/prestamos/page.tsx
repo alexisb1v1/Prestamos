@@ -905,6 +905,9 @@ export default function PrestamosPage() {
         onClose={() => setIsDetailsModalOpen(false)}
         loan={selectedLoanForDetails}
         shareRef={shareRef}
+        onPaymentDeleted={() => {
+          if (currentUser) loadLoans(currentUser);
+        }}
       />
       <ReassignLoanModal
         isOpen={isReassignModalOpen}

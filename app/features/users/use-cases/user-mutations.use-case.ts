@@ -71,3 +71,40 @@ export class ToggleDayStatusUseCase {
     return this.userRepository.toggleDayStatus(id, isDayClosed);
   }
 }
+
+/**
+ * Caso de uso para restablecer la contraseña de un usuario por defecto a su número de documento.
+ */
+export class ResetUserPasswordUseCase {
+  constructor(private userRepository: UserRepository) {}
+
+  /**
+   * Restablece la contraseña del usuario a su número de documento de identidad.
+   * @param id ID del usuario a restablecer.
+   * @returns ResultAsync indicando éxito o un error de dominio.
+   */
+  execute(id: string): ResultAsync<void, DomainError> {
+    return this.userRepository.resetPassword(id);
+  }
+}
+
+/**
+ * Caso de uso para cambiar la contraseña del usuario actualmente autenticado.
+ */
+export class ChangePasswordUseCase {
+  constructor(private userRepository: UserRepository) {}
+
+  /**
+   * Cambia la contraseña del usuario actual.
+   * @param currentPassword Contraseña actual.
+   * @param newPassword Nueva contraseña (mínimo 6 caracteres).
+   * @returns ResultAsync indicando éxito o un error de dominio.
+   */
+  execute(
+    currentPassword: string,
+    newPassword: string,
+  ): ResultAsync<void, DomainError> {
+    return this.userRepository.changePassword({ currentPassword, newPassword });
+  }
+}
+
