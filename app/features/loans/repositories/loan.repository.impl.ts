@@ -102,4 +102,13 @@ export class LoanRepositoryImpl implements LoanRepository {
   ): ResultAsync<void, DomainError> {
     return api.safe.patch<void>(`/loan/${loanId}/info`, info);
   }
+
+  generateShareLink(
+    loanId: string,
+  ): ResultAsync<{ shareUrl: string; expiresAt?: number }, DomainError> {
+    return api.safe.post<{ shareUrl: string; expiresAt?: number }>(
+      `/loan/${loanId}/share-link`,
+      {},
+    );
+  }
 }

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import {
   getLoanDetailsUseCase,
   deleteInstallmentUseCase,
+  generateShareLinkUseCase,
 } from "@/app/features/loans";
 import { formatMoney, getLoanStatus, formatDateUTC } from "@/lib/loanUtils";
 import { Loan, LoanDetails } from "@/lib/types";
@@ -24,7 +25,19 @@ import { LoanShareGeneratorRef } from "./LoanShareGenerator";
 import ConfirmModal from "./ConfirmModal";
 import LoadingSpinner from "./LoadingSpinner";
 import { logger } from "@/lib/logging-service";
-import { ArrowLeft, Share2, Calendar, Receipt, ChevronLeft, ChevronRight, Clock, CheckCircle2, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Share2,
+  Calendar,
+  Receipt,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  CheckCircle2,
+  X,
+  Link2,
+  Check,
+} from "lucide-react";
 
 interface LoanDetailsModalProps {
   isOpen: boolean;
@@ -51,6 +64,8 @@ function LoanDetailsModal({
   const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
   const [isDeletingPayment, setIsDeletingPayment] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -170,7 +185,7 @@ function LoanDetailsModal({
       if (!dayInstallments || dayInstallments.length === 0) return undefined;
 
       const totalAmount = dayInstallments.reduce((sum, inst) => sum + (inst.amount || 0), 0);
-      
+
       return {
         ...dayInstallments[0],
         amount: totalAmount,
@@ -214,6 +229,49 @@ function LoanDetailsModal({
     }
   };
 
+  const handleShareLink = async () => {
+    if (!loan || isGeneratingLink) return;
+    setIsGeneratingLink(true);
+    const result = await generateShareLinkUseCase.execute(loan.id.toString());
+
+    result.match(
+      async ({ shareUrl }) => {
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(shareUrl);
+          } else {
+            const textArea = document.createElement("textarea");
+            textArea.value = shareUrl;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand("copy");
+            textArea.remove();
+          }
+          setLinkCopied(true);
+          setTimeout(() => setLinkCopied(false), 3000);
+
+          if (navigator.share && isMobile) {
+            try {
+              await navigator.share({
+                title: `Estado de Préstamo - ${loan.clientName}`,
+                text: `Hola ${loan.clientName}, aquí puedes consultar tu estado de cuenta:`,
+                url: shareUrl,
+              });
+            } catch (err) { }
+          }
+        } catch (err) {
+          logger.error("Error al copiar enlace:", err);
+        } finally {
+          setIsGeneratingLink(false);
+        }
+      },
+      (err) => {
+        logger.error("Error al generar enlace de préstamo:", err);
+        setIsGeneratingLink(false);
+      },
+    );
+  };
+
   const openConfirmDelete = (paymentId: string) => {
     setPaymentToDelete(paymentId);
     setIsConfirmOpen(true);
@@ -247,7 +305,7 @@ function LoanDetailsModal({
   const remainingAmount = loan.remainingAmount ?? (totalAmount - (loan.paidToday || 0)); // fallback if needed
   const paidAmount = totalAmount - remainingAmount;
   const progressPercent = totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0;
-  
+
   const totalDays = loan.days;
   const paidDays = Math.max(0, Math.min(totalDays, paidAmount / loan.fee));
 
@@ -696,7 +754,7 @@ function LoanDetailsModal({
               </section>
             )}
           </main>
-          
+
           {/* Footer */}
           <footer
             style={{
@@ -712,8 +770,7 @@ function LoanDetailsModal({
             <button
               onClick={onClose}
               style={{
-                flex: 1,
-                padding: "0.75rem",
+                padding: "0.75rem 1rem",
                 borderRadius: "0.75rem",
                 backgroundColor: "#f1f5f9",
                 color: "#475569",
@@ -723,16 +780,51 @@ function LoanDetailsModal({
                 cursor: "pointer",
               }}
             >
-              Cancelar
+              Cerrar
+            </button>
+            <button
+              onClick={handleShareLink}
+              disabled={isGeneratingLink}
+              title="Enlace web"
+              style={{
+                flex: 1,
+                padding: "0.75rem 1rem",
+                borderRadius: "0.75rem",
+                backgroundColor: linkCopied ? "#ecfdf5" : "#eef2ff",
+                color: linkCopied ? "#059669" : "#4147eb",
+                border: linkCopied ? "1px solid #a7f3d0" : "1px solid #c7d2fe",
+                fontWeight: 700,
+                fontSize: "0.875rem",
+                cursor: isGeneratingLink ? "wait" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.5rem",
+                transition: "all 0.2s",
+              }}
+            >
+              {linkCopied ? (
+                <>
+                  <Check size={18} strokeWidth={2.5} />
+                  <span>¡Enlace Copiado!</span>
+                </>
+              ) : isGeneratingLink ? (
+                <span>Generando...</span>
+              ) : (
+                <>
+                  <Link2 size={18} strokeWidth={2.5} />
+                  <span>Enlace Web</span>
+                </>
+              )}
             </button>
             <button
               onClick={handleShare}
               disabled={isSharing}
+              title="Compartir imagen de la tarjeta"
               style={{
-                flex: 1,
-                padding: "0.75rem",
+                padding: "0.75rem 1rem",
                 borderRadius: "0.75rem",
-                backgroundColor: "#4f46e5",
+                backgroundColor: "#4147eb",
                 color: "white",
                 fontWeight: 600,
                 fontSize: "0.875rem",
@@ -750,7 +842,7 @@ function LoanDetailsModal({
               ) : (
                 <Share2 size={18} />
               )}
-              <span style={{ marginLeft: isSharing ? "0.5rem" : "0" }}>Compartir</span>
+              <span>Ficha</span>
             </button>
           </footer>
         </div>

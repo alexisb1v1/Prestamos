@@ -91,3 +91,21 @@ export class UpdateLoanInfoUseCase {
     return this.repository.updateInfo(loanId, info);
   }
 }
+
+/**
+ * Caso de uso para generar un enlace público cifrado para compartir con el cliente.
+ */
+export class GenerateShareLinkUseCase {
+  constructor(private readonly repository: LoanRepository) {}
+
+  /**
+   * Ejecuta la generación del enlace seguro.
+   * @param loanId ID del préstamo.
+   * @returns ResultAsync con la URL para compartir y la fecha de expiración.
+   */
+  execute(
+    loanId: string,
+  ): ResultAsync<{ shareUrl: string; expiresAt?: number }, DomainError> {
+    return this.repository.generateShareLink(loanId);
+  }
+}

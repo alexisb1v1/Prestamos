@@ -81,4 +81,11 @@ export abstract class LoanRepository {
     loanId: string,
     info: UpdateLoanInfoRequestDto,
   ): ResultAsync<void, DomainError>;
+
+  /**
+   * Genera el enlace público cifrado con expiración para que el cliente consulte su préstamo.
+   */
+  abstract generateShareLink(
+    loanId: string,
+  ): ResultAsync<{ shareUrl: string; expiresAt?: number }, DomainError>;
 }

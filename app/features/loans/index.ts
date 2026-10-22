@@ -11,6 +11,7 @@ import {
   DeleteLoanUseCase,
   DeleteInstallmentUseCase,
   UpdateLoanInfoUseCase,
+  GenerateShareLinkUseCase,
 } from "./use-cases/loan-mutations.use-case";
 
 // Composition Root (Simple Dependency Injection)
@@ -30,6 +31,7 @@ export const deleteInstallmentUseCase = new DeleteInstallmentUseCase(
   loanRepository,
 );
 export const updateLoanInfoUseCase = new UpdateLoanInfoUseCase(loanRepository);
+export const generateShareLinkUseCase = new GenerateShareLinkUseCase(loanRepository);
 
 // Export Models
 export * from "./models/loan.model";

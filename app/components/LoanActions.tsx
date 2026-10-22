@@ -6,6 +6,7 @@ import { Loan, User } from "@/lib/types";
 import { getLoanStatus } from "@/lib/loanUtils";
 import { usePermissions } from "@/hooks/usePermissions";
 import { LoanShareGeneratorRef } from "./LoanShareGenerator";
+import { generateShareLinkUseCase } from "@/app/features/loans";
 import { logger } from "@/lib/logging-service";
 
 interface LoanActionsProps {
@@ -45,6 +46,8 @@ export default function LoanActions({
   const [activeMenu, setActiveMenu] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const toggleBtnRef = useRef<HTMLButtonElement>(null);
@@ -162,6 +165,55 @@ export default function LoanActions({
     }
   };
 
+  const handleCopyShareLink = async () => {
+    const loanId =
+      loan.id ||
+      (loan as { id?: string | number; _id?: string | number })._id;
+    if (!loanId || isGeneratingLink) return;
+
+    setIsGeneratingLink(true);
+    const result = await generateShareLinkUseCase.execute(loanId.toString());
+
+    result.match(
+      async ({ shareUrl }) => {
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(shareUrl);
+          } else {
+            const textArea = document.createElement("textarea");
+            textArea.value = shareUrl;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand("copy");
+            textArea.remove();
+          }
+          setCopiedLink(true);
+          setTimeout(() => setCopiedLink(false), 2500);
+
+          if (navigator.share && isMobile) {
+            try {
+              await navigator.share({
+                title: `Estado de Préstamo - ${loan.clientName}`,
+                text: `Hola ${loan.clientName}, aquí puedes consultar tu estado de cuenta:`,
+                url: shareUrl,
+              });
+            } catch (e) { }
+          }
+        } catch (err) {
+          logger.error("Error al copiar enlace:", err);
+        } finally {
+          setIsGeneratingLink(false);
+          setActiveMenu(false);
+        }
+      },
+      (err) => {
+        logger.error("Error al generar enlace:", err);
+        setIsGeneratingLink(false);
+        setActiveMenu(false);
+      },
+    );
+  };
+
   const status = getLoanStatus(loan, today);
   const { canDeleteLoan, canReassignLoan, canRenewLoan } = usePermissions();
 
@@ -264,6 +316,32 @@ export default function LoanActions({
               d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
             />
           </svg>
+        </button>
+
+        {/* Botón Desktop: Copiar Enlace Web*/}
+        <button
+          onClick={handleCopyShareLink}
+          disabled={isGeneratingLink}
+          title={copiedLink ? "¡Enlace Copiado!" : "Copiar Enlace Web"}
+          style={{
+            width: "2rem",
+            height: "2rem",
+            borderRadius: "0.5rem",
+            backgroundColor: copiedLink ? "#ecfdf5" : "#f0fdf4",
+            color: copiedLink ? "#059669" : "#16a34a",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            border: copiedLink ? "1px solid #a7f3d0" : "none",
+            cursor: isGeneratingLink ? "wait" : "pointer",
+            transition: "all 0.2s",
+          }}
+        >
+          {copiedLink ? (
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+          )}
         </button>
 
         <button
@@ -723,6 +801,28 @@ export default function LoanActions({
               flexDirection: "column",
             }}
           >
+            {/* Opción Copiar Enlace Web */}
+            <button
+              onClick={handleCopyShareLink}
+              disabled={isGeneratingLink}
+              style={{
+                padding: "0.75rem 1rem",
+                border: "none",
+                backgroundColor: "transparent",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.75rem",
+                cursor: isGeneratingLink ? "wait" : "pointer",
+                textAlign: "left",
+                color: copiedLink ? "#059669" : "#16a34a",
+                fontSize: "0.85rem",
+                fontWeight: 600,
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+              {copiedLink ? "¡Enlace Copiado!" : "Enlace Web"}
+            </button>
+
             <button
               onClick={() => handleShare("calendar")}
               disabled={isSharing}
