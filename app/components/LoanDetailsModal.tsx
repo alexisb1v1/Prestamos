@@ -26,6 +26,7 @@ import { LoanShareGeneratorRef } from "./LoanShareGenerator";
 import ConfirmModal from "./ConfirmModal";
 import LoadingSpinner from "./LoadingSpinner";
 import { logger } from "@/lib/logging-service";
+import { trackEvent } from "@/lib/analytics";
 import {
   ArrowLeft,
   Share2,
@@ -285,6 +286,11 @@ function LoanDetailsModal({
 
   const handleShare = async () => {
     if (loan && shareRef?.current) {
+      trackEvent("click_compartir_ficha", {
+        prestamoId: loan.id,
+        modo: activeTab,
+        origen: "modal_detalle",
+      });
       setIsSharing(true);
       try {
         await shareRef.current.shareLoan(loan, activeTab);
@@ -298,6 +304,10 @@ function LoanDetailsModal({
 
   const handleShareLink = async () => {
     if (!loan || isGeneratingLink) return;
+    trackEvent("click_compartir_link", {
+      prestamoId: loan.id,
+      origen: "modal_detalle",
+    });
     setIsGeneratingLink(true);
     const result = await generateShareLinkUseCase.execute(loan.id.toString());
 

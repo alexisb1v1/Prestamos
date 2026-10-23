@@ -15,6 +15,7 @@ import CreateExpenseModal from "./CreateExpenseModal";
 import LoadingSpinner from "./LoadingSpinner";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { trackEvent } from "@/lib/analytics";
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -40,6 +41,7 @@ export default function BottomNav() {
 
   const executeShare = async () => {
     try {
+      trackEvent("cerrar_dia_confirmado");
       setShowConfirm(false);
       setLoading(true);
 
@@ -133,13 +135,17 @@ export default function BottomNav() {
             <Link 
               href="/dashboard"
               className={`bottom-nav-btn ${pathname === "/dashboard" ? "active" : ""}`}
+              onClick={() => trackEvent("bottom_nav_click", { opcion: "home" })}
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
               <span className="bottom-nav-label">Home</span>
             </Link>
 
             <button 
-              onClick={() => setIsLoanModalOpen(true)}
+              onClick={() => {
+                trackEvent("bottom_nav_click", { opcion: "nuevo_prestamo" });
+                setIsLoanModalOpen(true);
+              }}
               className="bottom-nav-btn"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
@@ -147,7 +153,10 @@ export default function BottomNav() {
             </button>
 
             <button 
-              onClick={() => setIsExpenseModalOpen(true)}
+              onClick={() => {
+                trackEvent("bottom_nav_click", { opcion: "nuevo_gasto" });
+                setIsExpenseModalOpen(true);
+              }}
               className="bottom-nav-btn"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17V7"/></svg>
@@ -155,7 +164,10 @@ export default function BottomNav() {
             </button>
 
             <button 
-              onClick={() => setShowConfirm(true)}
+              onClick={() => {
+                trackEvent("bottom_nav_click", { opcion: "cerrar_dia" });
+                setShowConfirm(true);
+              }}
               className="bottom-nav-btn danger"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>

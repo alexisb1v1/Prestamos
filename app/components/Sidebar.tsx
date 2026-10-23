@@ -22,6 +22,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { authService } from "@/lib/auth";
 import { formatUserName } from "@/lib/utils";
 import { TOURS } from "@/lib/tours.config";
+import { trackEvent } from "@/lib/analytics";
 import ChangePasswordModal from "./ChangePasswordModal";
 
 export default function Sidebar() {
@@ -60,6 +61,7 @@ export default function Sidebar() {
   }, []);
 
   const handleInstallPWA = async () => {
+    trackEvent("pwa_install_click");
     const deferredPrompt = (window as any).deferredInstallPrompt;
     if (!deferredPrompt) return;
 
@@ -87,7 +89,8 @@ export default function Sidebar() {
     manualHelpExpanded !== null ? manualHelpExpanded : false;
   const toggleHelp = () => setManualHelpExpanded(!isHelpExpanded);
 
-  const handleStartTour = (path: string) => {
+  const handleStartTour = (path: string, tourTitle?: string) => {
+    trackEvent("tour_start", { tour: path, titulo: tourTitle });
     setIsOpen(false);
     if (pathname !== path) {
       router.push(path);
@@ -204,7 +207,10 @@ export default function Sidebar() {
             <Link
               href="/dashboard"
               className={`sidebar-item ${isActive("/dashboard") ? "sidebar-active" : ""}`}
-              onClick={() => setIsOpen(false)}
+              onClick={() => {
+                trackEvent("menu_click", { opcion: "resumen_dia" });
+                setIsOpen(false);
+              }}
             >
               <div
                 style={{
@@ -227,7 +233,10 @@ export default function Sidebar() {
             <Link
               href="/prestamos"
               className={`sidebar-item ${isActive("/prestamos") ? "sidebar-active" : ""}`}
-              onClick={() => setIsOpen(false)}
+              onClick={() => {
+                trackEvent("menu_click", { opcion: "prestamos" });
+                setIsOpen(false);
+              }}
             >
               <div
                 style={{
@@ -249,7 +258,10 @@ export default function Sidebar() {
             <Link
               href="/gastos"
               className={`sidebar-item ${isActive("/gastos") ? "sidebar-active" : ""}`}
-              onClick={() => setIsOpen(false)}
+              onClick={() => {
+                trackEvent("menu_click", { opcion: "gastos" });
+                setIsOpen(false);
+              }}
             >
               <div
                 style={{
@@ -330,7 +342,10 @@ export default function Sidebar() {
                         <Link
                           href="/reportes/vision-general"
                           className={`sidebar-tutorial-item ${isActive("/reportes/vision-general") ? "sidebar-active" : ""}`}
-                          onClick={() => setIsOpen(false)}
+                          onClick={() => {
+                            trackEvent("menu_click", { opcion: "reportes_general" });
+                            setIsOpen(false);
+                          }}
                         >
                           <span className="sidebar-tutorial-dot" />
                           <span>Visión General</span>
@@ -338,7 +353,10 @@ export default function Sidebar() {
                         <Link
                           href="/reportes/por-cobrador"
                           className={`sidebar-tutorial-item ${isActive("/reportes/por-cobrador") ? "sidebar-active" : ""}`}
-                          onClick={() => setIsOpen(false)}
+                          onClick={() => {
+                            trackEvent("menu_click", { opcion: "reportes_cobrador" });
+                            setIsOpen(false);
+                          }}
                         >
                           <span className="sidebar-tutorial-dot" />
                           <span>Por Cobrador</span>
@@ -353,7 +371,10 @@ export default function Sidebar() {
                   <Link
                     href="/cobradores"
                     className={`sidebar-item ${isActive("/cobradores") ? "sidebar-active" : ""}`}
-                    onClick={() => setIsOpen(false)}
+                    onClick={() => {
+                      trackEvent("menu_click", { opcion: "usuarios" });
+                      setIsOpen(false);
+                    }}
                   >
                     <div
                       style={{
@@ -380,7 +401,10 @@ export default function Sidebar() {
                   <Link
                     href="/empresas"
                     className={`sidebar-item ${isActive("/empresas") ? "sidebar-active" : ""}`}
-                    onClick={() => setIsOpen(false)}
+                    onClick={() => {
+                      trackEvent("menu_click", { opcion: "empresas" });
+                      setIsOpen(false);
+                    }}
                   >
                     <div
                       style={{
@@ -407,7 +431,10 @@ export default function Sidebar() {
                   <Link
                     href="/configuracion"
                     className={`sidebar-item ${isActive("/configuracion") ? "sidebar-active" : ""}`}
-                    onClick={() => setIsOpen(false)}
+                    onClick={() => {
+                      trackEvent("menu_click", { opcion: "configuracion" });
+                      setIsOpen(false);
+                    }}
                   >
                     <div
                       style={{
@@ -468,7 +495,7 @@ export default function Sidebar() {
                     <button
                       key={tour.id}
                       className="sidebar-tutorial-item"
-                      onClick={() => handleStartTour(tour.path)}
+                      onClick={() => handleStartTour(tour.path, tour.title)}
                       type="button"
                     >
                       <span className="sidebar-tutorial-dot" />
@@ -654,6 +681,7 @@ export default function Sidebar() {
               <button
                 className="sidebar-action-link"
                 onClick={() => {
+                  trackEvent("menu_click", { opcion: "cambiar_clave" });
                   setIsChangePasswordOpen(true);
                   setIsOpen(false);
                 }}

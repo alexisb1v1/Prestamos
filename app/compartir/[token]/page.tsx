@@ -18,6 +18,7 @@ import {
 import { es } from "date-fns/locale";
 import LoadingSpinner from "@/app/components/LoadingSpinner";
 import { logger } from "@/lib/logging-service";
+import { trackEvent } from "@/lib/analytics";
 import {
   CheckCircle2,
   Award,
@@ -79,6 +80,11 @@ export default function PublicSharePage() {
         `/loan/public-share/${token}`,
       );
       setDetails(data);
+      trackEvent("public_link_view", {
+        estado: data.status,
+        liquidado: data.isLiquidated,
+        expirado: data.isExpired,
+      });
     } catch (err: any) {
       logger.error("Error al cargar detalles públicos del préstamo:", err);
       setError(

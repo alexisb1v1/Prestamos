@@ -8,6 +8,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { LoanShareGeneratorRef } from "./LoanShareGenerator";
 import { generateShareLinkUseCase } from "@/app/features/loans";
 import { logger } from "@/lib/logging-service";
+import { trackEvent } from "@/lib/analytics";
 
 interface LoanActionsProps {
   loan: Loan;
@@ -154,6 +155,11 @@ export default function LoanActions({
 
   const handleShare = async (mode: "calendar" | "list") => {
     if (!shareRef || !shareRef.current) return;
+    trackEvent("click_compartir_ficha", {
+      prestamoId: loan.id,
+      modo: mode,
+      origen: "card_acciones",
+    });
     setIsSharing(true);
     try {
       await shareRef.current.shareLoan(loan, mode);
@@ -171,6 +177,10 @@ export default function LoanActions({
       (loan as { id?: string | number; _id?: string | number })._id;
     if (!loanId || isGeneratingLink) return;
 
+    trackEvent("click_compartir_link", {
+      prestamoId: loanId,
+      origen: "card_acciones",
+    });
     setIsGeneratingLink(true);
     const result = await generateShareLinkUseCase.execute(loanId.toString());
 

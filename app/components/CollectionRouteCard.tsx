@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import ProgressInfoModal from "./ProgressInfoModal";
 import { LoanShareGeneratorRef } from "./LoanShareGenerator";
+import { trackEvent } from "@/lib/analytics";
 
 interface CollectionRouteCardProps {
   loan: Loan;
@@ -154,6 +155,11 @@ export default function CollectionRouteCard({
     e.stopPropagation();
     setShowShareMenu(false);
     if (loan && shareRef?.current) {
+      trackEvent("click_compartir_ficha", {
+        prestamoId: loan.id,
+        modo: mode,
+        origen: "tarjeta_ruta",
+      });
       setIsSharing(true);
       try {
         await shareRef.current.shareLoan(loan, mode);
