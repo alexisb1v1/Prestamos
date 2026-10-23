@@ -4,6 +4,7 @@ import { Person } from "../models/person.model";
 import {
   CreatePersonRequestDto,
   CreatePersonResponseDto,
+  RecalculateScoreResponseDto,
 } from "../dto/person.dto";
 
 export interface PersonRepository {
@@ -14,4 +15,7 @@ export interface PersonRepository {
   create(
     person: CreatePersonRequestDto,
   ): ResultAsync<CreatePersonResponseDto, DomainError>;
+  recalculateScore(
+    id: string,
+  ): ResultAsync<RecalculateScoreResponseDto, DomainError>;
 }

@@ -6,6 +6,7 @@ import {
   PersonDto,
   CreatePersonRequestDto,
   CreatePersonResponseDto,
+  RecalculateScoreResponseDto,
 } from "../dto/person.dto";
 import { PersonMapper } from "../mappers/person.mapper";
 import { PersonRepository } from "./person.repository";
@@ -26,5 +27,14 @@ export class PersonRepositoryImpl implements PersonRepository {
     person: CreatePersonRequestDto,
   ): ResultAsync<CreatePersonResponseDto, DomainError> {
     return api.safe.post<CreatePersonResponseDto>("/person", person);
+  }
+
+  recalculateScore(
+    id: string,
+  ): ResultAsync<RecalculateScoreResponseDto, DomainError> {
+    return api.safe.post<RecalculateScoreResponseDto>(
+      `/person/${id}/recalculate-score`,
+      {},
+    );
   }
 }

@@ -7,6 +7,9 @@ export interface PersonDto {
   birthday?: string | null;
   phone?: string;
   address?: string;
+  riskScoringEnabled?: boolean;
+  creditScore?: number;
+  creditScoreDetail?: any;
 }
 
 export interface CreatePersonRequestDto {
@@ -20,3 +23,9 @@ export interface CreatePersonRequestDto {
 export interface CreatePersonResponseDto {
   id: string;
 }
+
+export interface RecalculateScoreResponseDto {
+  creditScore: number;
+  creditScoreDetail: any;
+}
+

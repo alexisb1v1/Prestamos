@@ -48,4 +48,15 @@ export class CompanyMutationsUseCase {
   ): ResultAsync<{ message: string }, DomainError> {
     return this.companyRepository.updateStatus(id, status);
   }
+
+  /**
+   * Ejecuta la regeneración del token de seguridad (key_token) para forzar el cierre de sesión masivo.
+   * @param id ID de la empresa.
+   * @returns ResultAsync con mensaje y token o un error de dominio.
+   */
+  refreshKeyToken(
+    id: string,
+  ): ResultAsync<{ message: string; newKeyToken?: string }, DomainError> {
+    return this.companyRepository.refreshKeyToken(id);
+  }
 }

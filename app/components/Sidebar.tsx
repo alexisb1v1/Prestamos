@@ -403,7 +403,7 @@ export default function Sidebar() {
                 )}
 
                 {/* Configuración */}
-                {(isAdmin || isOwner) && (
+                {(isOwner) && (
                   <Link
                     href="/configuracion"
                     className={`sidebar-item ${isActive("/configuracion") ? "sidebar-active" : ""}`}

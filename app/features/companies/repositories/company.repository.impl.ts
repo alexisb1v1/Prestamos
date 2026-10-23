@@ -38,4 +38,13 @@ export class CompanyRepositoryImpl implements CompanyRepository {
       status,
     });
   }
+
+  refreshKeyToken(
+    id: string,
+  ): ResultAsync<{ message: string; newKeyToken?: string }, DomainError> {
+    return api.safe.post<{ message: string; newKeyToken?: string }>(
+      `/company/${id}/refresh-key-token`,
+      {},
+    );
+  }
 }

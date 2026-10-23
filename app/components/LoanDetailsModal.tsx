@@ -18,6 +18,7 @@ import {
   isWithinInterval,
   getDay,
   differenceInDays,
+  differenceInCalendarDays,
 } from "date-fns";
 import { es } from "date-fns/locale";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -37,6 +38,7 @@ import {
   X,
   Link2,
   Check,
+  AlertTriangle,
 } from "lucide-react";
 
 interface LoanDetailsModalProps {
@@ -137,7 +139,13 @@ function LoanDetailsModal({
 
   const parsedDates = useMemo(() => {
     if (!startDateStr || !endDateStr) {
-      return { start: new Date(), contractEnd: new Date(), calendarEnd: new Date() };
+      return {
+        start: new Date(),
+        contractEnd: new Date(),
+        calendarEnd: new Date(),
+        isStalledOverdue: false,
+        daysOverdue: 0,
+      };
     }
 
     const start = parseDateSafe(startDateStr);
@@ -146,24 +154,56 @@ function LoanDetailsModal({
       contractEnd.setDate(contractEnd.getDate() - 1);
     }
 
-    // calendarEnd se extiende si hay abonos posteriores o mora para renderizar en el grid
-    let calendarEnd = new Date(contractEnd);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const isLiquidated = loan?.status === "Liquidado" || loan?.remainingAmount === 0;
+    const isLiquidated = loan?.status === "Liquidado" || (loan?.remainingAmount ?? 0) <= 0;
 
-    if (!isLiquidated && today > calendarEnd) {
-      calendarEnd = today;
-    }
-
+    // Buscar fecha del último abono registrado
+    let lastPaymentDate: Date | null = null;
     if (details?.installments && details.installments.length > 0) {
-      details.installments.forEach((inst) => {
+      for (const inst of details.installments) {
         const instDate = parseDateSafe(inst.date);
-        if (instDate > calendarEnd) calendarEnd = instDate;
-      });
+        if (!lastPaymentDate || instDate.getTime() > lastPaymentDate.getTime()) {
+          lastPaymentDate = instDate;
+        }
+      }
     }
 
-    return { start, contractEnd, calendarEnd };
+    // Límite del calendario (calendarEnd):
+    // 1. Por defecto, cubre hasta la fecha fin del contrato pactado
+    let calendarEnd = new Date(contractEnd);
+
+    // 2. Si hubo abonos en prórroga (posteriores a contractEnd), extendemos hasta el último abono
+    const hasLatePayments = lastPaymentDate ? lastPaymentDate.getTime() > contractEnd.getTime() : false;
+    if (lastPaymentDate && hasLatePayments) {
+      calendarEnd = new Date(lastPaymentDate);
+    }
+
+    // 3. Evaluar clientes que ya no pagan (morosos con > 7 días sin amortizar tras el plazo)
+    let isStalledOverdue = false;
+    let daysOverdue = 0;
+
+    if (!isLiquidated && today.getTime() > contractEnd.getTime()) {
+      daysOverdue = differenceInCalendarDays(today, contractEnd);
+      const referenceDate = (lastPaymentDate && hasLatePayments) ? lastPaymentDate : contractEnd;
+      const daysSinceLastActivity = differenceInCalendarDays(today, referenceDate);
+
+      if (daysSinceLastActivity > 7) {
+        // Moroso prolongado: NO extender el calendario indefinidamente (se acota a contractEnd o último abono)
+        isStalledOverdue = true;
+      } else {
+        // Sigue pagando o vencimiento muy reciente (<= 7 días): extender hasta hoy
+        calendarEnd = new Date(today);
+      }
+    }
+
+    return {
+      start,
+      contractEnd,
+      calendarEnd,
+      isStalledOverdue,
+      daysOverdue,
+    };
   }, [
     startDateStr,
     endDateStr,
@@ -222,14 +262,15 @@ function LoanDetailsModal({
 
   const isLoanDate = useCallback(
     (day: Date) => {
+      // El rango contractual original es estrictamente entre start y contractEnd (sin domingos)
       const withinInterval = isWithinInterval(day, {
         start: parsedDates.start,
-        end: parsedDates.calendarEnd,
+        end: parsedDates.contractEnd,
       });
       const isSunday = getDay(day) === 0;
       return withinInterval && !isSunday;
     },
-    [parsedDates.start, parsedDates.calendarEnd],
+    [parsedDates.start, parsedDates.contractEnd],
   );
 
   const isStartDate = useCallback(
@@ -657,134 +698,191 @@ function LoanDetailsModal({
                   </div>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "4px", marginBottom: "4px", textAlign: "center" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: "4px", marginBottom: "4px", textAlign: "center" }}>
                   {["LU", "MA", "MI", "JU", "VI", "SÁ", "DO"].map((d, i) => (
                     <span key={d} style={{ fontSize: "11px", fontWeight: "bold", color: i === 6 ? "#fb7185" : "#94a3b8" }}>{d}</span>
                   ))}
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "4px", textAlign: "center" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: "4px", textAlign: "center" }}>
                   {days.map((day) => {
                     const installment = getInstallmentForDay(day);
                     const isRelevant = isLoanDate(day);
                     const isStart = isStartDate(day);
                     const isContractEnd = isContractEndDate(day);
-                    const isExtension = day > parsedDates.contractEnd && getDay(day) !== 0;
-                    const isTodayDate = isToday(day);
+                    const isSunday = getDay(day) === 0;
+                    const isExtension = day > parsedDates.contractEnd && !isSunday;
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
                     const isOverdueUnpaid = isRelevant && day < today && !installment;
-                    const isSunday = getDay(day) === 0;
 
                     const isLastPayment = performance?.isLiquidated && performance?.lastPaymentDate && isSameDay(day, performance.lastPaymentDate);
 
                     let bgColor = "transparent";
-                    let textColor = "#cbd5e1"; // default inactive
+                    let textColor = "#cbd5e1"; // default inactive / gris
                     let borderColor = "transparent";
                     let shadow = "none";
                     let label = "";
+                    let labelColor = "#94a3b8";
 
-                    if (isStart) {
-                      bgColor = installment ? "#ecfdf5" : "#4f46e5";
-                      textColor = installment ? "#065f46" : "white";
-                      borderColor = "#4f46e5";
-                      shadow = "0 0 0 2px #4f46e5, 0 0 0 4px white";
-                      label = installment ? `S/ ${installment.amount?.toFixed(0)}` : "INI";
-                    } else if (isContractEnd) {
-                      // Fin pactado
+                    if (isSunday) {
+                      // Domingo: inactivo en gris
+                      bgColor = "transparent";
+                      textColor = "#cbd5e1";
+                      borderColor = "transparent";
+                    } else if (isRelevant) {
+                      // 1. DENTRO DEL RANGO PACTADO
                       if (installment) {
+                        // Pagó: VERDE
                         bgColor = "#ecfdf5";
                         textColor = "#065f46";
-                        borderColor = "#6366f1";
-                        shadow = "0 0 0 2px #6366f1, 0 0 0 4px white";
+                        borderColor = "#10b981";
                         label = `S/ ${installment.amount?.toFixed(0)}`;
-                      } else {
-                        bgColor = "#fff1f2";
+                        labelColor = "#047857";
+                      } else if (day < today) {
+                        // No pagó dentro de fecha y ya venció: ROJO (Mora)
+                        bgColor = "#fef2f2";
                         textColor = "#e11d48";
-                        borderColor = "#6366f1";
-                        shadow = "0 0 0 2px #6366f1, 0 0 0 4px white";
-                        label = "PACTADO";
+                        borderColor = "#fecaca";
+                        label = `${loan.fee.toFixed(0)}`;
+                        labelColor = "#f43f5e";
+                      } else {
+                        // Día de hoy o futuro dentro del rango: NEUTRO / PENDIENTE
+                        bgColor = "#f8fafc";
+                        textColor = "#334155";
+                        borderColor = "#e2e8f0";
+                        label = `${loan.fee.toFixed(0)}`;
+                        labelColor = "#64748b";
                       }
-                    } else if (isExtension && installment) {
-                      // Días de prórroga con pago
-                      bgColor = isLastPayment ? "#dcfce7" : "#fefce8";
-                      textColor = isLastPayment ? "#15803d" : "#854d0e";
-                      borderColor = isLastPayment ? "#16a34a" : "#ca8a04";
-                      shadow = isLastPayment ? "0 0 0 2px #16a34a, 0 0 0 4px white" : "none";
-                      label = `S/ ${installment.amount?.toFixed(0)}`;
-                    } else if (installment) {
-                      bgColor = "#ecfdf5"; // emerald-50
-                      textColor = "#065f46"; // emerald-800
-                      borderColor = "#10b981"; // emerald-500
-                      label = `S/ ${installment.amount?.toFixed(0)}`;
-                    } else if (isOverdueUnpaid) {
-                      bgColor = "#fff1f2"; // rose-50
-                      textColor = "#e11d48"; // rose-600
-                      borderColor = "#ffe4e6"; // rose-100
-                      label = `${loan.fee.toFixed(0)}`;
-                    } else if (isRelevant) {
-                      bgColor = "#f0f9ff"; // sky-50
-                      textColor = "#0c4a6e"; // sky-900
-                      borderColor = "#e0f2fe"; // sky-100
-                      label = `${loan.fee.toFixed(0)}`;
+
+                      // Inicio o Fin pactado: anillo sutil sin texto
+                      if (isStart) {
+                        borderColor = "#4f46e5";
+                        shadow = "0 0 0 2px #4f46e5, 0 0 0 3px white";
+                      } else if (isContractEnd) {
+                        borderColor = "#6366f1";
+                        shadow = "0 0 0 2px #6366f1, 0 0 0 3px white";
+                      }
+                    } else if (isExtension) {
+                      // 2. FUERA DEL RANGO PACTADO (PRÓRROGA)
+                      if (installment) {
+                        // Pagó en prórroga: SIEMPRE AMARILLO (incluso si es liquidación)
+                        bgColor = "#fefce8";
+                        textColor = "#854d0e";
+                        borderColor = "#ca8a04";
+                        shadow = "none";
+                        label = `S/ ${installment.amount?.toFixed(0)}`;
+                        labelColor = "#a16207";
+                      } else {
+                        // No pagó en prórroga: GRIS como los domingos (no saturar de rojo)
+                        bgColor = "transparent";
+                        textColor = "#cbd5e1";
+                        borderColor = "transparent";
+                      }
                     }
 
                     return (
                       <div
                         key={day.toISOString()}
                         style={{
-                          minHeight: "3.5rem",
+                          minHeight: "3.25rem",
                           display: "flex",
                           flexDirection: "column",
                           alignItems: "center",
                           justifyContent: "center",
-                          borderRadius: "0.75rem",
-                          padding: "0.25rem",
+                          borderRadius: "0.625rem",
+                          padding: "0.2rem",
                           backgroundColor: bgColor,
                           color: textColor,
                           border: `1px solid ${borderColor}`,
                           boxShadow: shadow,
-                          fontWeight: (installment || isStart || isContractEnd || isOverdueUnpaid) ? "bold" : "600",
-                          opacity: isSunday ? 0.6 : 1,
+                          fontWeight: (installment || isStart || isContractEnd || isOverdueUnpaid) ? 700 : 500,
+                          opacity: isSunday ? 0.45 : 1,
+                          overflow: "hidden",
                         }}
                       >
-                        <span style={{ fontSize: "0.875rem", lineHeight: 1 }}>{format(day, "d")}</span>
-                        {label && (
+                        <span style={{ fontSize: "0.8125rem", lineHeight: 1.1 }}>
+                          {format(day, "d")}
+                        </span>
+                        {label ? (
                           <span
                             style={{
-                              fontSize: "9px",
+                              fontSize: "8.5px",
                               marginTop: "2px",
-                              color: isStart && !installment
-                                ? "#c7d2fe"
-                                : (isContractEnd && !installment
-                                  ? "#ffe4e6"
-                                  : (isExtension
-                                    ? (isLastPayment ? "#15803d" : "#854d0e")
-                                    : (installment ? "#047857" : (isOverdueUnpaid ? "#f43f5e" : "#0284c7")))),
+                              color: labelColor,
                               fontWeight: 800,
+                              whiteSpace: "nowrap",
+                              letterSpacing: "-0.02em",
                             }}
                           >
                             {label}
                           </span>
-                        )}
-                        {isContractEnd && (
-                          <span style={{ fontSize: "7px", textTransform: "uppercase", fontWeight: 800, color: "#4f46e5", marginTop: "1px" }}>
-                            PACTADO
-                          </span>
-                        )}
-                        {isExtension && installment && isLastPayment && (
-                          <span style={{ fontSize: "7px", textTransform: "uppercase", fontWeight: 800, color: "#16a34a", marginTop: "1px" }}>
-                            LIQUIDADO
-                          </span>
-                        )}
-                        {isExtension && installment && !isLastPayment && (
-                          <span style={{ fontSize: "7px", textTransform: "uppercase", fontWeight: 800, color: "#ca8a04", marginTop: "1px" }}>
-                            PRÓRROGA
-                          </span>
+                        ) : (
+                          <span style={{ height: "10px" }} />
                         )}
                       </div>
                     );
                   })}
                 </div>
+
+                {/* Franja de Deuda Pendiente para Morosos Prolongados (> 7 o 14 días sin abonos) */}
+                {parsedDates.isStalledOverdue && (
+                  <div
+                    style={{
+                      marginTop: "0.875rem",
+                      padding: "0.75rem 1rem",
+                      background: "linear-gradient(135deg, #fff1f2 0%, #fee2e2 100%)",
+                      border: "1px solid #fecaca",
+                      borderRadius: "0.75rem",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "0.75rem",
+                      boxShadow: "0 1px 2px rgba(225, 29, 72, 0.05)",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                      <div
+                        style={{
+                          width: "32px",
+                          height: "32px",
+                          borderRadius: "8px",
+                          backgroundColor: "#ffe4e6",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "#e11d48",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <AlertTriangle size={18} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: "0.8rem", fontWeight: 800, color: "#9f1239" }}>
+                          Deuda pendiente: S/ {remainingAmount.toFixed(2)}
+                        </div>
+                        <div style={{ fontSize: "0.7rem", color: "#e11d48", fontWeight: 500 }}>
+                          {parsedDates.daysOverdue > 0
+                            ? `${parsedDates.daysOverdue} días fuera del plazo contractual`
+                            : "Saldo pendiente sin abonos recientes"}
+                        </div>
+                      </div>
+                    </div>
+                    <span
+                      style={{
+                        fontSize: "0.65rem",
+                        fontWeight: 800,
+                        backgroundColor: "#e11d48",
+                        color: "white",
+                        padding: "0.25rem 0.55rem",
+                        borderRadius: "999px",
+                        letterSpacing: "0.025em",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      MORA ACTIVA
+                    </span>
+                  </div>
+                )}
 
                 {/* Legend */}
                 <div style={{ marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid #f1f5f9", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", fontSize: "11px", fontWeight: 500, color: "#475569" }}>
@@ -805,7 +903,7 @@ function LoanDetailsModal({
                     <span>Mora</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "transparent" }}></span>
+                    <span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "transparent", border: "1px solid #cbd5e1" }}></span>
                     <span>Inactivo</span>
                   </div>
                 </div>

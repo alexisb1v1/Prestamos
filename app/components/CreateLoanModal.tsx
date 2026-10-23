@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import {
   searchPersonUseCase,
   createPersonUseCase,
+  recalculateScoreUseCase,
   Person,
 } from "@/app/features/people";
 import { createLoanUseCase } from "@/app/features/loans";
@@ -20,6 +21,11 @@ import {
   Phone,
   CheckCircle2,
   Share2,
+  ShieldCheck,
+  RefreshCw,
+  ChevronDown,
+  ChevronUp,
+  ArrowRight,
 } from "lucide-react";
 
 import styles from "./CreateLoanModal.module.css";
@@ -56,6 +62,11 @@ export default function CreateLoanModal({
   const [isRegistering, setIsRegistering] = useState(false);
   const [createdLoan, setCreatedLoan] = useState<Loan | null>(null);
 
+  // --- Evaluación Crediticia (Paso 1.5) ---
+  const [passedRiskAssessment, setPassedRiskAssessment] = useState(false);
+  const [recalculatingScore, setRecalculatingScore] = useState(false);
+  const [showScoreDetail, setShowScoreDetail] = useState(false);
+
   const shareRef = useRef<LoanShareGeneratorRef>(null);
 
   // --- State: Cliente ---
@@ -86,6 +97,9 @@ export default function CreateLoanModal({
     setSearchPerformed(false);
     setIsRegistering(false);
     setCreatedLoan(null);
+    setPassedRiskAssessment(false);
+    setRecalculatingScore(false);
+    setShowScoreDetail(false);
     setDocType("DNI");
     setDocNumber("");
     setPerson(null);
@@ -122,6 +136,7 @@ export default function CreateLoanModal({
           setPhone(loanToRenew.phone || "");
           setDays(24);
           setSearchPerformed(true);
+          setPassedRiskAssessment(true);
         } else {
           resetState();
         }
@@ -143,6 +158,8 @@ export default function CreateLoanModal({
         if (p.address) setAddress(p.address);
         setSearchPerformed(true);
         setIsRegistering(false);
+        // Si la empresa tiene habilitado scoring, se muestra primero el Paso 1.5
+        setPassedRiskAssessment(!p.riskScoringEnabled);
       },
       () => {
         setIsRegistering(true);
@@ -154,6 +171,71 @@ export default function CreateLoanModal({
       },
     );
     setLoading(false);
+  };
+
+  const handleRecalculateScore = async () => {
+    if (!person?.id || recalculatingScore) return;
+    setRecalculatingScore(true);
+    setError("");
+    const result = await recalculateScoreUseCase.execute(person.id);
+
+    result.match(
+      (data) => {
+        setPerson((prev) =>
+          prev
+            ? {
+                ...prev,
+                creditScore: data.creditScore,
+                creditScoreDetail: data.creditScoreDetail,
+              }
+            : null,
+        );
+      },
+      (err) => {
+        setError(err.message || "No se pudo actualizar el score crediticio.");
+      },
+    );
+    setRecalculatingScore(false);
+  };
+
+  const getRatingInfo = (rating?: string, score?: number) => {
+    const s = score ?? 0;
+    const r = (rating || (s >= 80 ? "A+" : s >= 65 ? "A" : s >= 50 ? "B" : "C")).toUpperCase();
+    switch (r) {
+      case "A+":
+        return {
+          rating: "A+",
+          label: "Excelente",
+          badgeClass: styles.ratingBadgeAplus,
+          scoreClass: styles.scoreColorAplus,
+          barColor: "#059669",
+        };
+      case "A":
+        return {
+          rating: "A",
+          label: "Bueno",
+          badgeClass: styles.ratingBadgeA,
+          scoreClass: styles.scoreColorA,
+          barColor: "#2563eb",
+        };
+      case "B":
+        return {
+          rating: "B",
+          label: "Riesgo Moderado",
+          badgeClass: styles.ratingBadgeB,
+          scoreClass: styles.scoreColorB,
+          barColor: "#d97706",
+        };
+      case "C":
+      default:
+        return {
+          rating: "C",
+          label: "Alto Riesgo",
+          badgeClass: styles.ratingBadgeC,
+          scoreClass: styles.scoreColorC,
+          barColor: "#dc2626",
+        };
+    }
   };
 
   const handleCreatePerson = async () => {
@@ -173,6 +255,7 @@ export default function CreateLoanModal({
         });
         setIsRegistering(false);
         setSearchPerformed(true);
+        setPassedRiskAssessment(true);
       },
       (err) => {
         setError(err.message || "Error al registrar persona.");
@@ -264,7 +347,9 @@ export default function CreateLoanModal({
                 {createdLoan
                   ? "Paso 3: Confirmación"
                   : searchPerformed && person
-                    ? "Paso 2: Detalles & Confirmación"
+                    ? person.riskScoringEnabled && !passedRiskAssessment
+                      ? "Paso 1.5: Evaluación Crediticia"
+                      : "Paso 2: Detalles & Confirmación"
                     : "Búsqueda o registro rápido"}
               </p>
             </div>
@@ -452,135 +537,311 @@ export default function CreateLoanModal({
                       </div>
                       <div className={styles.verifiedDni}>
                         DNI: <strong>{person.documentNumber}</strong>
+                        {person.riskScoringEnabled && passedRiskAssessment && (
+                          <button
+                            type="button"
+                            onClick={() => setPassedRiskAssessment(false)}
+                            style={{
+                              marginLeft: "0.5rem",
+                              background: "none",
+                              border: "none",
+                              color: "#4f46e5",
+                              fontSize: "11px",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              textDecoration: "underline",
+                              padding: 0,
+                            }}
+                          >
+                            (Ver Score: {person.creditScore ?? person.creditScoreDetail?.score ?? 50} pts)
+                          </button>
+                        )}
                       </div>
                     </div>
                     <button
                       className={styles.changeClientBtn}
-                      onClick={() => setSearchPerformed(false)}
+                      onClick={() => {
+                        setSearchPerformed(false);
+                        setPassedRiskAssessment(false);
+                      }}
                       type="button"
                     >
                       Cambiar
                     </button>
                   </div>
 
-                  <div className={styles.stepHeader}>
-                    <span className={styles.stepCircle} style={{ width: 20, height: 20 }}>2</span>
-                    <h2>Detalles del Préstamo</h2>
-                  </div>
-
-                  {/* Formulario de Préstamo */}
-                  <div className={styles.loanForm}>
-                    {/* Celular */}
-                    <div className={styles.fieldGroup}>
-                      <label className={styles.fieldLabel}>N° Celular (Personal)</label>
-                      <div className={styles.fieldInputWrapper}>
-                        <input
-                          type="tel"
-                          className={styles.fieldInput}
-                          placeholder="999 999 999"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                        />
-                        <Phone className={styles.fieldIcon} size={16} />
-                      </div>
-                    </div>
-
-                    {/* Dirección */}
-                    <div className={styles.fieldGroup}>
-                      <label className={styles.fieldLabel}>Dirección / Domicilio</label>
-                      <div className={styles.fieldInputWrapper}>
-                        <input
-                          type="text"
-                          className={styles.fieldInput}
-                          placeholder="Calle, Jr, Av..."
-                          value={address}
-                          onChange={(e) => setAddress(e.target.value)}
-                        />
-                        <MapPin className={styles.fieldIcon} size={16} />
-                      </div>
-                    </div>
-
-                    {/* Monto Central */}
-                    <div className={styles.fieldGroup} style={{ marginTop: "0.25rem" }}>
-                      <div className={styles.amountHeader}>
-                        <label className={styles.fieldLabel}>Monto a Prestar (S/.)</label>
-                        <span className={styles.rateBadge}>Tasa: 20%</span>
-                      </div>
-                      <div className={styles.amountInputWrapper}>
-                        <span className={styles.currencySymbol}>S/.</span>
-                        <input
-                          type="number"
-                          className={styles.amountInput}
-                          value={amount}
-                          onChange={(e) => {
-                            const raw = e.target.value;
-                            if (raw === "") {
-                              setAmount("");
-                              return;
-                            }
-                            const val = Number(raw);
-                            if (!isNaN(val)) {
-                              setAmount(val);
-                              if (val < 1000) setDays(24);
-                            }
-                          }}
-                        />
-                      </div>
-                      <div className={styles.amountHelpers}>
-                        <div className={styles.quickBtns}>
-                          <button type="button" className={styles.quickBtn} onClick={() => addAmount(50)}>+50</button>
-                          <button type="button" className={styles.quickBtn} onClick={() => addAmount(100)}>+100</button>
-                          <button type="button" className={styles.quickBtn} onClick={() => addAmount(200)}>+200</button>
+                  {/* VISTA 1.5: EVALUACIÓN CREDITICIA */}
+                  {person.riskScoringEnabled && !passedRiskAssessment ? (
+                    <div className={styles.riskCard}>
+                      <div className={styles.riskHeader}>
+                        <div className={styles.riskTitleBox}>
+                          <div className={styles.riskIconBox}>
+                            <ShieldCheck size={18} />
+                          </div>
+                          <div>
+                            <h3 className={styles.riskTitle}>Evaluación Crediticia</h3>
+                            <span style={{ fontSize: "10px", color: "#64748b" }}>Central de Riesgos Compartida</span>
+                          </div>
                         </div>
-                        <div className={styles.interestBadge}>
-                          Interés: <strong>S/. {interestTotal}</strong>
-                        </div>
+                        <button
+                          type="button"
+                          className={styles.recalculateBtn}
+                          onClick={handleRecalculateScore}
+                          disabled={recalculatingScore}
+                          title="Recalcular evaluación en tiempo real"
+                        >
+                          <RefreshCw size={13} className={recalculatingScore ? styles.spinningIcon : ""} />
+                          <span>{recalculatingScore ? "Calculando..." : "Actualizar Score"}</span>
+                        </button>
                       </div>
-                    </div>
 
-                    {/* Período */}
-                    <div className={styles.fieldGroup} style={{ marginTop: "0.25rem" }}>
-                      <div className={styles.amountHeader}>
-                        <label className={styles.fieldLabel}>Período de Pago</label>
-                        <span style={{ fontSize: "10px", fontWeight: 600, color: "#94a3b8", textTransform: "uppercase" }}>Frecuencia Diaria</span>
-                      </div>
-                      <div className={styles.fieldInputWrapper}>
-                        <input
-                          type="number"
-                          className={styles.fieldInput}
-                          value={days}
-                          onChange={(e) => {
-                            const raw = e.target.value;
-                            if (raw === "") {
-                              setDays("" as any);
-                              return;
-                            }
-                            const val = Number(raw);
-                            if (!isNaN(val)) setDays(val);
-                          }}
-                          disabled={!!amount && Number(amount) < 1000}
-                        />
-                        <span className={styles.periodSuffix}>Días</span>
-                      </div>
-                    </div>
+                      {/* Score Hero */}
+                      {(() => {
+                        const currentScore = person.creditScore ?? person.creditScoreDetail?.score ?? 50;
+                        const ratingInfo = getRatingInfo(person.creditScoreDetail?.rating, currentScore);
+                        return (
+                          <div className={styles.scoreHero}>
+                            <div className={styles.scoreVisual}>
+                              <span className={`${styles.scoreBigNumber} ${ratingInfo.scoreClass}`}>
+                                {currentScore}
+                              </span>
+                              <span className={styles.scoreMaxText}>/ 100</span>
+                            </div>
+                            <div className={styles.scoreInfoRight}>
+                              <div className={`${styles.ratingBadge} ${ratingInfo.badgeClass}`}>
+                                <span>Calificación {ratingInfo.rating}</span>
+                              </div>
+                              <span className={styles.ratingSubtitle}>{person.creditScoreDetail?.rating_label || ratingInfo.label}</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
 
-                    {/* Tarjeta Resumen */}
-                    <div className={styles.financialSummary}>
-                      <div className={styles.summaryRowTop}>
-                        <span className={styles.summaryLabelTop}>Total a Cobrar</span>
-                        <span className={styles.summaryValueTop}>S/. {totalToPay}</span>
-                      </div>
-                      <div className={styles.summaryRowBottom}>
-                        <div>
-                          <span className={styles.summaryLabelBottom}>Cuota Diaria</span>
-                          <span className={styles.summarySubBottom}>Cobro de Lunes a Sábado</span>
+                      {/* Acordeón de 3 Pilares */}
+                      <button
+                        type="button"
+                        className={styles.accordionBtn}
+                        onClick={() => setShowScoreDetail((prev) => !prev)}
+                      >
+                        <span>{showScoreDetail ? "Ocultar Detalle del Análisis" : "Ver Detalle del Análisis (3 Pilares)"}</span>
+                        {showScoreDetail ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                      </button>
+
+                      {showScoreDetail && (
+                        <div className={styles.pillarsBox}>
+                          {/* Pilar 1: Historial y Reputación (40 pts) */}
+                          {(() => {
+                            const p1 = person.creditScoreDetail?.pillars?.reputation_history;
+                            const p1Score = p1?.score ?? Math.round((person.creditScore ?? 50) * 0.4);
+                            const p1Max = p1?.max_score ?? 40;
+                            const p1Percent = Math.min(100, Math.max(0, (p1Score / p1Max) * 100));
+                            return (
+                              <div className={styles.pillarItem}>
+                                <div className={styles.pillarHeader}>
+                                  <span className={styles.pillarName}>1. Historial de Pagos y Reputación</span>
+                                  <span className={styles.pillarScore}>{p1Score} / {p1Max} pts</span>
+                                </div>
+                                <div className={styles.pillarBarBg}>
+                                  <div
+                                    className={styles.pillarBarFill}
+                                    style={{
+                                      width: `${p1Percent}%`,
+                                      background: p1Percent >= 70 ? "#059669" : p1Percent >= 50 ? "#2563eb" : "#d97706",
+                                    }}
+                                  />
+                                </div>
+                                {p1?.assessment && <p className={styles.pillarAssessment}>{p1.assessment}</p>}
+                              </div>
+                            );
+                          })()}
+
+                          {/* Pilar 2: Puntualidad Activa (35 pts) */}
+                          {(() => {
+                            const p2 = person.creditScoreDetail?.pillars?.active_punctuality;
+                            const p2Score = p2?.score ?? Math.round((person.creditScore ?? 50) * 0.35);
+                            const p2Max = p2?.max_score ?? 35;
+                            const p2Percent = Math.min(100, Math.max(0, (p2Score / p2Max) * 100));
+                            return (
+                              <div className={styles.pillarItem}>
+                                <div className={styles.pillarHeader}>
+                                  <span className={styles.pillarName}>2. Puntualidad en Préstamos Activos</span>
+                                  <span className={styles.pillarScore}>{p2Score} / {p2Max} pts</span>
+                                </div>
+                                <div className={styles.pillarBarBg}>
+                                  <div
+                                    className={styles.pillarBarFill}
+                                    style={{
+                                      width: `${p2Percent}%`,
+                                      background: p2Percent >= 70 ? "#059669" : p2Percent >= 50 ? "#2563eb" : "#d97706",
+                                    }}
+                                  />
+                                </div>
+                                {p2?.assessment && <p className={styles.pillarAssessment}>{p2.assessment}</p>}
+                              </div>
+                            );
+                          })()}
+
+                          {/* Pilar 3: Capacidad de Endeudamiento (25 pts) */}
+                          {(() => {
+                            const p3 = person.creditScoreDetail?.pillars?.debt_capacity;
+                            const p3Score = p3?.score ?? Math.round((person.creditScore ?? 50) * 0.25);
+                            const p3Max = p3?.max_score ?? 25;
+                            const p3Percent = Math.min(100, Math.max(0, (p3Score / p3Max) * 100));
+                            return (
+                              <div className={styles.pillarItem}>
+                                <div className={styles.pillarHeader}>
+                                  <span className={styles.pillarName}>3. Capacidad de Endeudamiento</span>
+                                  <span className={styles.pillarScore}>{p3Score} / {p3Max} pts</span>
+                                </div>
+                                <div className={styles.pillarBarBg}>
+                                  <div
+                                    className={styles.pillarBarFill}
+                                    style={{
+                                      width: `${p3Percent}%`,
+                                      background: p3Percent >= 70 ? "#059669" : p3Percent >= 50 ? "#2563eb" : "#d97706",
+                                    }}
+                                  />
+                                </div>
+                                {p3?.assessment && <p className={styles.pillarAssessment}>{p3.assessment}</p>}
+                              </div>
+                            );
+                          })()}
                         </div>
-                        <div className={styles.summaryValueBottom}>
-                          S/. {dailyQuota}
-                        </div>
-                      </div>
+                      )}
+
+                      {/* Botón para Continuar al Préstamo */}
+                      <button
+                        type="button"
+                        className={styles.continueLoanBtn}
+                        onClick={() => setPassedRiskAssessment(true)}
+                      >
+                        <span>CONTINUAR CON EL PRÉSTAMO</span>
+                        <ArrowRight size={18} strokeWidth={2.5} />
+                      </button>
                     </div>
-                  </div>
+                  ) : (
+                    /* VISTA HABITUAL: DETALLES DEL PRÉSTAMO */
+                    <>
+                      <div className={styles.stepHeader}>
+                        <span className={styles.stepCircle} style={{ width: 20, height: 20 }}>2</span>
+                        <h2>Detalles del Préstamo</h2>
+                      </div>
+
+                      {/* Formulario de Préstamo */}
+                      <div className={styles.loanForm}>
+                        {/* Celular */}
+                        <div className={styles.fieldGroup}>
+                          <label className={styles.fieldLabel}>N° Celular (Personal)</label>
+                          <div className={styles.fieldInputWrapper}>
+                            <input
+                              type="tel"
+                              className={styles.fieldInput}
+                              placeholder="999 999 999"
+                              value={phone}
+                              onChange={(e) => setPhone(e.target.value)}
+                            />
+                            <Phone className={styles.fieldIcon} size={16} />
+                          </div>
+                        </div>
+
+                        {/* Dirección */}
+                        <div className={styles.fieldGroup}>
+                          <label className={styles.fieldLabel}>Dirección / Domicilio</label>
+                          <div className={styles.fieldInputWrapper}>
+                            <input
+                              type="text"
+                              className={styles.fieldInput}
+                              placeholder="Calle, Jr, Av..."
+                              value={address}
+                              onChange={(e) => setAddress(e.target.value)}
+                            />
+                            <MapPin className={styles.fieldIcon} size={16} />
+                          </div>
+                        </div>
+
+                        {/* Monto Central */}
+                        <div className={styles.fieldGroup} style={{ marginTop: "0.25rem" }}>
+                          <div className={styles.amountHeader}>
+                            <label className={styles.fieldLabel}>Monto a Prestar (S/.)</label>
+                            <span className={styles.rateBadge}>Tasa: 20%</span>
+                          </div>
+                          <div className={styles.amountInputWrapper}>
+                            <span className={styles.currencySymbol}>S/.</span>
+                            <input
+                              type="number"
+                              className={styles.amountInput}
+                              value={amount}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                if (raw === "") {
+                                  setAmount("");
+                                  return;
+                                }
+                                const val = Number(raw);
+                                if (!isNaN(val)) {
+                                  setAmount(val);
+                                  if (val < 1000) setDays(24);
+                                }
+                              }}
+                            />
+                          </div>
+                          <div className={styles.amountHelpers}>
+                            <div className={styles.quickBtns}>
+                              <button type="button" className={styles.quickBtn} onClick={() => addAmount(50)}>+50</button>
+                              <button type="button" className={styles.quickBtn} onClick={() => addAmount(100)}>+100</button>
+                              <button type="button" className={styles.quickBtn} onClick={() => addAmount(200)}>+200</button>
+                            </div>
+                            <div className={styles.interestBadge}>
+                              Interés: <strong>S/. {interestTotal}</strong>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Período */}
+                        <div className={styles.fieldGroup} style={{ marginTop: "0.25rem" }}>
+                          <div className={styles.amountHeader}>
+                            <label className={styles.fieldLabel}>Período de Pago</label>
+                            <span style={{ fontSize: "10px", fontWeight: 600, color: "#94a3b8", textTransform: "uppercase" }}>Frecuencia Diaria</span>
+                          </div>
+                          <div className={styles.fieldInputWrapper}>
+                            <input
+                              type="number"
+                              className={styles.fieldInput}
+                              value={days}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                if (raw === "") {
+                                  setDays("" as any);
+                                  return;
+                                }
+                                const val = Number(raw);
+                                if (!isNaN(val)) setDays(val);
+                              }}
+                              disabled={!!amount && Number(amount) < 1000}
+                            />
+                            <span className={styles.periodSuffix}>Días</span>
+                          </div>
+                        </div>
+
+                        {/* Tarjeta Resumen */}
+                        <div className={styles.financialSummary}>
+                          <div className={styles.summaryRowTop}>
+                            <span className={styles.summaryLabelTop}>Total a Cobrar</span>
+                            <span className={styles.summaryValueTop}>S/. {totalToPay}</span>
+                          </div>
+                          <div className={styles.summaryRowBottom}>
+                            <div>
+                              <span className={styles.summaryLabelBottom}>Cuota Diaria</span>
+                              <span className={styles.summarySubBottom}>Cobro de Lunes a Sábado</span>
+                            </div>
+                            <div className={styles.summaryValueBottom}>
+                              S/. {dailyQuota}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -643,9 +904,9 @@ export default function CreateLoanModal({
         </div>
 
         {/* ============================================================== */}
-        {/* FOOTER ACCIÓN (Solo visible en Paso 2)                         */}
+        {/* FOOTER ACCIÓN (Visible solo en Paso 2 cuando ya pasó evaluación) */}
         {/* ============================================================== */}
-        {searchPerformed && person && !createdLoan && (
+        {searchPerformed && person && !createdLoan && passedRiskAssessment && (
           <footer className={styles.actionFooter}>
             <button
               className={styles.confirmBtn}

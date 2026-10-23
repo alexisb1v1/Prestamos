@@ -10,11 +10,13 @@ import CreateCompanyModal from "@/app/components/CreateCompanyModal";
 import ConfirmModal from "@/app/components/ConfirmModal";
 import LoadingSpinner from "@/app/components/LoadingSpinner";
 import { logger } from "@/lib/logging-service";
+import { RotateCcw, ShieldCheck } from "lucide-react";
 
 interface MobileCompanyCardProps {
   company: Company;
   onEdit: (company: Company) => void;
   onToggleStatus: (company: Company) => void;
+  onRefreshKeyToken: (company: Company) => void;
   getStatusColor: (status: string) => { bg: string; text: string };
 }
 
@@ -22,6 +24,7 @@ const MobileCompanyCard = ({
   company,
   onEdit,
   onToggleStatus,
+  onRefreshKeyToken,
   getStatusColor,
 }: MobileCompanyCardProps) => (
   <div className="card" style={{ padding: "1.25rem", marginBottom: "1rem" }}>
@@ -48,23 +51,43 @@ const MobileCompanyCard = ({
             {company.subdomain}.neocobros.com
           </div>
         )}
-        {company.label && (
-          <span
-            style={{
-              marginTop: "0.4rem",
-              display: "inline-block",
-              padding: "0.2rem 0.6rem",
-              backgroundColor: "var(--bg-app)",
-              borderRadius: "6px",
-              fontSize: "0.75rem",
-              fontWeight: "700",
-              color: "var(--text-secondary)",
-              border: "1px solid var(--border-color)",
-            }}
-          >
-            {company.label}
-          </span>
-        )}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.4rem" }}>
+          {company.label && (
+            <span
+              style={{
+                display: "inline-block",
+                padding: "0.2rem 0.6rem",
+                backgroundColor: "var(--bg-app)",
+                borderRadius: "6px",
+                fontSize: "0.75rem",
+                fontWeight: "700",
+                color: "var(--text-secondary)",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              {company.label}
+            </span>
+          )}
+          {company.settings?.features?.risk_scoring && (
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.25rem",
+                padding: "0.2rem 0.6rem",
+                backgroundColor: "rgba(16, 185, 129, 0.1)",
+                color: "#10b981",
+                borderRadius: "6px",
+                fontSize: "0.75rem",
+                fontWeight: "700",
+                border: "1px solid rgba(16, 185, 129, 0.25)",
+              }}
+            >
+              <ShieldCheck size={12} />
+              Scoring Activo
+            </span>
+          )}
+        </div>
       </div>
       <span
         style={{
@@ -97,7 +120,21 @@ const MobileCompanyCard = ({
       <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
         Registrada: {new Date(company.createdAt).toLocaleDateString()}
       </div>
-      <div style={{ display: "flex", gap: "0.75rem" }}>
+      <div style={{ display: "flex", gap: "0.5rem" }}>
+        <button
+          onClick={() => onRefreshKeyToken(company)}
+          className="btn-icon"
+          title="Regenerar Llave de Seguridad (Kill-Switch: Forzar Cierre de Sesiones)"
+          style={{
+            padding: "0.5rem",
+            borderRadius: "0.75rem",
+            color: "#f59e0b",
+            backgroundColor: "rgba(245, 158, 11, 0.1)",
+            border: "1px solid rgba(245, 158, 11, 0.25)",
+          }}
+        >
+          <RotateCcw size={18} />
+        </button>
         <button
           onClick={() => onEdit(company)}
           className="btn-icon primary"
@@ -172,6 +209,12 @@ export default function EmpresasPage() {
     company: Company | null;
     targetStatus: string;
   }>({ isOpen: false, company: null, targetStatus: "" });
+  const [keyTokenConfirmation, setKeyTokenConfirmation] = useState<{
+    isOpen: boolean;
+    company: Company | null;
+  }>({ isOpen: false, company: null });
+  const [keyTokenLoading, setKeyTokenLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -232,6 +275,37 @@ export default function EmpresasPage() {
       setError("Error al actualizar el estado de la empresa.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRefreshKeyToken = async () => {
+    if (!keyTokenConfirmation.company) return;
+    try {
+      setKeyTokenLoading(true);
+      setError("");
+      const result = await companyMutationsUseCase.refreshKeyToken(
+        keyTokenConfirmation.company.id,
+      );
+
+      result.match(
+        () => {
+          const compName = keyTokenConfirmation.company?.companyName;
+          setSuccessMessage(
+            `Llave de seguridad rotada exitosamente para "${compName}". Todas las sesiones activas han sido revocadas al instante.`,
+          );
+          setKeyTokenConfirmation({ isOpen: false, company: null });
+          loadCompanies();
+          setTimeout(() => setSuccessMessage(""), 6000);
+        },
+        (err) => {
+          logger.error("Error refreshing key token:", err);
+          setError("Error al regenerar la llave de seguridad: " + err.message);
+        },
+      );
+    } catch {
+      setError("Error al regenerar la llave de seguridad.");
+    } finally {
+      setKeyTokenLoading(false);
     }
   };
 
@@ -345,6 +419,26 @@ export default function EmpresasPage() {
         </div>
       )}
 
+      {successMessage && (
+        <div
+          style={{
+            padding: "1rem",
+            marginBottom: "1.5rem",
+            backgroundColor: "rgba(16, 185, 129, 0.1)",
+            border: "1px solid #10b981",
+            borderRadius: "var(--radius-md)",
+            color: "#059669",
+            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+          }}
+        >
+          <ShieldCheck size={20} />
+          <span>{successMessage}</span>
+        </div>
+      )}
+
       {isMobile ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           {loading ? (
@@ -374,6 +468,12 @@ export default function EmpresasPage() {
                     isOpen: true,
                     company: c,
                     targetStatus: c.status === "ACTIVE" ? "INACTIVE" : "ACTIVE",
+                  })
+                }
+                onRefreshKeyToken={(c) =>
+                  setKeyTokenConfirmation({
+                    isOpen: true,
+                    company: c,
                   })
                 }
                 getStatusColor={getStatusColor}
@@ -453,6 +553,27 @@ export default function EmpresasPage() {
                         >
                           {company.companyName}
                         </div>
+                        {company.settings?.features?.risk_scoring && (
+                          <div style={{ marginTop: "0.35rem" }}>
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "0.25rem",
+                                padding: "0.15rem 0.5rem",
+                                backgroundColor: "rgba(16, 185, 129, 0.1)",
+                                color: "#10b981",
+                                borderRadius: "6px",
+                                fontSize: "0.72rem",
+                                fontWeight: "700",
+                                border: "1px solid rgba(16, 185, 129, 0.25)",
+                              }}
+                            >
+                              <ShieldCheck size={12} />
+                              Central de Riesgos
+                            </span>
+                          </div>
+                        )}
                       </td>
                       <td style={{ padding: "1.5rem" }}>
                         {company.subdomain ? (
@@ -518,10 +639,29 @@ export default function EmpresasPage() {
                         <div
                           style={{
                             display: "flex",
-                            gap: "0.75rem",
+                            gap: "0.5rem",
                             justifyContent: "flex-end",
                           }}
                         >
+                          <button
+                            onClick={() =>
+                              setKeyTokenConfirmation({
+                                isOpen: true,
+                                company,
+                              })
+                            }
+                            className="btn-icon"
+                            title="Regenerar Llave de Seguridad (Kill-Switch: Forzar Cierre de Sesiones)"
+                            style={{
+                              padding: "0.6rem",
+                              borderRadius: "10px",
+                              color: "#f59e0b",
+                              backgroundColor: "rgba(245, 158, 11, 0.1)",
+                              border: "1px solid rgba(245, 158, 11, 0.25)",
+                            }}
+                          >
+                            <RotateCcw size={18} />
+                          </button>
                           <button
                             onClick={() => {
                               setEditingCompany(company);
@@ -627,6 +767,20 @@ export default function EmpresasPage() {
             : "Desactivar Empresa"
         }
         message={`¿Estás seguro de que deseas ${confirmation.targetStatus === "ACTIVE" ? "activar" : "desactivar"} la empresa "${confirmation.company?.companyName}"?`}
+      />
+
+      <ConfirmModal
+        isOpen={keyTokenConfirmation.isOpen}
+        onClose={() =>
+          setKeyTokenConfirmation({ isOpen: false, company: null })
+        }
+        onConfirm={handleRefreshKeyToken}
+        title="Regenerar Llave de Seguridad (Kill-Switch)"
+        message={`¿Estás seguro de regenerar el token de seguridad para la empresa "${keyTokenConfirmation.company?.companyName}"? Al confirmar, la clave secreta del tenant se actualizará en la base de datos y la caché en Redis será eliminada de inmediato. Todas las sesiones activas de cobradores y administradores de esta empresa serán cerradas forzosamente en todos sus dispositivos al instante.`}
+        confirmText="Regenerar y Cerrar Sesiones"
+        cancelText="Cancelar"
+        isDestructive={true}
+        isLoading={keyTokenLoading}
       />
     </div>
   );

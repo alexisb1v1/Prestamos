@@ -10,6 +10,8 @@ export class CompanyMapper {
       label: dto.label,
       status: dto.status,
       createdAt: dto.createdAt,
+      keyToken: dto.keyToken,
+      settings: dto.settings,
     };
   }
 }

@@ -12,6 +12,9 @@ export class PersonMapper {
       birthday: dto.birthday,
       phone: dto.phone,
       address: dto.address,
+      riskScoringEnabled: dto.riskScoringEnabled,
+      creditScore: dto.creditScore,
+      creditScoreDetail: dto.creditScoreDetail,
     };
   }
 }

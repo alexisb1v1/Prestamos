@@ -13,6 +13,7 @@ import {
   endOfWeek,
   isWithinInterval,
   getDay,
+  differenceInCalendarDays,
 } from "date-fns";
 import { es } from "date-fns/locale";
 import LoadingSpinner from "@/app/components/LoadingSpinner";
@@ -28,6 +29,7 @@ import {
   Calendar,
   Receipt,
   MessageCircle,
+  AlertTriangle,
 } from "lucide-react";
 
 interface Installment {
@@ -107,7 +109,13 @@ export default function PublicSharePage() {
 
   const parsedDates = useMemo(() => {
     if (!startDateStr || !endDateStr) {
-      return { start: new Date(), contractEnd: new Date(), calendarEnd: new Date() };
+      return {
+        start: new Date(),
+        contractEnd: new Date(),
+        calendarEnd: new Date(),
+        isStalledOverdue: false,
+        daysOverdue: 0,
+      };
     }
 
     const start = parseDateSafe(startDateStr);
@@ -118,7 +126,6 @@ export default function PublicSharePage() {
       contractEnd.setDate(contractEnd.getDate() - 1);
     }
 
-    let calendarEnd = new Date(contractEnd);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const isLiquidated =
@@ -126,18 +133,52 @@ export default function PublicSharePage() {
       details?.status === "Liquidado" ||
       details?.remainingAmount === 0;
 
-    if (!isLiquidated && today > calendarEnd) {
-      calendarEnd = today;
-    }
-
+    // Buscar fecha del último abono registrado
+    let lastPaymentDate: Date | null = null;
     if (details?.installments && details.installments.length > 0) {
-      details.installments.forEach((inst) => {
+      for (const inst of details.installments) {
         const instDate = parseDateSafe(inst.date);
-        if (instDate > calendarEnd) calendarEnd = instDate;
-      });
+        if (!lastPaymentDate || instDate.getTime() > lastPaymentDate.getTime()) {
+          lastPaymentDate = instDate;
+        }
+      }
     }
 
-    return { start, contractEnd, calendarEnd };
+    // Límite del calendario (calendarEnd):
+    // 1. Por defecto, cubre hasta la fecha fin del contrato pactado
+    let calendarEnd = new Date(contractEnd);
+
+    // 2. Si hubo abonos en prórroga (posteriores a contractEnd), extendemos hasta el último abono
+    const hasLatePayments = lastPaymentDate ? lastPaymentDate.getTime() > contractEnd.getTime() : false;
+    if (lastPaymentDate && hasLatePayments) {
+      calendarEnd = new Date(lastPaymentDate);
+    }
+
+    // 3. Evaluar clientes que ya no pagan (morosos con > 7 días sin amortizar tras el plazo)
+    let isStalledOverdue = false;
+    let daysOverdue = 0;
+
+    if (!isLiquidated && today.getTime() > contractEnd.getTime()) {
+      daysOverdue = differenceInCalendarDays(today, contractEnd);
+      const referenceDate = (lastPaymentDate && hasLatePayments) ? lastPaymentDate : contractEnd;
+      const daysSinceLastActivity = differenceInCalendarDays(today, referenceDate);
+
+      if (daysSinceLastActivity > 7) {
+        // Moroso prolongado: NO extender el calendario indefinidamente (se acota al fin pactado o último abono)
+        isStalledOverdue = true;
+      } else {
+        // Sigue pagando o vencimiento muy reciente (<= 7 días): extender hasta hoy
+        calendarEnd = new Date(today);
+      }
+    }
+
+    return {
+      start,
+      contractEnd,
+      calendarEnd,
+      isStalledOverdue,
+      daysOverdue,
+    };
   }, [
     startDateStr,
     endDateStr,
@@ -227,12 +268,12 @@ export default function PublicSharePage() {
     (day: Date) => {
       const withinInterval = isWithinInterval(day, {
         start: parsedDates.start,
-        end: parsedDates.calendarEnd,
+        end: parsedDates.contractEnd,
       });
       const isSunday = getDay(day) === 0;
       return withinInterval && !isSunday;
     },
-    [parsedDates.start, parsedDates.calendarEnd],
+    [parsedDates.start, parsedDates.contractEnd],
   );
 
   const isStartDate = useCallback(
@@ -683,6 +724,9 @@ export default function PublicSharePage() {
                       performance={performance}
                       isToday={isToday}
                       fee={details.fee}
+                      isStalledOverdue={parsedDates.isStalledOverdue}
+                      daysOverdue={parsedDates.daysOverdue}
+                      remainingAmount={details.remainingAmount}
                     />
                   ) : (
                     <InstallmentsListView
@@ -871,6 +915,9 @@ export default function PublicSharePage() {
                   performance={performance}
                   isToday={isToday}
                   fee={details.fee}
+                  isStalledOverdue={parsedDates.isStalledOverdue}
+                  daysOverdue={parsedDates.daysOverdue}
+                  remainingAmount={details.remainingAmount}
                 />
               ) : (
                 <InstallmentsListView installments={details.installments} />
@@ -965,6 +1012,9 @@ function CalendarView({
   performance,
   isToday,
   fee,
+  isStalledOverdue,
+  daysOverdue,
+  remainingAmount,
 }: {
   monthLabel: string;
   days: Date[];
@@ -976,6 +1026,9 @@ function CalendarView({
   performance?: any;
   isToday: (day: Date) => boolean;
   fee: number;
+  isStalledOverdue?: boolean;
+  daysOverdue?: number;
+  remainingAmount?: number;
 }) {
   return (
     <div className="nc-calendar-container">
@@ -983,9 +1036,13 @@ function CalendarView({
         <span className="nc-calendar-title">{monthLabel}</span>
       </div>
       {/* Cuadrícula Calendario */}
-      <div className="nc-calendar-grid">
-        {["LU", "MA", "MI", "JU", "VI", "SÁ", "DO"].map((dayName) => (
-          <div key={dayName} className="nc-calendar-header-day">
+      <div className="nc-calendar-grid" style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: "6px" }}>
+        {["LU", "MA", "MI", "JU", "VI", "SÁ", "DO"].map((dayName, i) => (
+          <div
+            key={dayName}
+            className="nc-calendar-header-day"
+            style={{ color: i === 6 ? "#fb7185" : "#94a3b8" }}
+          >
             {dayName}
           </div>
         ))}
@@ -994,113 +1051,194 @@ function CalendarView({
           const isRelevant = isLoanDate(day);
           const isStart = isStartDate(day);
           const isContractEnd = isContractEndDate(day);
-          const isExtension = day > contractEndDate && getDay(day) !== 0;
-          const isTodayDate = isToday(day);
+          const isSunday = getDay(day) === 0;
+          const isExtension = day > contractEndDate && !isSunday;
           const referenceDate = new Date();
           referenceDate.setHours(0, 0, 0, 0);
-          const isOverdueUnpaid =
-            isRelevant && day < referenceDate && !installment;
           const isLastPayment =
             performance?.isLiquidated &&
             performance?.lastPaymentDate &&
             isSameDay(day, performance.lastPaymentDate);
 
-          let statusClass = "";
-          let customLabel = "";
+          let bgColor = "transparent";
+          let textColor = "#cbd5e1";
+          let borderColor = "transparent";
+          let shadow = "none";
+          let label = "";
+          let labelColor = "#94a3b8";
 
-          if (isContractEnd) {
-            statusClass = installment ? "nc-day-paid" : "nc-day-end";
-            customLabel = "Pactado";
-          } else if (isExtension && installment) {
-            statusClass = isLastPayment ? "nc-day-liquidated-ext" : "nc-day-extension";
-            customLabel = isLastPayment ? "Liquidado" : "Prórroga";
-          } else if (installment) {
-            statusClass = "nc-day-paid";
-          } else if (isOverdueUnpaid) {
-            statusClass = "nc-day-overdue";
+          if (isSunday) {
+            bgColor = "transparent";
+            textColor = "#cbd5e1";
+            borderColor = "transparent";
           } else if (isRelevant) {
-            statusClass = "nc-day-pending";
-          }
+            if (installment) {
+              bgColor = "#ecfdf5";
+              textColor = "#065f46";
+              borderColor = "#10b981";
+              label = `S/ ${installment.amount.toFixed(0)}`;
+              labelColor = "#047857";
+            } else if (day < referenceDate) {
+              bgColor = "#fef2f2";
+              textColor = "#e11d48";
+              borderColor = "#fecaca";
+              label = `S/ ${fee.toFixed(0)}`;
+              labelColor = "#f43f5e";
+            } else {
+              bgColor = "#f8fafc";
+              textColor = "#334155";
+              borderColor = "#e2e8f0";
+              label = `S/ ${fee.toFixed(0)}`;
+              labelColor = "#64748b";
+            }
 
-          if (isStart) {
-            statusClass = "nc-day-start";
-            customLabel = "Inicio";
+            if (isStart) {
+              borderColor = "#4f46e5";
+              shadow = "0 0 0 2px #4f46e5, 0 0 0 3px white";
+            } else if (isContractEnd) {
+              borderColor = "#6366f1";
+              shadow = "0 0 0 2px #6366f1, 0 0 0 3px white";
+            }
+          } else if (isExtension) {
+            if (installment) {
+              bgColor = "#fefce8";
+              textColor = "#854d0e";
+              borderColor = "#ca8a04";
+              shadow = "none";
+              label = `S/ ${installment.amount.toFixed(0)}`;
+              labelColor = "#a16207";
+            } else {
+              bgColor = "transparent";
+              textColor = "#cbd5e1";
+              borderColor = "transparent";
+            }
           }
 
           return (
             <div
               key={day.toISOString()}
-              className={`nc-calendar-day ${statusClass} ${isTodayDate ? "nc-calendar-day-today" : ""}`}
               style={{
-                opacity: isRelevant || installment ? 1 : 0.35,
-                border: isContractEnd ? "2px solid #6366f1" : undefined,
+                aspectRatio: "1",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: bgColor,
+                color: textColor,
+                border: `1px solid ${borderColor}`,
+                boxShadow: shadow,
+                borderRadius: "0.5rem",
+                fontWeight: (installment || isStart || isContractEnd || (isRelevant && day < referenceDate)) ? 800 : 500,
+                opacity: isSunday ? 0.4 : 1,
+                overflow: "hidden",
+                padding: "2px",
               }}
             >
-              <span className="nc-day-number">{format(day, "d")}</span>
-              {installment ? (
-                <span className="nc-day-fee" style={{ fontWeight: 800 }}>
-                  {installment.amount.toFixed(0)}
-                </span>
-              ) : isRelevant && !isStart && !isContractEnd ? (
-                <span className="nc-day-fee">{fee.toFixed(0)}</span>
-              ) : null}
-              {customLabel && (
+              <span className="nc-day-number" style={{ fontSize: "0.85rem", lineHeight: 1.1 }}>
+                {format(day, "d")}
+              </span>
+              {label ? (
                 <span
-                  className="nc-day-label"
                   style={{
-                    fontSize: "8px",
+                    fontSize: "8.5px",
                     fontWeight: 800,
-                    textTransform: "uppercase",
-                    color: isContractEnd && installment ? "#4f46e5" : undefined,
+                    color: labelColor,
+                    marginTop: "2px",
+                    whiteSpace: "nowrap",
+                    letterSpacing: "-0.02em",
                   }}
                 >
-                  {customLabel}
+                  {label}
                 </span>
+              ) : (
+                <span style={{ height: "10px" }} />
               )}
             </div>
           );
         })}
       </div>
 
+      {/* Franja de Deuda Pendiente para Morosos Prolongados (> 7 o 14 días sin abonos) */}
+      {isStalledOverdue && (
+        <div
+          style={{
+            marginTop: "0.875rem",
+            padding: "0.75rem 1rem",
+            background: "linear-gradient(135deg, #fff1f2 0%, #fee2e2 100%)",
+            border: "1px solid #fecaca",
+            borderRadius: "0.75rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "0.75rem",
+            boxShadow: "0 1px 2px rgba(225, 29, 72, 0.05)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+            <div
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "8px",
+                backgroundColor: "#ffe4e6",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#e11d48",
+                flexShrink: 0,
+              }}
+            >
+              <AlertTriangle size={18} />
+            </div>
+            <div>
+              <div style={{ fontSize: "0.8rem", fontWeight: 800, color: "#9f1239" }}>
+                Deuda pendiente: S/ {(remainingAmount ?? 0).toFixed(2)}
+              </div>
+              <div style={{ fontSize: "0.7rem", color: "#e11d48", fontWeight: 500 }}>
+                {(daysOverdue ?? 0) > 0
+                  ? `${daysOverdue} días fuera del plazo contractual`
+                  : "Saldo pendiente sin abonos recientes"}
+              </div>
+            </div>
+          </div>
+          <span
+            style={{
+              fontSize: "0.65rem",
+              fontWeight: 800,
+              backgroundColor: "#e11d48",
+              color: "white",
+              padding: "0.25rem 0.55rem",
+              borderRadius: "999px",
+              letterSpacing: "0.025em",
+              whiteSpace: "nowrap",
+            }}
+          >
+            MORA ACTIVA
+          </span>
+        </div>
+      )}
+
       {/* Leyenda del Calendario */}
-      <div className="nc-legend">
-        <div className="nc-legend-item">
-          <div
-            className="nc-legend-color nc-day-paid"
-            style={{ border: "1px solid #15803d" }}
-          />
-          <span className="nc-legend-label">Pagado</span>
+      <div className="nc-legend" style={{ marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid #f1f5f9", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", fontSize: "11px", fontWeight: 500, color: "#475569" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#4f46e5" }} />
+          <span>Inicio / Fin Pactado</span>
         </div>
-        <div className="nc-legend-item">
-          <div
-            className="nc-legend-color"
-            style={{ backgroundColor: "#ecfdf5", border: "2px solid #6366f1" }}
-          />
-          <span className="nc-legend-label">Fin Pactado</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#10b981" }} />
+          <span>Cobrado</span>
         </div>
-        <div className="nc-legend-item">
-          <div
-            className="nc-legend-color nc-day-extension"
-          />
-          <span className="nc-legend-label">Prórroga</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#ca8a04" }} />
+          <span>Prórroga</span>
         </div>
-        <div className="nc-legend-item">
-          <div
-            className="nc-legend-color nc-day-overdue"
-            style={{ border: "1px solid #b91c1c" }}
-          />
-          <span className="nc-legend-label">Atrasado</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#fef2f2", border: "1px solid #fecaca" }} />
+          <span>Mora</span>
         </div>
-        <div className="nc-legend-item">
-          <div
-            className="nc-legend-color nc-day-pending"
-            style={{ border: "1px solid #0369a1" }}
-          />
-          <span className="nc-legend-label">Pendiente</span>
-        </div>
-        <div className="nc-legend-item">
-          <div className="nc-legend-color nc-day-start" />
-          <span className="nc-legend-label">Inicio</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "transparent", border: "1px solid #cbd5e1" }} />
+          <span>Inactivo</span>
         </div>
       </div>
     </div>

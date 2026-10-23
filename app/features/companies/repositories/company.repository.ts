@@ -37,4 +37,11 @@ export interface CompanyRepository {
     id: string,
     status: string,
   ): ResultAsync<{ message: string }, DomainError>;
+
+  /**
+   * Regenera el token de seguridad (key_token) del tenant para forzar el cierre de sesión masivo.
+   */
+  refreshKeyToken(
+    id: string,
+  ): ResultAsync<{ message: string; newKeyToken?: string }, DomainError>;
 }
