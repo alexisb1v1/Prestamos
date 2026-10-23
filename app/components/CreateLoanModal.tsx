@@ -9,6 +9,7 @@ import {
 } from "@/app/features/people";
 import { createLoanUseCase } from "@/app/features/loans";
 import { authService } from "@/lib/auth";
+import { trackEvent } from "@/lib/analytics";
 import { User } from "@/app/features/users";
 import { Loan } from "@/lib/types";
 import LoanShareGenerator, { LoanShareGeneratorRef } from "./LoanShareGenerator";
@@ -175,12 +176,19 @@ export default function CreateLoanModal({
 
   const handleRecalculateScore = async () => {
     if (!person?.id || recalculatingScore) return;
+    trackEvent("click_actualizar_score", {
+      person_id: person.id,
+    });
     setRecalculatingScore(true);
     setError("");
     const result = await recalculateScoreUseCase.execute(person.id);
 
     result.match(
       (data) => {
+        trackEvent("score_actualizado_exito", {
+          score: data.creditScore,
+          rating: data.creditScoreDetail?.rating,
+        });
         setPerson((prev) =>
           prev
             ? {
@@ -192,6 +200,9 @@ export default function CreateLoanModal({
         );
       },
       (err) => {
+        trackEvent("score_actualizado_error", {
+          error: err.message,
+        });
         setError(err.message || "No se pudo actualizar el score crediticio.");
       },
     );
@@ -621,7 +632,11 @@ export default function CreateLoanModal({
                       <button
                         type="button"
                         className={styles.accordionBtn}
-                        onClick={() => setShowScoreDetail((prev) => !prev)}
+                        onClick={() => {
+                          const nuevoEstado = !showScoreDetail;
+                          trackEvent("score_toggle_detalle", { visible: nuevoEstado });
+                          setShowScoreDetail(nuevoEstado);
+                        }}
                       >
                         <span>{showScoreDetail ? "Ocultar Detalle del Análisis" : "Ver Detalle del Análisis (3 Pilares)"}</span>
                         {showScoreDetail ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -713,7 +728,10 @@ export default function CreateLoanModal({
                       <button
                         type="button"
                         className={styles.continueLoanBtn}
-                        onClick={() => setPassedRiskAssessment(true)}
+                        onClick={() => {
+                          trackEvent("score_continuar_prestamo");
+                          setPassedRiskAssessment(true);
+                        }}
                       >
                         <span>CONTINUAR CON EL PRÉSTAMO</span>
                         <ArrowRight size={18} strokeWidth={2.5} />
