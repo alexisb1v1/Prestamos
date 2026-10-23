@@ -514,6 +514,26 @@ button {
   color: white !important;
 }
 
+.nc-day-extension {
+  background-color: #fefce8;
+  border: 1.5px solid #ca8a04;
+}
+.nc-day-extension .nc-day-number,
+.nc-day-extension .nc-day-label,
+.nc-day-extension .nc-day-fee {
+  color: #854d0e !important;
+}
+
+.nc-day-liquidated-ext {
+  background-color: #dcfce7;
+  border: 2px solid #16a34a;
+}
+.nc-day-liquidated-ext .nc-day-number,
+.nc-day-liquidated-ext .nc-day-label,
+.nc-day-liquidated-ext .nc-day-fee {
+  color: #15803d !important;
+}
+
 .nc-legend {
   display: flex;
   flex-wrap: wrap;

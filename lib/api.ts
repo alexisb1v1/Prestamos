@@ -40,6 +40,20 @@ export async function apiRequest<T = unknown>(
         if (fingerprint) {
             headers['X-Fingerprint'] = fingerprint;
         }
+
+        // Subdominio del tenant en memoria para optimizar peticiones al backend
+        const hostname = window.location.hostname;
+        const parts = hostname.split('.');
+        const isLocalWithSub = hostname.endsWith('.localhost') && parts.length >= 2;
+        let tenant = '';
+        if (hostname === 'localhost' || parts[0] === 'central' || (!isLocalWithSub && parts.length < 3)) {
+            tenant = process.env.NEXT_PUBLIC_DEV_TENANT || '';
+        } else {
+            tenant = parts[0];
+        }
+        if (tenant && tenant !== 'central') {
+            headers['X-Tenant-Subdomain'] = tenant;
+        }
     }
 
     const url = `${API_BASE_URL}${endpoint}`;

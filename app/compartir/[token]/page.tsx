@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { apiRequest } from "@/lib/api";
-import { formatMoney, getLoanStatus, formatDateUTC } from "@/lib/loanUtils";
+import { formatMoney, getLoanStatus, formatDateUTC, formatDateLocal, calculateLoanPerformance } from "@/lib/loanUtils";
 import {
   format,
   parseISO,
@@ -51,6 +51,11 @@ interface PublicLoanDetails {
   endDate: string;
   status: string;
   installments: Installment[];
+  completedOnTime?: boolean;
+  earlyLiquidationDays?: number;
+  extensionDays?: number;
+  delayDays?: number;
+  creditRating?: string | null;
 }
 
 export default function PublicSharePage() {
@@ -102,12 +107,18 @@ export default function PublicSharePage() {
 
   const parsedDates = useMemo(() => {
     if (!startDateStr || !endDateStr) {
-      return { start: new Date(), end: new Date() };
+      return { start: new Date(), contractEnd: new Date(), calendarEnd: new Date() };
     }
 
     const start = parseDateSafe(startDateStr);
-    let end = parseDateSafe(endDateStr);
+    let contractEnd = parseDateSafe(endDateStr);
 
+    // Si la fecha fin pactada en la BD cae domingo, normalizar al sábado anterior
+    if (contractEnd.getDay() === 0) {
+      contractEnd.setDate(contractEnd.getDate() - 1);
+    }
+
+    let calendarEnd = new Date(contractEnd);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const isLiquidated =
@@ -115,18 +126,18 @@ export default function PublicSharePage() {
       details?.status === "Liquidado" ||
       details?.remainingAmount === 0;
 
-    if (!isLiquidated && today > end) {
-      end = today;
+    if (!isLiquidated && today > calendarEnd) {
+      calendarEnd = today;
     }
 
     if (details?.installments && details.installments.length > 0) {
       details.installments.forEach((inst) => {
         const instDate = parseDateSafe(inst.date);
-        if (instDate > end) end = instDate;
+        if (instDate > calendarEnd) calendarEnd = instDate;
       });
     }
 
-    return { start, end };
+    return { start, contractEnd, calendarEnd };
   }, [
     startDateStr,
     endDateStr,
@@ -137,28 +148,48 @@ export default function PublicSharePage() {
     details?.installments,
   ]);
 
+  const performance = useMemo(() => {
+    if (!details) return null;
+    const tempLoan = {
+      status: details.status,
+      startDate: details.startDate,
+      endDate: details.endDate,
+      fee: details.fee,
+      amount: details.amount,
+      interest: details.interest,
+      remainingAmount: details.remainingAmount,
+      days: details.days,
+      completedOnTime: details.completedOnTime,
+      earlyLiquidationDays: details.earlyLiquidationDays,
+      extensionDays: details.extensionDays,
+      delayDays: details.delayDays,
+      creditRating: details.creditRating,
+    } as any;
+    return calculateLoanPerformance(tempLoan, details.installments || []);
+  }, [details]);
+
   const days = useMemo(() => {
-    if (!parsedDates.start || !parsedDates.end) return [];
+    if (!parsedDates.start || !parsedDates.calendarEnd) return [];
     return eachDayOfInterval({
       start: startOfWeek(parsedDates.start, { weekStartsOn: 1 }),
-      end: endOfWeek(parsedDates.end, { weekStartsOn: 1 }),
+      end: endOfWeek(parsedDates.calendarEnd, { weekStartsOn: 1 }),
     });
-  }, [parsedDates.start, parsedDates.end]);
+  }, [parsedDates.start, parsedDates.calendarEnd]);
 
   const monthLabel = useMemo(() => {
     if (!details) return "";
     if (
       format(parsedDates.start, "MMM yyyy") ===
-      format(parsedDates.end, "MMM yyyy")
+      format(parsedDates.calendarEnd, "MMM yyyy")
     ) {
       return format(parsedDates.start, "MMMM yyyy", { locale: es });
     }
     return `${format(parsedDates.start, "MMMM", { locale: es })} - ${format(
-      parsedDates.end,
+      parsedDates.calendarEnd,
       "MMMM yyyy",
       { locale: es },
     )}`;
-  }, [parsedDates.start, parsedDates.end, details]);
+  }, [parsedDates.start, parsedDates.calendarEnd, details]);
 
   const getInstallmentForDay = useCallback(
     (day: Date) => {
@@ -167,7 +198,7 @@ export default function PublicSharePage() {
         day.getMonth(),
         day.getDate(),
       ).getTime();
-      return details?.installments?.find((inst) => {
+      const dayInstallments = details?.installments?.filter((inst) => {
         const instDate = new Date(inst.date);
         const instDay = new Date(
           instDate.getFullYear(),
@@ -176,6 +207,18 @@ export default function PublicSharePage() {
         ).getTime();
         return instDay === normalizedDay;
       });
+
+      if (!dayInstallments || dayInstallments.length === 0) return undefined;
+
+      const totalAmount = dayInstallments.reduce(
+        (sum, inst) => sum + (inst.amount || 0),
+        0,
+      );
+
+      return {
+        ...dayInstallments[0],
+        amount: totalAmount,
+      };
     },
     [details?.installments],
   );
@@ -184,21 +227,21 @@ export default function PublicSharePage() {
     (day: Date) => {
       const withinInterval = isWithinInterval(day, {
         start: parsedDates.start,
-        end: parsedDates.end,
+        end: parsedDates.calendarEnd,
       });
       const isSunday = getDay(day) === 0;
       return withinInterval && !isSunday;
     },
-    [parsedDates.start, parsedDates.end],
+    [parsedDates.start, parsedDates.calendarEnd],
   );
 
   const isStartDate = useCallback(
     (day: Date) => isSameDay(parsedDates.start, day),
     [parsedDates.start],
   );
-  const isEndDate = useCallback(
-    (day: Date) => isSameDay(parsedDates.end, day),
-    [parsedDates.end],
+  const isContractEndDate = useCallback(
+    (day: Date) => isSameDay(parsedDates.contractEnd, day),
+    [parsedDates.contractEnd],
   );
   const isToday = useCallback((day: Date) => isSameDay(new Date(), day), []);
 
@@ -388,7 +431,7 @@ export default function PublicSharePage() {
                   fontSize: "0.9rem",
                   color: "#475569",
                   lineHeight: 1.5,
-                  margin: "0 0 1.25rem 0",
+                  margin: "0 0 1rem 0",
                   maxWidth: "460px",
                 }}
               >
@@ -398,10 +441,58 @@ export default function PublicSharePage() {
                 </strong>
                 , de parte de todo el equipo de{" "}
                 <strong style={{ color: "#4147eb" }}>{tenantName}</strong>,
-                queremos agradecerle sinceramente su compromiso y responsabilidad
-                en el pago de sus cuotas. Su historial crediticio se encuentra
-                impecable.
+                queremos agradecerle sinceramente su compromiso en el pago de sus cuotas.
               </p>
+
+              {/* Badges de Desempeño y Cumplimiento de Plazo */}
+              {performance && (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "0.5rem",
+                    flexWrap: "wrap",
+                    justifyContent: "center",
+                    marginBottom: "1.25rem",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      padding: "4px 10px",
+                      borderRadius: "8px",
+                      backgroundColor: performance.completionBadge.bgColor,
+                      border: `1px solid ${performance.completionBadge.borderColor}`,
+                      color: performance.completionBadge.color,
+                      fontSize: "0.75rem",
+                      fontWeight: 800,
+                    }}
+                    title="Cumplimiento del Plazo Final Pactado"
+                  >
+                    <span>{performance.completionBadge.icon}</span>
+                    <span>{performance.completionBadge.label}</span>
+                  </div>
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "5px",
+                      padding: "4px 10px",
+                      borderRadius: "8px",
+                      backgroundColor: performance.punctualityBadge.bgColor,
+                      border: `1px solid ${performance.punctualityBadge.borderColor}`,
+                      color: performance.punctualityBadge.color,
+                      fontSize: "0.75rem",
+                      fontWeight: 800,
+                    }}
+                    title="Puntualidad en el Cronograma de Pagos"
+                  >
+                    <span>{performance.punctualityBadge.icon}</span>
+                    <span>{performance.punctualityBadge.label}</span>
+                  </div>
+                </div>
+              )}
 
               {/* Resumen Financiero de Liquidación */}
               <div
@@ -414,7 +505,7 @@ export default function PublicSharePage() {
                   display: "grid",
                   gridTemplateColumns: "repeat(3, 1fr)",
                   gap: "0.75rem",
-                  marginBottom: "1.25rem",
+                  marginBottom: "0.75rem",
                 }}
               >
                 <div>
@@ -488,6 +579,38 @@ export default function PublicSharePage() {
                 </div>
               </div>
 
+              {/* Vigencia pactada y fecha de cancelación */}
+              <div
+                style={{
+                  width: "100%",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "0.65rem",
+                  border: "1px solid #e2e8f0",
+                  padding: "0.6rem 0.85rem",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  fontSize: "0.75rem",
+                  color: "#64748b",
+                  marginBottom: "1.25rem",
+                }}
+              >
+                <div>
+                  <span style={{ fontWeight: 600, color: "#94a3b8" }}>Plazo Pactado: </span>
+                  <span style={{ fontWeight: 700, color: "#1e293b" }}>
+                    {formatDateLocal(details.startDate)} al {formatDateLocal(parsedDates.contractEnd)}
+                  </span>
+                </div>
+                {performance?.lastPaymentDate && (
+                  <div>
+                    <span style={{ fontWeight: 600, color: "#94a3b8" }}>Cancelado el: </span>
+                    <span style={{ fontWeight: 700, color: "#15803d" }}>
+                      {formatDateLocal(performance.lastPaymentDate)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
               {/* Botón WhatsApp de Renovación */}
 
               {/* Botón para alternar historial de comprobantes */}
@@ -555,7 +678,9 @@ export default function PublicSharePage() {
                       getInstallmentForDay={getInstallmentForDay}
                       isLoanDate={isLoanDate}
                       isStartDate={isStartDate}
-                      isEndDate={isEndDate}
+                      isContractEndDate={isContractEndDate}
+                      contractEndDate={parsedDates.contractEnd}
+                      performance={performance}
                       isToday={isToday}
                       fee={details.fee}
                     />
@@ -678,8 +803,8 @@ export default function PublicSharePage() {
                     </h3>
                   </div>
                   <div className="nc-date-badge">
-                    {formatDateUTC(details.startDate)} al{" "}
-                    {formatDateUTC(details.endDate)}
+                    {formatDateLocal(details.startDate)} al{" "}
+                    {formatDateLocal(parsedDates.contractEnd)}
                   </div>
                 </div>
 
@@ -741,7 +866,9 @@ export default function PublicSharePage() {
                   getInstallmentForDay={getInstallmentForDay}
                   isLoanDate={isLoanDate}
                   isStartDate={isStartDate}
-                  isEndDate={isEndDate}
+                  isContractEndDate={isContractEndDate}
+                  contractEndDate={parsedDates.contractEnd}
+                  performance={performance}
                   isToday={isToday}
                   fee={details.fee}
                 />
@@ -833,7 +960,9 @@ function CalendarView({
   getInstallmentForDay,
   isLoanDate,
   isStartDate,
-  isEndDate,
+  isContractEndDate,
+  contractEndDate,
+  performance,
   isToday,
   fee,
 }: {
@@ -842,7 +971,9 @@ function CalendarView({
   getInstallmentForDay: (day: Date) => Installment | undefined;
   isLoanDate: (day: Date) => boolean;
   isStartDate: (day: Date) => boolean;
-  isEndDate: (day: Date) => boolean;
+  isContractEndDate: (day: Date) => boolean;
+  contractEndDate: Date;
+  performance?: any;
   isToday: (day: Date) => boolean;
   fee: number;
 }) {
@@ -862,16 +993,28 @@ function CalendarView({
           const installment = getInstallmentForDay(day);
           const isRelevant = isLoanDate(day);
           const isStart = isStartDate(day);
-          const isEnd = isEndDate(day);
+          const isContractEnd = isContractEndDate(day);
+          const isExtension = day > contractEndDate && getDay(day) !== 0;
           const isTodayDate = isToday(day);
           const referenceDate = new Date();
           referenceDate.setHours(0, 0, 0, 0);
           const isOverdueUnpaid =
             isRelevant && day < referenceDate && !installment;
+          const isLastPayment =
+            performance?.isLiquidated &&
+            performance?.lastPaymentDate &&
+            isSameDay(day, performance.lastPaymentDate);
 
           let statusClass = "";
+          let customLabel = "";
 
-          if (installment) {
+          if (isContractEnd) {
+            statusClass = installment ? "nc-day-paid" : "nc-day-end";
+            customLabel = "Pactado";
+          } else if (isExtension && installment) {
+            statusClass = isLastPayment ? "nc-day-liquidated-ext" : "nc-day-extension";
+            customLabel = isLastPayment ? "Liquidado" : "Prórroga";
+          } else if (installment) {
             statusClass = "nc-day-paid";
           } else if (isOverdueUnpaid) {
             statusClass = "nc-day-overdue";
@@ -881,8 +1024,7 @@ function CalendarView({
 
           if (isStart) {
             statusClass = "nc-day-start";
-          } else if (isEnd) {
-            statusClass = "nc-day-end";
+            customLabel = "Inicio";
           }
 
           return (
@@ -891,15 +1033,28 @@ function CalendarView({
               className={`nc-calendar-day ${statusClass} ${isTodayDate ? "nc-calendar-day-today" : ""}`}
               style={{
                 opacity: isRelevant || installment ? 1 : 0.35,
+                border: isContractEnd ? "2px solid #6366f1" : undefined,
               }}
             >
               <span className="nc-day-number">{format(day, "d")}</span>
-              {isRelevant && !isStart && !isEnd && (
+              {installment ? (
+                <span className="nc-day-fee" style={{ fontWeight: 800 }}>
+                  {installment.amount.toFixed(0)}
+                </span>
+              ) : isRelevant && !isStart && !isContractEnd ? (
                 <span className="nc-day-fee">{fee.toFixed(0)}</span>
-              )}
-              {(isStart || isEnd) && (
-                <span className="nc-day-label">
-                  {isStart ? "Inicio" : "Fin"}
+              ) : null}
+              {customLabel && (
+                <span
+                  className="nc-day-label"
+                  style={{
+                    fontSize: "8px",
+                    fontWeight: 800,
+                    textTransform: "uppercase",
+                    color: isContractEnd && installment ? "#4f46e5" : undefined,
+                  }}
+                >
+                  {customLabel}
                 </span>
               )}
             </div>
@@ -918,6 +1073,19 @@ function CalendarView({
         </div>
         <div className="nc-legend-item">
           <div
+            className="nc-legend-color"
+            style={{ backgroundColor: "#ecfdf5", border: "2px solid #6366f1" }}
+          />
+          <span className="nc-legend-label">Fin Pactado</span>
+        </div>
+        <div className="nc-legend-item">
+          <div
+            className="nc-legend-color nc-day-extension"
+          />
+          <span className="nc-legend-label">Prórroga</span>
+        </div>
+        <div className="nc-legend-item">
+          <div
             className="nc-legend-color nc-day-overdue"
             style={{ border: "1px solid #b91c1c" }}
           />
@@ -933,10 +1101,6 @@ function CalendarView({
         <div className="nc-legend-item">
           <div className="nc-legend-color nc-day-start" />
           <span className="nc-legend-label">Inicio</span>
-        </div>
-        <div className="nc-legend-item">
-          <div className="nc-legend-color nc-day-end" />
-          <span className="nc-legend-label">Fin</span>
         </div>
       </div>
     </div>
@@ -971,7 +1135,7 @@ function InstallmentsListView({
             <span className="nc-payment-index">{sorted.length - idx}</span>
             <div className="nc-payment-info">
               <span className="nc-payment-date">
-                {format(parseISO(inst.date), "dd/MM/yyyy")}
+                {formatDateLocal(inst.date)}
               </span>
               <span className="nc-payment-time">
                 {format(parseISO(inst.date), "hh:mm a")}

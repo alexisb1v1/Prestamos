@@ -2,7 +2,7 @@
 
 import { useState, useImperativeHandle, forwardRef, useEffect } from "react";
 import { getLoanDetailsUseCase } from "@/app/features/loans";
-import { getLoanStatus } from "@/lib/loanUtils";
+import { getLoanStatus, calculateLoanPerformance, formatDateLocal } from "@/lib/loanUtils";
 import { Loan, LoanDetails } from "@/lib/types";
 import {
   format,
@@ -250,15 +250,26 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
     today.setHours(0, 0, 0, 0);
 
     const baseStartDate = parseISOasUTC(details.startDate || loan.startDate);
-    const baseEndDate = parseISOasUTC(details.endDate || loan.endDate);
+    let contractEndDate = parseISOasUTC(details.endDate || loan.endDate);
+    if (contractEndDate.getDay() === 0) {
+      contractEndDate.setDate(contractEndDate.getDate() - 1);
+    }
 
-    // Obtener estado detallado usando la utilidad del sistema
+    // Obtener estado detallado y desempeño usando la utilidad del sistema
     const statusInfo = getLoanStatus(loan, today);
-    const isLiquidated = statusInfo.value === "blue";
+    const isLiquidated =
+      statusInfo.value === "blue" ||
+      loan.status === "Liquidado" ||
+      (loan as { remainingAmount?: number }).remainingAmount === 0;
+
+    const performance = calculateLoanPerformance(
+      loan,
+      details.installments || [],
+    );
 
     // Extender calendario hasta hoy si NO está liquidado y hoy es después del fin teórico
     let effectiveEnd =
-      !isLiquidated && today > baseEndDate ? today : baseEndDate;
+      !isLiquidated && today > contractEndDate ? new Date(today) : new Date(contractEndDate);
 
     // Asegurar que se incluyan todos los abonos registrados (incluso fuera de fecha)
     if (details.installments && details.installments.length > 0) {
@@ -449,7 +460,7 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
                     }}
                   >
                     {format(baseStartDate, "dd/MM/yy")} -{" "}
-                    {format(baseEndDate, "dd/MM/yy")}
+                    {format(contractEndDate, "dd/MM/yy")}
                   </div>
                 </div>
 
@@ -555,6 +566,54 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
                 }}
               ></div>
             </div>
+
+            {/* Indicadores de Desempeño y Cumplimiento de Plazo */}
+            {performance && (
+              <div
+                style={{
+                  marginTop: "0.5rem",
+                  display: "flex",
+                  gap: "0.4rem",
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                }}
+              >
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "2px 7px",
+                    borderRadius: "6px",
+                    backgroundColor: performance.completionBadge.bgColor,
+                    border: `1px solid ${performance.completionBadge.borderColor}`,
+                    color: performance.completionBadge.color,
+                    fontSize: "0.62rem",
+                    fontWeight: 800,
+                  }}
+                >
+                  <span>{performance.completionBadge.icon}</span>
+                  <span>{performance.completionBadge.label}</span>
+                </div>
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "2px 7px",
+                    borderRadius: "6px",
+                    backgroundColor: performance.punctualityBadge.bgColor,
+                    border: `1px solid ${performance.punctualityBadge.borderColor}`,
+                    color: performance.punctualityBadge.color,
+                    fontSize: "0.62rem",
+                    fontWeight: 800,
+                  }}
+                >
+                  <span>{performance.punctualityBadge.icon}</span>
+                  <span>{performance.punctualityBadge.label}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Resumen Financiero en UNA SOLA LÍNEA */}
@@ -754,12 +813,23 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
                   const dayInstallments = details.installments.filter((i) =>
                     isSameDay(parseISO(i.date), day),
                   );
-                  let installment = dayInstallments.length > 0 ? { ...dayInstallments[0], amount: dayInstallments.reduce((sum, inst) => sum + (inst.amount || 0), 0) } : undefined;
+                  let installment =
+                    dayInstallments.length > 0
+                      ? {
+                          ...dayInstallments[0],
+                          amount: dayInstallments.reduce(
+                            (sum, inst) => sum + (inst.amount || 0),
+                            0,
+                          ),
+                        }
+                      : undefined;
+
                   const isOriginalPlan =
                     isWithinInterval(day, {
                       start: baseStartDate,
-                      end: baseEndDate,
+                      end: contractEndDate,
                     }) && getDay(day) !== 0;
+
                   const isRelevant =
                     isWithinInterval(day, {
                       start: baseStartDate,
@@ -767,7 +837,13 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
                     }) && getDay(day) !== 0;
 
                   const isStart = isSameDay(baseStartDate, day);
+                  const isContractEnd = isSameDay(contractEndDate, day);
+                  const isExtension = day > contractEndDate && getDay(day) !== 0;
                   const isToday = isSameDay(new Date(), day);
+                  const isLastPayment =
+                    performance?.isLiquidated &&
+                    performance?.lastPaymentDate &&
+                    isSameDay(day, performance.lastPaymentDate);
 
                   const isOverdueUnpaid =
                     isOriginalPlan && day < today && !installment;
@@ -775,8 +851,30 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
                   let bg = "white";
                   let textColor = "#64748b";
                   let border = "1px solid #f1f5f9";
+                  let subLabel = "";
+                  let subLabelColor = "";
 
-                  if (installment) {
+                  if (isContractEnd) {
+                    if (installment) {
+                      bg = "#ecfdf5";
+                      textColor = "#065f46";
+                      border = "2px solid #6366f1";
+                      subLabel = "PACTADO";
+                      subLabelColor = "#4f46e5";
+                    } else {
+                      bg = "#fff1f2";
+                      textColor = "#e11d48";
+                      border = "2px solid #6366f1";
+                      subLabel = "PACTADO";
+                      subLabelColor = "#4f46e5";
+                    }
+                  } else if (isExtension && installment) {
+                    bg = isLastPayment ? "#dcfce7" : "#fefce8";
+                    textColor = isLastPayment ? "#15803d" : "#854d0e";
+                    border = isLastPayment ? "2px solid #16a34a" : "1.5px solid #ca8a04";
+                    subLabel = isLastPayment ? "LIQUIDADO" : "PRÓRROGA";
+                    subLabelColor = isLastPayment ? "#16a34a" : "#ca8a04";
+                  } else if (installment) {
                     bg = "#22c55e";
                     textColor = "white";
                     border = "none";
@@ -802,7 +900,7 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
                     <div
                       key={dateStr}
                       style={{
-                        height: "42px",
+                        height: "44px",
                         backgroundColor: bg,
                         borderRadius: "8px",
                         border: border,
@@ -820,8 +918,8 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
                       <span
                         style={{
                           fontSize: "0.7rem",
-                          opacity: installment ? 0.9 : 1,
-                          marginBottom: installment ? "-2px" : "0",
+                          opacity: installment ? 0.95 : 1,
+                          lineHeight: 1,
                         }}
                       >
                         {format(day, "d")}
@@ -829,12 +927,28 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
                       {installment && (
                         <span
                           style={{
-                            fontSize: "0.55rem",
+                            fontSize: "0.58rem",
                             fontWeight: 900,
-                            color: "white",
+                            color: isContractEnd || (isExtension && installment) ? textColor : "white",
+                            lineHeight: 1.1,
+                            marginTop: "1px",
                           }}
                         >
                           {installment.amount}
+                        </span>
+                      )}
+                      {subLabel && (
+                        <span
+                          style={{
+                            fontSize: "6px",
+                            fontWeight: 900,
+                            textTransform: "uppercase",
+                            color: subLabelColor,
+                            lineHeight: 1,
+                            marginTop: "1px",
+                          }}
+                        >
+                          {subLabel}
                         </span>
                       )}
                       {isStart && !installment && !isOverdueUnpaid && (
@@ -860,7 +974,7 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
                 style={{
                   marginTop: "0.75rem",
                   display: "flex",
-                  gap: "0.75rem",
+                  gap: "0.6rem",
                   fontSize: "0.55rem",
                   flexWrap: "wrap",
                   justifyContent: "center",
@@ -875,8 +989,8 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
                 >
                   <div
                     style={{
-                      width: "5px",
-                      height: "5px",
+                      width: "6px",
+                      height: "6px",
                       backgroundColor: "#22c55e",
                       borderRadius: "50%",
                     }}
@@ -892,8 +1006,42 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
                 >
                   <div
                     style={{
-                      width: "5px",
-                      height: "5px",
+                      width: "6px",
+                      height: "6px",
+                      backgroundColor: "#6366f1",
+                      borderRadius: "50%",
+                    }}
+                  ></div>
+                  <span style={{ fontWeight: 800 }}>FIN PACTADO</span>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.2rem",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "6px",
+                      height: "6px",
+                      backgroundColor: "#ca8a04",
+                      borderRadius: "50%",
+                    }}
+                  ></div>
+                  <span style={{ fontWeight: 800 }}>PRÓRROGA</span>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.2rem",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "6px",
+                      height: "6px",
                       backgroundColor: "#e11d48",
                       borderRadius: "50%",
                     }}
@@ -909,8 +1057,8 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
                 >
                   <div
                     style={{
-                      width: "5px",
-                      height: "5px",
+                      width: "6px",
+                      height: "6px",
                       border: "1px solid #e2e8f0",
                       borderRadius: "50%",
                     }}
@@ -995,7 +1143,7 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
                               color: "#1e293b",
                             }}
                           >
-                            {format(parseISO(inst.date), "dd/MM/yy")}
+                            {formatDateLocal(inst.date)}
                           </span>
                         </div>
                         <span

@@ -45,6 +45,12 @@ export class LoanMapper {
       personId: dto.personId,
       collectorId: dto.collectorId,
       companyId: dto.companyId,
+      liquidationDate: dto.liquidationDate,
+      completedOnTime: dto.completedOnTime,
+      earlyLiquidationDays: dto.earlyLiquidationDays,
+      extensionDays: dto.extensionDays,
+      delayDays: dto.delayDays,
+      creditRating: dto.creditRating,
     };
   }
 
@@ -90,6 +96,13 @@ export class LoanMapper {
     return {
       startDate: dto.startDate,
       endDate: dto.endDate,
+      status: dto.status,
+      liquidationDate: dto.liquidationDate,
+      completedOnTime: dto.completedOnTime,
+      earlyLiquidationDays: dto.earlyLiquidationDays,
+      extensionDays: dto.extensionDays,
+      delayDays: dto.delayDays,
+      creditRating: dto.creditRating,
       installments: dto.installments
         ? dto.installments.map((i) => this.toInstallmentDetailDomain(i))
         : [],

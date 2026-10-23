@@ -20,6 +20,12 @@ export interface Loan {
   personId?: string;
   collectorId?: string;
   companyId?: string;
+  liquidationDate?: string;
+  completedOnTime?: boolean;
+  earlyLiquidationDays?: number;
+  extensionDays?: number;
+  delayDays?: number;
+  creditRating?: string | null;
 }
 
 export interface CreateLoan {
@@ -43,6 +49,13 @@ export interface InstallmentDetail {
 export interface LoanDetails {
   startDate: string;
   endDate: string;
+  status?: string;
+  liquidationDate?: string;
+  completedOnTime?: boolean;
+  earlyLiquidationDays?: number;
+  extensionDays?: number;
+  delayDays?: number;
+  creditRating?: string | null;
   installments: InstallmentDetail[];
 }
 

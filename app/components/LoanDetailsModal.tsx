@@ -6,7 +6,7 @@ import {
   deleteInstallmentUseCase,
   generateShareLinkUseCase,
 } from "@/app/features/loans";
-import { formatMoney, getLoanStatus, formatDateUTC } from "@/lib/loanUtils";
+import { formatMoney, getLoanStatus, formatDateLocal, calculateLoanPerformance } from "@/lib/loanUtils";
 import { Loan, LoanDetails } from "@/lib/types";
 import {
   format,
@@ -115,55 +115,81 @@ function LoanDetailsModal({
   const startDateStr = details?.startDate || loan?.startDate || "";
   const endDateStr = details?.endDate || loan?.endDate || "";
 
+  const performance = useMemo(() => {
+    if (!loan) return null;
+    return calculateLoanPerformance(
+      {
+        startDate: startDateStr,
+        endDate: endDateStr,
+        status: loan.status,
+        remainingAmount: loan.remainingAmount,
+        liquidationDate: (loan as any).liquidationDate,
+        fee: loan.fee,
+        completedOnTime: details?.completedOnTime ?? loan?.completedOnTime,
+        earlyLiquidationDays: details?.earlyLiquidationDays ?? loan?.earlyLiquidationDays,
+        extensionDays: details?.extensionDays ?? loan?.extensionDays,
+        delayDays: details?.delayDays ?? loan?.delayDays,
+        creditRating: details?.creditRating ?? loan?.creditRating,
+      },
+      details?.installments
+    );
+  }, [loan, details, startDateStr, endDateStr]);
+
   const parsedDates = useMemo(() => {
     if (!startDateStr || !endDateStr) {
-      return { start: new Date(), end: new Date() };
+      return { start: new Date(), contractEnd: new Date(), calendarEnd: new Date() };
     }
 
     const start = parseDateSafe(startDateStr);
-    let end = parseDateSafe(endDateStr);
+    let contractEnd = parseDateSafe(endDateStr);
+    if (contractEnd.getDay() === 0) {
+      contractEnd.setDate(contractEnd.getDate() - 1);
+    }
 
+    // calendarEnd se extiende si hay abonos posteriores o mora para renderizar en el grid
+    let calendarEnd = new Date(contractEnd);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const isLiquidated = loan?.status === "Liquidado";
+    const isLiquidated = loan?.status === "Liquidado" || loan?.remainingAmount === 0;
 
-    if (!isLiquidated && today > end) {
-      end = today;
+    if (!isLiquidated && today > calendarEnd) {
+      calendarEnd = today;
     }
 
     if (details?.installments && details.installments.length > 0) {
       details.installments.forEach((inst) => {
         const instDate = parseDateSafe(inst.date);
-        if (instDate > end) end = instDate;
+        if (instDate > calendarEnd) calendarEnd = instDate;
       });
     }
 
-    return { start, end };
+    return { start, contractEnd, calendarEnd };
   }, [
     startDateStr,
     endDateStr,
     parseDateSafe,
     loan?.status,
+    loan?.remainingAmount,
     details?.installments,
   ]);
 
   const days = useMemo(() => {
-    if (!parsedDates.start || !parsedDates.end) return [];
+    if (!parsedDates.start || !parsedDates.calendarEnd) return [];
     return eachDayOfInterval({
       start: startOfWeek(parsedDates.start, { weekStartsOn: 1 }),
-      end: endOfWeek(parsedDates.end, { weekStartsOn: 1 }),
+      end: endOfWeek(parsedDates.calendarEnd, { weekStartsOn: 1 }),
     });
-  }, [parsedDates.start, parsedDates.end]);
+  }, [parsedDates.start, parsedDates.calendarEnd]);
 
   const monthLabel = useMemo(() => {
     if (
       format(parsedDates.start, "MMM yyyy") ===
-      format(parsedDates.end, "MMM yyyy")
+      format(parsedDates.calendarEnd, "MMM yyyy")
     ) {
       return format(parsedDates.start, "MMMM yyyy", { locale: es });
     }
-    return `${format(parsedDates.start, "MMMM", { locale: es })} - ${format(parsedDates.end, "MMMM yyyy", { locale: es })}`;
-  }, [parsedDates.start, parsedDates.end]);
+    return `${format(parsedDates.start, "MMMM", { locale: es })} - ${format(parsedDates.calendarEnd, "MMMM yyyy", { locale: es })}`;
+  }, [parsedDates.start, parsedDates.calendarEnd]);
 
   const getInstallmentForDay = useCallback(
     (day: Date) => {
@@ -198,21 +224,21 @@ function LoanDetailsModal({
     (day: Date) => {
       const withinInterval = isWithinInterval(day, {
         start: parsedDates.start,
-        end: parsedDates.end,
+        end: parsedDates.calendarEnd,
       });
       const isSunday = getDay(day) === 0;
       return withinInterval && !isSunday;
     },
-    [parsedDates.start, parsedDates.end],
+    [parsedDates.start, parsedDates.calendarEnd],
   );
 
   const isStartDate = useCallback(
     (day: Date) => isSameDay(parsedDates.start, day),
     [parsedDates.start],
   );
-  const isEndDate = useCallback(
-    (day: Date) => isSameDay(parsedDates.end, day),
-    [parsedDates.end],
+  const isContractEndDate = useCallback(
+    (day: Date) => isSameDay(parsedDates.contractEnd, day),
+    [parsedDates.contractEnd],
   );
   const isToday = useCallback((day: Date) => isSameDay(new Date(), day), []);
 
@@ -467,7 +493,7 @@ function LoanDetailsModal({
                   <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "4px 10px", borderRadius: "9999px", backgroundColor: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)", fontSize: "11px", fontWeight: 500, color: "white" }}>
                     <Calendar size={14} color="#c7d2fe" />
                     <span>
-                      {format(parsedDates.start, "dd/MM/yy")} - {format(parsedDates.end, "dd/MM/yy")}
+                      {format(parsedDates.start, "dd/MM/yy")} - {format(parsedDates.contractEnd, "dd/MM/yy")}
                     </span>
                   </div>
                 </div>
@@ -510,6 +536,48 @@ function LoanDetailsModal({
                 <div style={{ width: "100%", backgroundColor: "rgba(0,0,0,0.2)", borderRadius: "9999px", height: "8px", padding: "2px" }}>
                   <div style={{ background: "linear-gradient(to right, #34d399, #5eead4)", height: "100%", borderRadius: "9999px", transition: "width 0.5s ease", width: `${Math.min(100, progressPercent)}%` }}></div>
                 </div>
+
+                {/* Indicadores de Desempeño y Cumplimiento de Plazo */}
+                {performance && (
+                  <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.4rem", flexWrap: "wrap", alignItems: "center" }}>
+                    <div
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "5px",
+                        padding: "3px 8px",
+                        borderRadius: "6px",
+                        backgroundColor: performance.completionBadge.bgColor,
+                        border: `1px solid ${performance.completionBadge.borderColor}`,
+                        color: performance.completionBadge.color,
+                        fontSize: "10px",
+                        fontWeight: 700,
+                      }}
+                      title="Cumplimiento del Plazo Final Pactado"
+                    >
+                      <span>{performance.completionBadge.icon}</span>
+                      <span>{performance.completionBadge.label}</span>
+                    </div>
+                    <div
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "5px",
+                        padding: "3px 8px",
+                        borderRadius: "6px",
+                        backgroundColor: performance.punctualityBadge.bgColor,
+                        border: `1px solid ${performance.punctualityBadge.borderColor}`,
+                        color: performance.punctualityBadge.color,
+                        fontSize: "10px",
+                        fontWeight: 700,
+                      }}
+                      title="Puntualidad en el Cronograma de Pagos"
+                    >
+                      <span>{performance.punctualityBadge.icon}</span>
+                      <span>{performance.punctualityBadge.label}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </section>
 
@@ -580,10 +648,10 @@ function LoanDetailsModal({
                 <div style={{ textAlign: "center", marginBottom: "1rem" }}>
                   <div style={{ fontSize: "1rem", fontWeight: 800, color: "#1e293b", textTransform: "capitalize" }}>
                     {format(parsedDates.start, "MMMM yyyy", { locale: es })}
-                    {parsedDates.start.getMonth() !== parsedDates.end.getMonth() && (
+                    {parsedDates.start.getMonth() !== parsedDates.calendarEnd.getMonth() && (
                       <>
                         <span style={{ color: "#94a3b8", margin: "0 0.3rem" }}>-</span>
-                        {format(parsedDates.end, "MMMM yyyy", { locale: es })}
+                        {format(parsedDates.calendarEnd, "MMMM yyyy", { locale: es })}
                       </>
                     )}
                   </div>
@@ -599,12 +667,15 @@ function LoanDetailsModal({
                     const installment = getInstallmentForDay(day);
                     const isRelevant = isLoanDate(day);
                     const isStart = isStartDate(day);
-                    const isEnd = isEndDate(day);
+                    const isContractEnd = isContractEndDate(day);
+                    const isExtension = day > parsedDates.contractEnd && getDay(day) !== 0;
                     const isTodayDate = isToday(day);
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
                     const isOverdueUnpaid = isRelevant && day < today && !installment;
                     const isSunday = getDay(day) === 0;
+
+                    const isLastPayment = performance?.isLiquidated && performance?.lastPaymentDate && isSameDay(day, performance.lastPaymentDate);
 
                     let bgColor = "transparent";
                     let textColor = "#cbd5e1"; // default inactive
@@ -613,17 +684,33 @@ function LoanDetailsModal({
                     let label = "";
 
                     if (isStart) {
-                      bgColor = "#4f46e5"; // indigo-600
-                      textColor = "white";
+                      bgColor = installment ? "#ecfdf5" : "#4f46e5";
+                      textColor = installment ? "#065f46" : "white";
                       borderColor = "#4f46e5";
-                      shadow = "0 1px 2px 0 rgba(0, 0, 0, 0.05), 0 0 0 2px #4f46e5, 0 0 0 4px white"; // ring effect
-                      label = "INI";
-                    } else if (isEnd) {
-                      bgColor = "#f43f5e"; // rose-500
-                      textColor = "white";
-                      borderColor = "#f43f5e";
-                      shadow = "0 1px 2px 0 rgba(0, 0, 0, 0.05), 0 0 0 2px #f43f5e, 0 0 0 4px white";
-                      label = "FIN";
+                      shadow = "0 0 0 2px #4f46e5, 0 0 0 4px white";
+                      label = installment ? `S/ ${installment.amount?.toFixed(0)}` : "INI";
+                    } else if (isContractEnd) {
+                      // Fin pactado
+                      if (installment) {
+                        bgColor = "#ecfdf5";
+                        textColor = "#065f46";
+                        borderColor = "#6366f1";
+                        shadow = "0 0 0 2px #6366f1, 0 0 0 4px white";
+                        label = `S/ ${installment.amount?.toFixed(0)}`;
+                      } else {
+                        bgColor = "#fff1f2";
+                        textColor = "#e11d48";
+                        borderColor = "#6366f1";
+                        shadow = "0 0 0 2px #6366f1, 0 0 0 4px white";
+                        label = "PACTADO";
+                      }
+                    } else if (isExtension && installment) {
+                      // Días de prórroga con pago
+                      bgColor = isLastPayment ? "#dcfce7" : "#fefce8";
+                      textColor = isLastPayment ? "#15803d" : "#854d0e";
+                      borderColor = isLastPayment ? "#16a34a" : "#ca8a04";
+                      shadow = isLastPayment ? "0 0 0 2px #16a34a, 0 0 0 4px white" : "none";
+                      label = `S/ ${installment.amount?.toFixed(0)}`;
                     } else if (installment) {
                       bgColor = "#ecfdf5"; // emerald-50
                       textColor = "#065f46"; // emerald-800
@@ -656,14 +743,42 @@ function LoanDetailsModal({
                           color: textColor,
                           border: `1px solid ${borderColor}`,
                           boxShadow: shadow,
-                          fontWeight: (installment || isStart || isEnd || isOverdueUnpaid) ? "bold" : "600",
+                          fontWeight: (installment || isStart || isContractEnd || isOverdueUnpaid) ? "bold" : "600",
                           opacity: isSunday ? 0.6 : 1,
                         }}
                       >
                         <span style={{ fontSize: "0.875rem", lineHeight: 1 }}>{format(day, "d")}</span>
                         {label && (
-                          <span style={{ fontSize: "9px", marginTop: "4px", color: isStart ? "#c7d2fe" : (isEnd ? "#ffe4e6" : (installment ? "#047857" : (isOverdueUnpaid ? "#f43f5e" : "#0284c7"))), fontWeight: (isStart || isEnd || installment) ? 800 : 700 }}>
+                          <span
+                            style={{
+                              fontSize: "9px",
+                              marginTop: "2px",
+                              color: isStart && !installment
+                                ? "#c7d2fe"
+                                : (isContractEnd && !installment
+                                  ? "#ffe4e6"
+                                  : (isExtension
+                                    ? (isLastPayment ? "#15803d" : "#854d0e")
+                                    : (installment ? "#047857" : (isOverdueUnpaid ? "#f43f5e" : "#0284c7")))),
+                              fontWeight: 800,
+                            }}
+                          >
                             {label}
+                          </span>
+                        )}
+                        {isContractEnd && (
+                          <span style={{ fontSize: "7px", textTransform: "uppercase", fontWeight: 800, color: "#4f46e5", marginTop: "1px" }}>
+                            PACTADO
+                          </span>
+                        )}
+                        {isExtension && installment && isLastPayment && (
+                          <span style={{ fontSize: "7px", textTransform: "uppercase", fontWeight: 800, color: "#16a34a", marginTop: "1px" }}>
+                            LIQUIDADO
+                          </span>
+                        )}
+                        {isExtension && installment && !isLastPayment && (
+                          <span style={{ fontSize: "7px", textTransform: "uppercase", fontWeight: 800, color: "#ca8a04", marginTop: "1px" }}>
+                            PRÓRROGA
                           </span>
                         )}
                       </div>
@@ -675,15 +790,15 @@ function LoanDetailsModal({
                 <div style={{ marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid #f1f5f9", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", fontSize: "11px", fontWeight: 500, color: "#475569" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                     <span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#4f46e5" }}></span>
-                    <span>Inicio / Fin</span>
+                    <span>Inicio / Fin Pactado</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                     <span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#10b981" }}></span>
                     <span>Cobrado</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#e0f2fe", border: "1px solid #bae6fd" }}></span>
-                    <span>Pendiente</span>
+                    <span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#ca8a04" }}></span>
+                    <span>Prórroga</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                     <span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#fef2f2", border: "1px solid #fecaca" }}></span>
@@ -724,7 +839,7 @@ function LoanDetailsModal({
                               {formatMoney(inst.amount)}
                             </div>
                             <div style={{ fontSize: "0.75rem", color: "#64748b", marginTop: "2px" }}>
-                              {formatDateUTC(inst.date)}
+                              {formatDateLocal(inst.date)}
                             </div>
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
