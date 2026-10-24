@@ -94,48 +94,12 @@ export default function CreateExpenseModal({
 
   return (
     <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 101,
-        backgroundColor: isMobile ? "rgba(15, 23, 42, 0.8)" : "rgba(15, 23, 42, 0.4)",
-        display: "flex",
-        justifyContent: isMobile ? "center" : "flex-end",
-        alignItems: isMobile ? "flex-end" : "stretch",
-      }}
+      className={styles.overlay}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: isMobile ? "100%" : "420px",
-          backgroundColor: "#f8fafc",
-          height: "100%",
-          maxHeight: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          position: "relative",
-          animation: isMobile ? "slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)" : "slideLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-          overflowY: "auto",
-          boxShadow: isMobile ? "none" : "-10px 0 30px rgba(0,0,0,0.15)",
-        }}
-      >
-        <style>
-          {`
-            @keyframes slideUp {
-              from { transform: translateY(100%); }
-              to { transform: translateY(0); }
-            }
-            @keyframes slideLeft {
-              from { transform: translateX(100%); }
-              to { transform: translateX(0); }
-            }
-            .no-scrollbar::-webkit-scrollbar { display: none; }
-            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-          `}
-        </style>
+      <div className={styles.modal}>
 
         {/* TopBar Homologada */}
         <header className={styles.header}>

@@ -22,6 +22,7 @@ import {
   UserPlus,
   Check,
   Search,
+  Lock,
 } from "lucide-react";
 
 interface CreateUserModalProps {
@@ -73,6 +74,8 @@ export default function CreateUserModal({
   const [companies, setCompanies] = useState<Company[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [searchingPerson, setSearchingPerson] = useState(false);
+  const [isPersonFoundFromDni, setIsPersonFoundFromDni] = useState(false);
+  const [isDniNotFound, setIsDniNotFound] = useState(false);
 
   // Reset logic when modal opens or userToEdit changes
   useEffect(() => {
@@ -112,12 +115,16 @@ export default function CreateUserModal({
           });
           setError("");
           setSearchingPerson(false);
+          setIsPersonFoundFromDni(false);
+          setIsDniNotFound(false);
         }, 0);
       } else {
         newTimer = setTimeout(() => {
           setFormData(initialFormState);
           setError("");
           setSearchingPerson(false);
+          setIsPersonFoundFromDni(false);
+          setIsDniNotFound(false);
         }, 0);
       }
 
@@ -133,13 +140,21 @@ export default function CreateUserModal({
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
+    if (name === "documentNumber" || name === "documentType") {
+      setIsPersonFoundFromDni(false);
+      setIsDniNotFound(false);
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   // Auto-search person logic
   useEffect(() => {
-    if (!isOpen) return;
-    if (!formData.documentNumber || formData.documentNumber.length < 8) return;
+    if (!isOpen || userToEdit) return;
+    if (!formData.documentNumber || formData.documentNumber.length < 8) {
+      setIsPersonFoundFromDni(false);
+      setIsDniNotFound(false);
+      return;
+    }
 
     const timer = setTimeout(async () => {
       setSearchingPerson(true);
@@ -157,8 +172,11 @@ export default function CreateUserModal({
             firstName: person.firstName,
             lastName: person.lastName,
           }));
+          setIsPersonFoundFromDni(true);
+          setIsDniNotFound(false);
         },
         (err) => {
+          setIsPersonFoundFromDni(false);
           setFormData((prev) => ({ ...prev, firstName: "", lastName: "" }));
 
           const isNotFound =
@@ -168,8 +186,10 @@ export default function CreateUserModal({
             err.message?.toLowerCase().includes("no encontrado");
 
           if (isNotFound) {
+            setIsDniNotFound(true);
             setError("");
           } else {
+            setIsDniNotFound(false);
             logger.error("Error searching person:", err);
             setError(err.message || "Error al realizar la búsqueda.");
           }
@@ -179,7 +199,7 @@ export default function CreateUserModal({
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [formData.documentNumber, formData.documentType, isOpen]);
+  }, [formData.documentNumber, formData.documentType, isOpen, userToEdit]);
 
   // Auto-generate username logic
   useEffect(() => {
@@ -268,6 +288,7 @@ export default function CreateUserModal({
   };
 
   const isPersonFound = formData.firstName && !searchingPerson;
+  const isNameReadOnly = !userToEdit && !isDniNotFound;
 
   if (!isOpen) return null;
 
@@ -428,8 +449,30 @@ export default function CreateUserModal({
                     value={formData.firstName}
                     onChange={handleChange}
                     required
-                    placeholder="Ingrese nombres"
+                    placeholder={
+                      isNameReadOnly && !isPersonFoundFromDni
+                        ? "Se autocompleta con DNI"
+                        : "Ingrese nombres"
+                    }
                     autoComplete="off"
+                    readOnly={isNameReadOnly}
+                    style={
+                      isNameReadOnly
+                        ? isPersonFoundFromDni
+                          ? {
+                              backgroundColor: "#f1f5f9",
+                              color: "#334155",
+                              cursor: "not-allowed",
+                              borderColor: "#cbd5e1",
+                            }
+                          : {
+                              backgroundColor: "#f8fafc",
+                              color: "#64748b",
+                              cursor: "not-allowed",
+                              borderColor: "#e2e8f0",
+                            }
+                        : undefined
+                    }
                   />
                   <UserIcon className="create-user-input-icon" size={16} />
                 </div>
@@ -445,11 +488,78 @@ export default function CreateUserModal({
                     value={formData.lastName}
                     onChange={handleChange}
                     required
-                    placeholder="Ingrese apellidos"
+                    placeholder={
+                      isNameReadOnly && !isPersonFoundFromDni
+                        ? "Se autocompleta con DNI"
+                        : "Ingrese apellidos"
+                    }
                     autoComplete="off"
+                    readOnly={isNameReadOnly}
+                    style={
+                      isNameReadOnly
+                        ? isPersonFoundFromDni
+                          ? {
+                              backgroundColor: "#f1f5f9",
+                              color: "#334155",
+                              cursor: "not-allowed",
+                              borderColor: "#cbd5e1",
+                            }
+                          : {
+                              backgroundColor: "#f8fafc",
+                              color: "#64748b",
+                              cursor: "not-allowed",
+                              borderColor: "#e2e8f0",
+                            }
+                        : undefined
+                    }
                   />
                   <UserIcon className="create-user-input-icon" size={16} />
                 </div>
+                {!userToEdit && isPersonFoundFromDni && (
+                  <span
+                    style={{
+                      fontSize: "0.72rem",
+                      color: "#059669",
+                      fontWeight: 600,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.25rem",
+                      marginTop: "0.35rem",
+                    }}
+                  >
+                    <Check size={13} strokeWidth={3} /> Datos validados en RENIEC / Base de datos (Solo lectura)
+                  </span>
+                )}
+                {!userToEdit && isDniNotFound && (
+                  <span
+                    style={{
+                      fontSize: "0.72rem",
+                      color: "#d97706",
+                      fontWeight: 600,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.25rem",
+                      marginTop: "0.35rem",
+                    }}
+                  >
+                    <AlertCircle size={13} /> DNI no encontrado. Ingrese nombres y apellidos manualmente.
+                  </span>
+                )}
+                {!userToEdit && !isPersonFoundFromDni && !isDniNotFound && (
+                  <span
+                    style={{
+                      fontSize: "0.72rem",
+                      color: "#64748b",
+                      fontWeight: 500,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.25rem",
+                      marginTop: "0.35rem",
+                    }}
+                  >
+                    <Lock size={12} /> Ingrese el DNI para consultar y autocompletar nombres.
+                  </span>
+                )}
               </div>
             </div>
 

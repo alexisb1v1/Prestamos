@@ -12,6 +12,7 @@ export class CompanyMapper {
       createdAt: dto.createdAt,
       keyToken: dto.keyToken,
       settings: dto.settings,
+      isDemo: dto.isDemo ?? false,
     };
   }
 }

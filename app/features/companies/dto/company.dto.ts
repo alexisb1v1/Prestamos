@@ -7,6 +7,7 @@ export interface CompanyDto {
   createdAt: string;
   keyToken?: string;
   settings?: Record<string, any>;
+  isDemo?: boolean;
 }
 
 export interface CreateCompanyRequestDto {

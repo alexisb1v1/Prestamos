@@ -46,8 +46,14 @@ export default function Sidebar() {
     const timer = setTimeout(() => setIsMounted(true), 0);
 
     const checkInstall = () => {
-      if ((window as any).deferredInstallPrompt) {
+      const isMobileDevice =
+        window.innerWidth < 768 ||
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobi/i.test(navigator.userAgent);
+
+      if (isMobileDevice && (window as any).deferredInstallPrompt) {
         setCanInstall(true);
+      } else {
+        setCanInstall(false);
       }
     };
 

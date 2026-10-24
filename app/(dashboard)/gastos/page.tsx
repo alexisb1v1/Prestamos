@@ -11,8 +11,9 @@ import LoadingSpinner from "../../components/LoadingSpinner";
 import { logger } from "@/lib/logging-service";
 import { getExpensesUseCase, deleteExpenseUseCase } from "@/app/features/expenses";
 import { userService } from "@/lib/userService";
-import { Trash2 } from "lucide-react";
+import { Trash2, Plus } from "lucide-react";
 import ConfirmModal from "../../components/ConfirmModal";
+import CreateExpenseModal from "../../components/CreateExpenseModal";
 
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -20,6 +21,7 @@ export default function ExpensesPage() {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Delete confirmation state
   const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
@@ -196,6 +198,7 @@ export default function ExpensesPage() {
       >
         {/* Top Filter Bar - Aligned with dashboard/prestamos and reportes */}
         <div
+          id="filtro-gastos"
           style={{
             backgroundColor: "var(--bg-app)",
             margin: "-1.5rem -1rem 1rem -1rem",
@@ -407,6 +410,30 @@ export default function ExpensesPage() {
               Gastos
             </h1>
           </div>
+          <div>
+            <button
+              id="btn-accion"
+              onClick={() => setIsCreateModalOpen(true)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                backgroundColor: "#4f46e5",
+                color: "white",
+                padding: "0.5rem 1rem",
+                borderRadius: "0.75rem",
+                fontWeight: 600,
+                fontSize: "0.875rem",
+                border: "none",
+                cursor: "pointer",
+                boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+                transition: "background-color 0.2s",
+              }}
+            >
+              <Plus size={16} />
+              <span>Registrar Gasto</span>
+            </button>
+          </div>
         </div>
 
         {!loading && expenses.length > 0 && (
@@ -537,6 +564,13 @@ export default function ExpensesPage() {
           </div>
         )}
       </div>
+      <CreateExpenseModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={() => {
+          loadExpenses(currentUser, selectedCompanyId, date, selectedCollector);
+        }}
+      />
     </div>
   );
 }

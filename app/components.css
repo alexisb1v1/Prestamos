@@ -811,30 +811,51 @@
 .create-user-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(15, 23, 42, 0.4);
+  background-color: rgba(15, 23, 42, 0.8);
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   z-index: 1000;
   backdrop-filter: blur(8px);
   animation: createUserFadeIn 0.3s ease-out;
+  padding: 0;
+}
+
+@media (min-width: 768px) {
+  .create-user-overlay {
+    background-color: rgba(15, 23, 42, 0.4);
+    align-items: stretch;
+    justify-content: flex-end;
+    padding: 0;
+  }
 }
 
 .create-user-modal {
   width: 100%;
-  max-width: 480px;
+  max-width: 100%;
   height: 100%;
-  max-height: 90vh;
+  max-height: 100vh;
   background: #f8fafc;
-  border-radius: 20px;
   display: flex;
   flex-direction: column;
-  box-shadow:
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: none;
   position: relative;
-  animation: createUserSlideInDesktop 0.3s ease-out;
   overflow: hidden;
+  border-radius: 0;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (min-width: 768px) {
+  .create-user-modal {
+    max-width: 440px;
+    height: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    border: none;
+    border-left: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
+    animation: slideLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
 }
 
 .create-user-header {
@@ -1020,14 +1041,6 @@
   opacity: 0.7;
 }
 
-@media (max-width: 640px) {
-  .create-user-modal {
-    max-width: 100%;
-    height: 100%;
-    max-height: 100vh;
-    border-radius: 0;
-  }
-}
 
 @keyframes createUserFadeIn {
   from {
@@ -1039,15 +1052,23 @@
   }
 }
 
-@keyframes createUserSlideInDesktop {
+@keyframes slideLeft {
   from {
-    transform: translateY(10px);
-    opacity: 0;
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
   }
 
   to {
     transform: translateY(0);
-    opacity: 1;
   }
 }
 

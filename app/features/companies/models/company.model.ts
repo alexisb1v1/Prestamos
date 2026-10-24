@@ -16,4 +16,5 @@ export interface Company {
   createdAt: string;
   keyToken?: string;
   settings?: CompanySettings;
+  isDemo?: boolean;
 }

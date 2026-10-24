@@ -437,6 +437,7 @@ export default function DashboardPage() {
     <div>
       {isAdmin && (
         <div
+          id="filtro-dashboard"
           style={{
             backgroundColor: "var(--bg-app)",
             margin: "-1.5rem -1rem 1rem -1rem",
@@ -529,7 +530,7 @@ export default function DashboardPage() {
         </div>
       ) : !data ? null : (
         <>
-          <section style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 0.25rem 0.75rem 0.25rem" }}>
+          <section id="header-dashboard" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 0.25rem 0.75rem 0.25rem" }}>
             <h1 style={{ fontSize: "1.25rem", fontWeight: 800, color: "#0f172a", margin: 0, letterSpacing: "-0.025em" }}>Resumen del Día</h1>
             <div style={{ backgroundColor: "#f1f5f9", color: "#475569", padding: "0.25rem 0.6rem", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: 600 }}>
               {(() => {
