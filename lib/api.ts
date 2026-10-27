@@ -72,8 +72,9 @@ export async function apiRequest<T = unknown>(
         // We check BOTH the HTTP status and the data.statusCode if present
         const isUnauthorized = response.status === 401 || (data?.statusCode === 401);
         const isLoginEndpoint = endpoint.includes('/auth/login') || endpoint.includes('/users/login');
+        const isPublicEndpoint = endpoint.includes('/public-share') || (typeof window !== 'undefined' && window.location.pathname.startsWith('/compartir'));
 
-        if (isUnauthorized && !isLoginEndpoint) {
+        if (isUnauthorized && !isLoginEndpoint && !isPublicEndpoint) {
             logger.warn('Unauthorized request. Logging out...');
 
             // Clear credentials

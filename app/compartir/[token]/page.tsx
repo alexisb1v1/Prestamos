@@ -113,6 +113,20 @@ export default function PublicSharePage() {
   const startDateStr = details?.startDate || "";
   const endDateStr = details?.endDate || "";
 
+  // Saldo restante real (calculado defensivamente sumando abonos)
+  const remainingAmount = useMemo(() => {
+    if (!details) return 0;
+    if (details.installments && details.installments.length > 0) {
+      const paidSum = details.installments.reduce(
+        (sum, inst) => sum + Number(inst.amount || 0),
+        0,
+      );
+      const totalAmount = Number(details.amount || 0) + Number(details.interest || 0);
+      return Math.max(0, totalAmount - paidSum);
+    }
+    return details.remainingAmount ?? (Number(details.amount || 0) + Number(details.interest || 0));
+  }, [details]);
+
   const parsedDates = useMemo(() => {
     if (!startDateStr || !endDateStr) {
       return {
@@ -137,7 +151,7 @@ export default function PublicSharePage() {
     const isLiquidated =
       details?.isLiquidated ||
       details?.status === "Liquidado" ||
-      details?.remainingAmount === 0;
+      remainingAmount === 0;
 
     // Buscar fecha del último abono registrado
     let lastPaymentDate: Date | null = null;
@@ -191,7 +205,7 @@ export default function PublicSharePage() {
     parseDateSafe,
     details?.status,
     details?.isLiquidated,
-    details?.remainingAmount,
+    remainingAmount,
     details?.installments,
   ]);
 
@@ -204,7 +218,7 @@ export default function PublicSharePage() {
       fee: details.fee,
       amount: details.amount,
       interest: details.interest,
-      remainingAmount: details.remainingAmount,
+      remainingAmount: remainingAmount,
       days: details.days,
       completedOnTime: details.completedOnTime,
       earlyLiquidationDays: details.earlyLiquidationDays,
@@ -213,7 +227,7 @@ export default function PublicSharePage() {
       creditRating: details.creditRating,
     } as any;
     return calculateLoanPerformance(tempLoan, details.installments || []);
-  }, [details]);
+  }, [details, remainingAmount]);
 
   const days = useMemo(() => {
     if (!parsedDates.start || !parsedDates.calendarEnd) return [];
@@ -301,19 +315,20 @@ export default function PublicSharePage() {
       fee: details.fee,
       amount: details.amount,
       interest: details.interest,
-      remainingAmount: details.remainingAmount,
+      remainingAmount: remainingAmount,
+      installments: details.installments,
     } as any;
     return getLoanStatus(tempLoan, new Date());
-  }, [details]);
+  }, [details, remainingAmount]);
 
   const isLiquidated = useMemo(() => {
     if (!details) return false;
     return (
       details.isLiquidated ||
       details.status === "Liquidado" ||
-      details.remainingAmount <= 0
+      remainingAmount <= 0
     );
-  }, [details]);
+  }, [details, remainingAmount]);
 
   const isExpired = useMemo(() => {
     if (!details) return false;
@@ -338,11 +353,11 @@ export default function PublicSharePage() {
       );
     } else {
       text = encodeURIComponent(
-        `Hola, tengo una consulta sobre mi préstamo.\nCliente: ${details.clientName}\nEmpresa: ${tenantName}\nSaldo Pendiente: ${formatMoney(details.remainingAmount)}`,
+        `Hola, tengo una consulta sobre mi préstamo.\nCliente: ${details.clientName}\nEmpresa: ${tenantName}\nSaldo Pendiente: ${formatMoney(remainingAmount)}`,
       );
     }
     return `https://wa.me/${phone}?text=${text}`;
-  }, [details, isLiquidated, isExpired, tenantName]);
+  }, [details, isLiquidated, isExpired, tenantName, remainingAmount]);
 
   if (loading) {
     return (
@@ -884,7 +899,7 @@ export default function PublicSharePage() {
                       Saldo Pendiente
                     </div>
                     <div className="nc-summary-value-highlight">
-                      {formatMoney(details.remainingAmount)}
+                      {formatMoney(remainingAmount)}
                     </div>
                   </div>
                 </div>
@@ -923,7 +938,7 @@ export default function PublicSharePage() {
                   fee={details.fee}
                   isStalledOverdue={parsedDates.isStalledOverdue}
                   daysOverdue={parsedDates.daysOverdue}
-                  remainingAmount={details.remainingAmount}
+                  remainingAmount={remainingAmount}
                 />
               ) : (
                 <InstallmentsListView installments={details.installments} />

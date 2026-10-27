@@ -153,17 +153,33 @@ export default function CreateUserModal({
     if (!formData.documentNumber || formData.documentNumber.length < 8) {
       setIsPersonFoundFromDni(false);
       setIsDniNotFound(false);
+      setSearchingPerson(false);
       return;
     }
 
+    // Bandera para descartar respuestas de búsquedas obsoletas (DNI cambiado en vuelo)
+    let cancelled = false;
+
+    // Se marca como "buscando" desde el inicio del debounce para evitar
+    // mostrar el aviso de "no encontrado" antes de consultar la API.
+    setSearchingPerson(true);
+    setIsDniNotFound(false);
+
+    // DNI siempre tiene 8 dígitos: al completarse se busca sin espera.
+    // CE / Pasaporte tienen longitud variable: debounce corto para no consultar por cada tecla.
+    const isCompleteDni =
+      formData.documentType === "DNI" && formData.documentNumber.length === 8;
+    const searchDelayMs = isCompleteDni ? 0 : 400;
+
     const timer = setTimeout(async () => {
-      setSearchingPerson(true);
       setError("");
 
       const result = await searchPersonUseCase.execute(
         formData.documentType,
         formData.documentNumber,
       );
+
+      if (cancelled) return;
 
       result.match(
         (person) => {
@@ -196,9 +212,12 @@ export default function CreateUserModal({
         },
       );
       setSearchingPerson(false);
-    }, 1000);
+    }, searchDelayMs);
 
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [formData.documentNumber, formData.documentType, isOpen, userToEdit]);
 
   // Auto-generate username logic
@@ -257,17 +276,17 @@ export default function CreateUserModal({
 
     const result = userToEdit
       ? await updateUserUseCase.execute(userToEdit.id, {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          profile: formData.profile,
-          status: formData.status || userToEdit.status,
-          birthday: null,
-        })
-      : await createUserUseCase.execute({ 
-          ...creationData, 
-          idCompany: effectiveCompanyId,
-          birthday: null 
-        });
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        profile: formData.profile,
+        status: formData.status || userToEdit.status,
+        birthday: null,
+      })
+      : await createUserUseCase.execute({
+        ...creationData,
+        idCompany: effectiveCompanyId,
+        birthday: null
+      });
 
     result.match(
       () => {
@@ -278,9 +297,9 @@ export default function CreateUserModal({
         logger.error("Error saving user:", err);
         setError(
           err.message ||
-            (userToEdit
-              ? "Error al actualizar usuario."
-              : "Error al crear usuario."),
+          (userToEdit
+            ? "Error al actualizar usuario."
+            : "Error al crear usuario."),
         );
       },
     );
@@ -346,8 +365,7 @@ export default function CreateUserModal({
           )}
 
           {!error &&
-            !formData.firstName &&
-            formData.documentNumber.length >= 8 &&
+            isDniNotFound &&
             !searchingPerson && (
               <div
                 className="create-user-section"
@@ -463,17 +481,17 @@ export default function CreateUserModal({
                       isNameReadOnly
                         ? isPersonFoundFromDni
                           ? {
-                              backgroundColor: "#f1f5f9",
-                              color: "#334155",
-                              cursor: "not-allowed",
-                              borderColor: "#cbd5e1",
-                            }
+                            backgroundColor: "#f1f5f9",
+                            color: "#334155",
+                            cursor: "not-allowed",
+                            borderColor: "#cbd5e1",
+                          }
                           : {
-                              backgroundColor: "#f8fafc",
-                              color: "#64748b",
-                              cursor: "not-allowed",
-                              borderColor: "#e2e8f0",
-                            }
+                            backgroundColor: "#f8fafc",
+                            color: "#64748b",
+                            cursor: "not-allowed",
+                            borderColor: "#e2e8f0",
+                          }
                         : undefined
                     }
                   />
@@ -502,17 +520,17 @@ export default function CreateUserModal({
                       isNameReadOnly
                         ? isPersonFoundFromDni
                           ? {
-                              backgroundColor: "#f1f5f9",
-                              color: "#334155",
-                              cursor: "not-allowed",
-                              borderColor: "#cbd5e1",
-                            }
+                            backgroundColor: "#f1f5f9",
+                            color: "#334155",
+                            cursor: "not-allowed",
+                            borderColor: "#cbd5e1",
+                          }
                           : {
-                              backgroundColor: "#f8fafc",
-                              color: "#64748b",
-                              cursor: "not-allowed",
-                              borderColor: "#e2e8f0",
-                            }
+                            backgroundColor: "#f8fafc",
+                            color: "#64748b",
+                            cursor: "not-allowed",
+                            borderColor: "#e2e8f0",
+                          }
                         : undefined
                     }
                   />
@@ -530,7 +548,7 @@ export default function CreateUserModal({
                       marginTop: "0.35rem",
                     }}
                   >
-                    <Check size={13} strokeWidth={3} /> Datos validados en RENIEC / Base de datos (Solo lectura)
+                    <Check size={13} strokeWidth={3} /> Datos encontrados
                   </span>
                 )}
                 {!userToEdit && isDniNotFound && (

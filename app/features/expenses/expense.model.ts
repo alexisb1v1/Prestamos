@@ -7,5 +7,9 @@ export interface Expense {
   date: string;
   expenseDate: string;
   userId: string;
+  companyId?: string;
+  userName?: string;
+  userFullName?: string;
   user?: User;
 }
+

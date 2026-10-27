@@ -75,7 +75,11 @@ export default function TenantThemeApplier() {
         }
       } catch {}
 
-      // Si no hay usuario autenticado (ej. en la pantalla de login), no consultar my-company para evitar 401
+      // Si estamos en rutas públicas (ej. /compartir) o no hay sesión, no consultar my-company para evitar 401
+      if (typeof window !== "undefined" && window.location.pathname.startsWith("/compartir")) {
+        return;
+      }
+
       if (!authService.isAuthenticated()) {
         return;
       }

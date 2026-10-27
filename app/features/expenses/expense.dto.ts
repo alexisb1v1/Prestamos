@@ -13,5 +13,9 @@ export interface ExpenseDto {
   expenseDate?: string;
   userAppId?: string;
   userId?: string;
+  companyId?: string;
+  userName?: string;
+  userFullName?: string;
   user?: unknown;
 }
+

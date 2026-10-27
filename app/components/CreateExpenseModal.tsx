@@ -48,6 +48,7 @@ export default function CreateExpenseModal({
         description,
         amount: parseFloat(amount),
         userId: user.id,
+        companyId: user.idCompany,
       });
 
       result.match(

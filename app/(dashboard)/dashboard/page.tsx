@@ -26,6 +26,7 @@ import ClientCard from "../../components/ClientCard";
 import LoanActions from "../../components/LoanActions";
 import DashboardFilterModal from "../../components/DashboardFilterModal";
 import UpdateLoanInfoModal from "../../components/UpdateLoanInfoModal";
+import CollectorDropdown from "../../components/CollectorDropdown";
 import {
   DndContext,
   closestCenter,
@@ -434,7 +435,7 @@ export default function DashboardPage() {
     currentUser?.profile === "ADMIN" || currentUser?.profile === "OWNER";
 
   return (
-    <div>
+    <div style={{ paddingBottom: isMobile ? "7.5rem" : "2rem" }}>
       {isAdmin && (
         <div
           id="filtro-dashboard"
@@ -446,7 +447,9 @@ export default function DashboardPage() {
             gap: "0.5rem",
             borderBottom: "1px solid var(--border-color)",
             position: "relative",
-            zIndex: 10
+            zIndex: 40,
+            flexWrap: "wrap",
+            overflow: "visible",
           }}
         >
           {/* Ocultar el borde del header para fusionarlos visualmente */}
@@ -484,35 +487,20 @@ export default function DashboardPage() {
             </button>
           )}
 
-          <button
-            onClick={() => setIsFilterModalOpen(true)}
-            style={{
-              flex: 1,
-              backgroundColor: "white",
-              padding: "0.45rem 0.5rem",
-              borderRadius: "2rem",
-              fontSize: "0.7rem",
-              fontWeight: 600,
-              color: "#475569",
-              display: "flex",
-              alignItems: "center",
-              gap: "0.3rem",
-              border: "1px solid var(--border-color)",
-              cursor: "pointer",
-              transition: "all 0.2s"
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#64748b" }}>
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
-            <span style={{ flex: 1, textAlign: "left", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {selectedUserId ? collectors.find((c) => c.id === selectedUserId)?.username : "Todos los cobradores"}
-            </span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#94a3b8" }}>
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </button>
+          <div style={{ flex: 1, minWidth: "150px" }}>
+            <CollectorDropdown
+              collectors={collectors}
+              selectedCollectorId={selectedUserId}
+              onSelectCollector={(id) => {
+                setSelectedUserId(id);
+                loadDashboard(id, selectedCompanyId);
+              }}
+              allowAll={true}
+              allLabel="Todos los cobradores"
+              isMobile={isMobile}
+              width="100%"
+            />
+          </div>
         </div>
       )}
 
@@ -742,18 +730,20 @@ export default function DashboardPage() {
                 style={{
                   position: "sticky",
                   top: "4rem",
-                  zIndex: 20,
-                  backgroundColor: "transparent",
-                  margin: "0 -0.25rem",
-                  padding: "0.25rem 0.25rem 0.5rem 0.25rem",
+                  zIndex: 25,
+                  backgroundColor: "var(--bg-app, #f8f9fa)",
+                  margin: "0 -1rem 0.5rem -1rem",
+                  padding: "0.75rem 1rem 0.75rem 1rem",
+                  borderBottom: "1px solid var(--border-color, #e2e8f0)",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.04)",
                   transition: "all 0.3s ease",
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem", padding: "0 0.25rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.6rem" }}>
                   <h2 style={{ fontSize: "1.125rem", fontWeight: 700, color: "#0f172a", margin: 0 }}>
                     Clientes por cobrar
                   </h2>
-                  <div style={{ backgroundColor: "#e0e7ff", color: "#3730a3", padding: "0.25rem 0.6rem", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                  <div style={{ backgroundColor: "#e0e7ff", color: "#3730a3", padding: "0.25rem 0.65rem", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.3rem" }}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                     {filteredLoans.length} pendientes
                   </div>
@@ -766,10 +756,22 @@ export default function DashboardPage() {
                     placeholder="Buscar por Nombre o DNI..."
                     value={searchTermLocal}
                     onChange={(e) => setSearchTermLocal(e.target.value)}
-                    style={{ width: "100%", backgroundColor: "#ffffff", height: "2.75rem", fontSize: "0.875rem", paddingLeft: "2.75rem", paddingRight: "1rem", borderRadius: "0.75rem", border: "none", color: "#0f172a", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)", outline: "none" }}
+                    style={{
+                      width: "100%",
+                      backgroundColor: "#ffffff",
+                      height: "2.75rem",
+                      fontSize: "0.875rem",
+                      paddingLeft: "2.75rem",
+                      paddingRight: "1rem",
+                      borderRadius: "0.75rem",
+                      border: "1px solid var(--border-color, #e2e8f0)",
+                      color: "#0f172a",
+                      boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
+                      outline: "none",
+                    }}
                   />
                   <div style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", color: "#94a3b8", pointerEvents: "none" }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                   </div>
                 </div>
               </div>

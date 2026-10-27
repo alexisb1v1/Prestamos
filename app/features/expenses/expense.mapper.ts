@@ -18,6 +18,9 @@ export class ExpenseMapper {
       date: dto.date || "",
       expenseDate: dto.expenseDate || dto.date || "",
       userId: dto.userAppId?.toString() || dto.userId?.toString() || "",
+      companyId: dto.companyId?.toString() || "",
+      userName: dto.userName || undefined,
+      userFullName: dto.userFullName || undefined,
       user: (dto.user as any) || undefined,
     };
   }

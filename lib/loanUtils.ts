@@ -3,6 +3,16 @@ import { Loan } from './types';
 
 export const formatDateLocal = (dateString: string | Date | undefined | null) => {
     if (!dateString) return '-';
+    if (typeof dateString === 'string') {
+        const dateStr = dateString.split('T')[0];
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+            const year = parts[0];
+            const month = parts[1];
+            const day = parts[2];
+            return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+        }
+    }
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return '-';
     const day = String(date.getDate()).padStart(2, '0');
@@ -22,6 +32,22 @@ export const formatMoney = (amount: number | undefined | null) => {
     return `S/ ${Number(amount).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
+const parseSafeDate = (d: string | Date | undefined | null): Date => {
+    if (!d) return startOfDay(new Date());
+    if (d instanceof Date) return startOfDay(d);
+    const dateStr = String(d).split('T')[0];
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+            return new Date(year, month, day);
+        }
+    }
+    return startOfDay(new Date(d));
+};
+
 export const getLoanStatus = (loan: Loan, referenceDate?: Date) => {
     // If loan is Liquidado, return Liquidado status immediately
     if (loan.status === 'Liquidado' || (loan as { remainingAmount?: number }).remainingAmount === 0) {
@@ -32,8 +58,8 @@ export const getLoanStatus = (loan: Loan, referenceDate?: Date) => {
     // Normalize to startOfDay to ensure consistent comparison.
     const today = referenceDate ? startOfDay(referenceDate) : startOfDay(new Date());
     const yesterday = subDays(today, 1);
-    const startDate = startOfDay(parseISO(loan.startDate));
-    const endDate = startOfDay(parseISO(loan.endDate));
+    const startDate = parseSafeDate(loan.startDate);
+    const endDate = parseSafeDate(loan.endDate);
 
     // Calculate elapsed days excluding Sundays (up to yesterday, capped at endDate)
     const limitDate = yesterday < endDate ? yesterday : endDate;
@@ -52,7 +78,14 @@ export const getLoanStatus = (loan: Loan, referenceDate?: Date) => {
 
     const totalDue = daysElapsed * loan.fee;
     // Calculation: Total Paid = (Amount + Interest) - Remaining
-    const totalPaid = (loan.amount + loan.interest) - (loan.remainingAmount || 0);
+    const loanData = loan as { remainingAmount?: number; installments?: Array<{ amount?: number }> };
+    let totalPaid = (loan.amount + loan.interest) - (loanData.remainingAmount !== undefined ? (loanData.remainingAmount || 0) : (loan.amount + loan.interest));
+    if (Array.isArray(loanData.installments) && loanData.installments.length > 0) {
+        const installmentsSum = loanData.installments.reduce((sum: number, inst: { amount?: number }) => sum + Number(inst.amount || 0), 0);
+        if (installmentsSum > totalPaid) {
+            totalPaid = installmentsSum;
+        }
+    }
 
     // Case: Recent loan (starts today or tomorrow)
     if (totalDue === 0 && today <= startDate) {

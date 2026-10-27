@@ -1,17 +1,19 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styles from '../reportes.module.css';
 import { userService } from '@/lib/userService';
 import { User } from '@/app/features/users';
 import { authService } from '@/lib/auth';
 import { apiRequest } from '@/lib/api';
+import CollectorDropdown from '@/app/components/CollectorDropdown';
+import DateRangePicker from '@/app/components/DateRangePicker';
 import {
   CalendarRange, Download, ChevronDown, UserRound, Banknote, Receipt,
   CheckCircle2, CreditCard, ChevronLeft, ChevronRight, Search,
   Settings2, Navigation, BadgeInfo, RefreshCw,
   ArrowLeft, Calendar, PiggyBank, FileText, Lock, Clock,
-  Users, TrendingUp, Bike, Share2, Fuel, Coffee, Map, ArrowLeftRight
+  Users, TrendingUp, Share2, Fuel, Coffee, Map
 } from 'lucide-react';
 
 interface DailyCollection {
@@ -73,6 +75,14 @@ export default function PorCobradorPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -214,54 +224,90 @@ export default function PorCobradorPage() {
   const currentPayments = filteredPayments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
-    <div className={styles.dashboardCanvas}>
+    <div
+      className={styles.dashboardCanvas}
+      style={{
+        padding: isMobile ? '16px 12px' : '24px',
+        paddingBottom: isMobile ? '6rem' : '24px',
+      }}
+    >
 
       {/* Top Bar Navigation & Actions */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', background: '#ffffff', borderRadius: '12px', padding: '8px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', gap: '12px' }}>
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: 'var(--color-primary, #4147eb)' }}></div>
-              <select
-                value={selectedCollector}
-                onChange={(e) => setSelectedCollector(e.target.value)}
-                style={{ appearance: 'none', border: 'none', background: 'transparent', fontSize: '20px', fontWeight: 700, color: '#0f172a', outline: 'none', cursor: 'pointer', paddingRight: '24px' }}
-              >
-                <option value="">Seleccionar Cobrador...</option>
-                {collectors.map(c => (
-                  <option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>
-                ))}
-              </select>
-              <ChevronDown size={20} color="#64748b" style={{ position: 'absolute', right: '16px', pointerEvents: 'none' }} />
-            </div>
-          </div>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          justifyContent: 'space-between',
+          alignItems: isMobile ? 'stretch' : 'center',
+          marginBottom: isMobile ? '14px' : '24px',
+          gap: isMobile ? '10px' : '16px',
+        }}
+      >
+        {/* Selector de Cobrador */}
+        <div style={{ width: isMobile ? '100%' : '260px' }}>
+          <CollectorDropdown
+            collectors={collectors}
+            selectedCollectorId={selectedCollector}
+            onSelectCollector={(id) => setSelectedCollector(id)}
+            allowAll={false}
+            placeholder="Seleccionar Cobrador..."
+            isMobile={isMobile}
+            width="100%"
+          />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-
-          <button onClick={refreshData} disabled={!selectedCollector || loading} style={{ background: '#f1f4fa', color: 'var(--color-primary, #4147eb)', border: 'none', borderRadius: '12px', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, fontSize: '14px', cursor: (!selectedCollector || loading) ? 'not-allowed' : 'pointer', opacity: (!selectedCollector || loading) ? 0.6 : 1 }}>
-            <RefreshCw size={18} className={loading ? styles.spin : ''} />
-            Refrescar
-          </button>
-
-          <div style={{ display: 'flex', alignItems: 'center', background: '#ffffff', borderRadius: '12px', padding: '8px 16px', gap: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-            <Calendar size={18} color="var(--color-primary, #4147eb)" />
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              style={{ border: 'none', background: 'transparent', fontSize: '14px', fontWeight: 600, color: '#0f172a', outline: 'none' }}
-            />
-            <span style={{ color: '#94a3b8' }}>-</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              style={{ border: 'none', background: 'transparent', fontSize: '14px', fontWeight: 600, color: '#0f172a', outline: 'none' }}
+        {/* Fila de Filtro de Fecha y Botón Refrescar */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: 'center',
+            gap: isMobile ? '10px' : '8px',
+            width: isMobile ? '100%' : 'auto',
+          }}
+        >
+          <div style={{ width: isMobile ? '100%' : 'auto' }}>
+            <DateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              onChange={(s, e) => {
+                setStartDate(s);
+                setEndDate(e);
+              }}
+              isMobile={isMobile}
+              width={isMobile ? '100%' : 'auto'}
             />
           </div>
+
+          <button
+            type="button"
+            onClick={refreshData}
+            disabled={!selectedCollector || loading}
+            title="Refrescar datos"
+            style={{
+              width: isMobile ? '100%' : 'auto',
+              backgroundColor: '#ffffff',
+              color: 'var(--color-primary, #4147eb)',
+              border: '1px solid var(--border-color, #e2e8f0)',
+              borderRadius: isMobile ? '14px' : '2rem',
+              padding: isMobile ? '0.65rem 1rem' : '0.5rem 1rem',
+              height: isMobile ? '42px' : 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              fontWeight: 650,
+              fontSize: '13px',
+              cursor: (!selectedCollector || loading) ? 'not-allowed' : 'pointer',
+              opacity: (!selectedCollector || loading) ? 0.6 : 1,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+              transition: 'all 0.15s ease',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <RefreshCw size={14} className={loading ? styles.spin : ''} />
+            <span>Refrescar</span>
+          </button>
         </div>
       </div>
 
@@ -394,74 +440,41 @@ export default function PorCobradorPage() {
           </div>
 
           <div className={styles.mobileDashboardLayout}>
-            {/* Top Selector (Mockup style) */}
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <div style={{ background: 'white', borderRadius: '16px', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', width: '100%' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'color-mix(in srgb, var(--color-primary, #4147eb) 12%, transparent)', color: 'var(--color-primary, #4147eb)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <UserRound size={20} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontWeight: 700, fontSize: '16px', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{currentCollector?.firstName} {currentCollector?.lastName}</span>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', flexShrink: 0 }}></div>
-                  </div>
-                  <span style={{ fontSize: '12px', color: '#64748b' }}>Ruta Norte • Cobrador Activo</span>
-                </div>
-                <div style={{ background: '#f1f4fa', borderRadius: '8px', padding: '8px', color: 'var(--color-primary, #4147eb)', flexShrink: 0 }}>
-                  <ArrowLeftRight size={16} />
-                </div>
-              </div>
-            </div>
-
-            {/* Profile Card */}
-            <div style={{ background: 'white', borderRadius: '24px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            {/* Profile Card (Sin duplicar el nombre del selector superior) */}
+            <div style={{ background: 'white', borderRadius: '24px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'linear-gradient(135deg, var(--color-primary, #4147eb), var(--color-primary-hover, #353bd6))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '20px', fontWeight: 800, position: 'relative' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'linear-gradient(135deg, var(--color-primary, #4147eb), var(--color-primary-hover, #353bd6))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '18px', fontWeight: 800, position: 'relative' }}>
                     {currentCollector?.firstName?.charAt(0)}{currentCollector?.lastName?.charAt(0)}
-                    <div style={{ position: 'absolute', bottom: '-4px', right: '-4px', background: '#10b981', color: 'white', borderRadius: '50%', padding: '2px', border: '2px solid white' }}>
+                    <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', background: '#10b981', color: 'white', borderRadius: '50%', padding: '2px', border: '2px solid white' }}>
                       <CheckCircle2 size={10} />
                     </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>{currentCollector?.firstName} {currentCollector?.lastName}</span>
-                    <span style={{ fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}><BadgeInfo size={12} /> DNI: {data.documentNumber || '---'}</span>
-
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>Rendimiento de Ruta</span>
+                    <span style={{ fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <BadgeInfo size={12} /> DNI: {data.documentNumber || '---'}
+                    </span>
                   </div>
                 </div>
-                <span style={{ background: 'color-mix(in srgb, var(--color-primary, #4147eb) 12%, transparent)', color: 'var(--color-primary, #4147eb)', fontSize: '11px', fontWeight: 700, padding: '4px 8px', borderRadius: '8px' }}>
-                  ID #CB-04
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#f0fdf4', color: '#16a34a', fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px' }}>
+                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#16a34a' }}></div>
+                  Activo
                 </span>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div style={{ background: '#f8f9fa', borderRadius: '16px', padding: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ background: 'color-mix(in srgb, var(--color-primary, #4147eb) 12%, transparent)', color: 'var(--color-primary, #4147eb)', padding: '8px', borderRadius: '10px' }}><Users size={16} /></div>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '11px', color: '#64748b' }}>Clientes</span>
-                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>{data.clientes} <span style={{ fontSize: '11px', fontWeight: 500, color: '#64748b' }}>Asignados</span></span>
-                  </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                <div style={{ background: '#f8f9fa', borderRadius: '14px', padding: '10px 6px', textAlign: 'center' }}>
+                  <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>Clientes</span>
+                  <span style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>{data.clientes}</span>
                 </div>
-                <div style={{ background: '#f8f9fa', borderRadius: '16px', padding: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ background: 'color-mix(in srgb, var(--color-primary, #4147eb) 12%, transparent)', color: 'var(--color-primary, #4147eb)', padding: '8px', borderRadius: '10px' }}><FileText size={16} /></div>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '11px', color: '#64748b' }}>Préstamos</span>
-                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>{data.paymentCount} <span style={{ fontSize: '11px', fontWeight: 500, color: '#64748b' }}>Activos</span></span>
-                  </div>
+                <div style={{ background: '#f8f9fa', borderRadius: '14px', padding: '10px 6px', textAlign: 'center' }}>
+                  <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>Abonos</span>
+                  <span style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>{data.paymentCount}</span>
                 </div>
-                <div style={{ background: '#f8f9fa', borderRadius: '16px', padding: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ background: '#e0f2fe', color: '#0284c7', padding: '8px', borderRadius: '10px' }}><TrendingUp size={16} /></div>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '11px', color: '#64748b' }}>Efectividad</span>
-                    <span style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>{getEffectiveness()}%</span>
-                  </div>
-                </div>
-                <div style={{ background: '#f8f9fa', borderRadius: '16px', padding: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ background: '#fff7ed', color: '#ea580c', padding: '8px', borderRadius: '10px' }}><Bike size={16} /></div>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '11px', color: '#64748b' }}>Honda GL-150</span>
-                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}><div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }}></div>GPS Activo</span>
-                  </div>
+                <div style={{ background: '#f8f9fa', borderRadius: '14px', padding: '10px 6px', textAlign: 'center' }}>
+                  <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>Efectividad</span>
+                  <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-primary, #4147eb)' }}>{getEffectiveness()}%</span>
                 </div>
               </div>
             </div>
@@ -619,23 +632,43 @@ export default function PorCobradorPage() {
           </div>
 
           {/* Tabla de Detalle de Cobros */}
-          <div style={{ background: 'white', borderRadius: '24px', padding: '32px', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', marginTop: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <div style={{ background: 'white', borderRadius: isMobile ? '20px' : '24px', padding: isMobile ? '16px 14px' : '32px', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', marginTop: '16px' }}>
+            <div style={{
+              display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
+              justifyContent: 'space-between',
+              alignItems: isMobile ? 'stretch' : 'center',
+              marginBottom: isMobile ? '16px' : '24px',
+              gap: isMobile ? '14px' : '16px'
+            }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>Detalle de Cobros y Transacciones</h3>
-                <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#64748b' }}>Mostrando últimos movimientos directos del cobrador en la ruta activa</p>
+                <h3 style={{ margin: 0, fontSize: isMobile ? '18px' : '20px', fontWeight: 700, color: '#0f172a' }}>
+                  Detalle de Cobros y Transacciones
+                </h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: isMobile ? '12px' : '13px', color: '#64748b' }}>
+                  Mostrando últimos movimientos directos del cobrador en la ruta activa
+                </p>
               </div>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div style={{ position: 'relative' }}>
-                  <Search size={18} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '10px' }} />
-                  <input
-                    type="text"
-                    placeholder="Buscar por cliente o método..."
-                    value={searchTerm}
-                    onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                    style={{ height: '40px', paddingLeft: '36px', paddingRight: '16px', borderRadius: '12px', border: 'none', background: '#f8f9fa', outline: 'none', fontSize: '14px', width: '220px' }}
-                  />
-                </div>
+              <div style={{ position: 'relative', width: isMobile ? '100%' : '240px' }}>
+                <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                <input
+                  type="text"
+                  placeholder="Buscar por cliente o método..."
+                  value={searchTerm}
+                  onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                  style={{
+                    width: '100%',
+                    height: '40px',
+                    paddingLeft: '36px',
+                    paddingRight: '16px',
+                    borderRadius: '2rem',
+                    border: '1px solid var(--border-color, #e2e8f0)',
+                    background: '#f8f9fa',
+                    outline: 'none',
+                    fontSize: '13px',
+                    boxSizing: 'border-box'
+                  }}
+                />
               </div>
             </div>
 
@@ -696,37 +729,51 @@ export default function PorCobradorPage() {
             </div>
 
             <div className={styles.mobileDashboardLayout}>
-              <div className={styles.mobileListHeader}>
-                <span className={styles.mobileListTitle}>Últimos Cobros en Ruta</span>
-              </div>
               <div className={styles.mobileListContainer}>
                 {currentPayments.length > 0 ? currentPayments.map((p, idx) => {
                   const initial = p.client ? p.client.substring(0, 2).toUpperCase() : '??';
                   return (
-                    <div key={p.id || idx} className={styles.mobilePaymentCard}>
-                      <div className={styles.mobilePaymentCardLeft}>
-                        <div className={`${styles.mobilePaymentAvatar} ${p.type !== 'EXPENSE' && p.method.toUpperCase() !== 'EFECTIVO' ? styles.mobilePaymentAvatarBlue : ''}`}>
+                    <div
+                      key={p.id || idx}
+                      style={{
+                        backgroundColor: '#f8f9fa',
+                        border: '1px solid #f1f5f9',
+                        borderRadius: '16px',
+                        padding: '12px 14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '12px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                        <div
+                          className={`${styles.mobilePaymentAvatar} ${p.type !== 'EXPENSE' && p.method.toUpperCase() !== 'EFECTIVO' ? styles.mobilePaymentAvatarBlue : ''}`}
+                          style={{ width: '38px', height: '38px', borderRadius: '10px', fontSize: '13px', flexShrink: 0 }}
+                        >
                           {initial}
                         </div>
-                        <div className={styles.mobilePaymentInfo}>
-                          <span className={styles.mobilePaymentName}>{p.client}</span>
-                          <div className={styles.mobilePaymentMeta}>
-                            <span className={styles.mobilePaymentMetaBadge}>{new Date(p.date).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
-                          </div>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <span style={{ fontWeight: 700, fontSize: '14px', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>
+                            {p.client}
+                          </span>
+                          <span style={{ fontSize: '11px', color: '#64748b', marginTop: '2px', display: 'block' }}>
+                            {new Date(p.date).toLocaleString('es-PE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          </span>
                         </div>
                       </div>
-                      <div className={styles.mobilePaymentRight}>
-                        <span className={styles.mobilePaymentAmount} style={{ color: p.type === 'EXPENSE' ? '#e11d48' : (p.method.toUpperCase() === 'EFECTIVO' ? '#16a34a' : '#4147eb') }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0 }}>
+                        <span style={{ fontSize: '15px', fontWeight: 700, color: p.type === 'EXPENSE' ? '#e11d48' : (p.method.toUpperCase() === 'EFECTIVO' ? '#16a34a' : 'var(--color-primary, #4147eb)') }}>
                           {p.type === 'EXPENSE' ? '-' : '+'}{formatCurrency(p.amount)}
                         </span>
-                        <span className={`${styles.mobilePaymentMethod} ${p.method.toUpperCase() !== 'EFECTIVO' && p.type !== 'EXPENSE' ? styles.mobilePaymentMethodYape : ''}`}>
+                        <span className={`${styles.mobilePaymentMethod} ${p.method.toUpperCase() !== 'EFECTIVO' && p.type !== 'EXPENSE' ? styles.mobilePaymentMethodYape : ''}`} style={{ marginTop: '2px', fontSize: '10px', padding: '2px 6px' }}>
                           {p.type === 'EXPENSE' ? 'Gasto' : p.method}
                         </span>
                       </div>
                     </div>
                   )
                 }) : (
-                  <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8', background: 'white', borderRadius: '16px' }}>
+                  <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8', background: '#f8f9fa', borderRadius: '16px', fontSize: '13px' }}>
                     No hay pagos registrados.
                   </div>
                 )}
@@ -734,13 +781,22 @@ export default function PorCobradorPage() {
             </div>
 
             {filteredPayments.length > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
-                <span style={{ fontSize: '13px', color: '#64748b' }}>
+              <div style={{
+                display: 'flex',
+                flexDirection: isMobile ? 'column' : 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: isMobile ? '12px' : '0',
+                marginTop: isMobile ? '16px' : '24px',
+                paddingTop: '16px',
+                borderTop: '1px solid #f1f5f9'
+              }}>
+                <span style={{ fontSize: isMobile ? '12px' : '13px', color: '#64748b', textAlign: isMobile ? 'center' : 'left' }}>
                   Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredPayments.length)} de {filteredPayments.length} transacciones
                 </span>
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: isMobile ? 'center' : 'flex-end', width: isMobile ? '100%' : 'auto' }}>
                   <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#f8f9fa', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', color: currentPage === 1 ? '#cbd5e1' : '#64748b', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}><ChevronLeft size={16} /></button>
-                  <button style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#4147eb', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '13px' }}>{currentPage}</button>
+                  <button style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--color-primary, #4147eb)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '13px' }}>{currentPage}</button>
                   {currentPage < totalPages && (
                     <button onClick={() => setCurrentPage(currentPage + 1)} style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'transparent', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0f172a', fontSize: '13px', cursor: 'pointer' }}>{currentPage + 1}</button>
                   )}

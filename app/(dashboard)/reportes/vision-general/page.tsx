@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import styles from '../reportes.module.css';
 import { authService } from '@/lib/auth';
 import { apiRequest } from '@/lib/api';
+import DateRangePicker from '@/app/components/DateRangePicker';
 import {
   CalendarRange,
   RefreshCw,
@@ -158,22 +159,15 @@ export default function VisionGeneralPage() {
         </div>
 
         <div className={styles.commandActions}>
-          <div className={styles.datePickerPill}>
-            <CalendarRange size={18} color="var(--color-primary, #4147eb)" />
-            <input
-              type="date"
-              className={styles.pillInput}
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-            <span style={{ color: '#454652', fontWeight: 600 }}> - </span>
-            <input
-              type="date"
-              className={styles.pillInput}
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
+          <DateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onChange={(s, e) => {
+              setStartDate(s);
+              setEndDate(e);
+            }}
+            align="right"
+          />
           <button className={styles.btnSecondary} onClick={loadData}>
             <RefreshCw size={18} />
             <span>Actualizar</span>
@@ -300,23 +294,27 @@ export default function VisionGeneralPage() {
 
           <div className={styles.mobileDashboardLayout}>
             {/* Control de fechas mobile */}
-            <div className={styles.mobileDatePickerRow}>
-              <CalendarRange size={16} color="var(--color-primary, #4147eb)" />
-              <input
-                type="date"
-                className={styles.mobileDateInput}
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-              <span style={{ color: '#94a3b8', fontWeight: 600 }}>—</span>
-              <input
-                type="date"
-                className={styles.mobileDateInput}
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
-              <button className={styles.mobileDateRefreshBtn} onClick={loadData}>
-                <RefreshCw size={14} />
+            {/* Control de fechas mobile con DateRangePicker */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', width: '100%' }}>
+              <div style={{ flex: 1 }}>
+                <DateRangePicker
+                  startDate={startDate}
+                  endDate={endDate}
+                  onChange={(s, e) => {
+                    setStartDate(s);
+                    setEndDate(e);
+                  }}
+                  isMobile={true}
+                  width="100%"
+                />
+              </div>
+              <button
+                type="button"
+                className={styles.mobileDateRefreshBtn}
+                onClick={loadData}
+                aria-label="Actualizar"
+              >
+                <RefreshCw size={14} className={loading ? styles.spin : ''} />
               </button>
             </div>
 

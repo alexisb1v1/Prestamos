@@ -14,6 +14,8 @@ import {
   Building2,
   Sparkles,
   AlertCircle,
+  ChevronRight,
+  ChevronLeft,
 } from "lucide-react";
 import ChangePasswordModal from "@/app/components/ChangePasswordModal";
 import { CompanyRepositoryImpl } from "@/app/features/companies/repositories/company.repository.impl";
@@ -41,6 +43,42 @@ export default function ConfiguracionPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkTabsScroll = () => {
+    if (!tabsRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = tabsRef.current;
+    setCanScrollLeft(scrollLeft > 6);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 6);
+  };
+
+  const scrollTabs = (direction: "left" | "right") => {
+    if (!tabsRef.current) return;
+    const scrollAmount = 180;
+    tabsRef.current.scrollBy({
+      left: direction === "right" ? scrollAmount : -scrollAmount,
+      behavior: "smooth",
+    });
+  };
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+      checkTabsScroll();
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  useEffect(() => {
+    // Verificar si hay scroll disponible al cargar la página
+    const timer = setTimeout(checkTabsScroll, 100);
+    return () => clearTimeout(timer);
+  }, [isMobile]);
 
   // Estados de Personalización Visual (Branding)
   const [primaryColor, setPrimaryColor] = useState("#4147eb");
@@ -257,28 +295,58 @@ export default function ConfiguracionPage() {
   };
 
   return (
-    <div style={{ maxWidth: "900px", margin: "0 auto", paddingBottom: "3rem" }}>
+    <div
+      style={{
+        maxWidth: "900px",
+        margin: "0 auto",
+        paddingBottom: isMobile ? "7.5rem" : "3rem",
+        width: "100%",
+        boxSizing: "border-box",
+      }}
+    >
       {/* Cabecera */}
-      <div style={{ marginBottom: "2rem" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
+      <div style={{ marginBottom: isMobile ? "1.25rem" : "2rem" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: isMobile ? "flex-start" : "center",
+            gap: "0.75rem",
+            marginBottom: "0.5rem",
+          }}
+        >
           <div
             style={{
-              padding: "0.5rem",
+              padding: isMobile ? "0.45rem" : "0.5rem",
               borderRadius: "0.75rem",
               backgroundColor: "#e0e7ff",
               color: "var(--color-primary)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              flexShrink: 0,
             }}
           >
-            <Building2 size={24} />
+            <Building2 size={isMobile ? 22 : 24} />
           </div>
-          <div>
-            <h1 style={{ fontSize: "1.875rem", fontWeight: 700, color: "var(--text-primary)" }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <h1
+              style={{
+                fontSize: isMobile ? "1.35rem" : "1.875rem",
+                fontWeight: 700,
+                color: "var(--text-primary)",
+                lineHeight: 1.25,
+                marginBottom: "0.25rem",
+              }}
+            >
               Configuración de Empresa
             </h1>
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>
+            <p
+              style={{
+                color: "var(--text-secondary)",
+                fontSize: isMobile ? "0.85rem" : "0.95rem",
+                lineHeight: 1.4,
+              }}
+            >
               Personaliza la apariencia visual, ícono y reglas de crédito para{" "}
               <strong>{company?.companyName || "tu organización"}</strong>.
             </p>
@@ -286,77 +354,178 @@ export default function ConfiguracionPage() {
         </div>
       </div>
 
-      {/* Tabs de Navegación */}
-      <div
-        style={{
-          display: "flex",
-          gap: "0.5rem",
-          borderBottom: "1px solid var(--border-color)",
-          marginBottom: "1.5rem",
-        }}
-      >
-        <button
-          onClick={() => setActiveTab("branding")}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            padding: "0.75rem 1.25rem",
-            fontWeight: 600,
-            fontSize: "0.95rem",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            borderBottom: activeTab === "branding" ? "2px solid var(--color-primary)" : "2px solid transparent",
-            color: activeTab === "branding" ? "var(--color-primary)" : "var(--text-secondary)",
-            transition: "all 0.2s ease",
-          }}
-        >
-          <Palette size={18} />
-          <span>Personalización Visual</span>
-        </button>
+      {/* Tabs de Navegación con scroll táctil y flecha indicadora en móvil */}
+      <div style={{ position: "relative", marginBottom: "1.5rem" }}>
+        {/* Flecha Izquierda (solo si hay scroll hacia la izquierda) */}
+        {isMobile && canScrollLeft && (
+          <button
+            type="button"
+            onClick={() => scrollTabs("left")}
+            style={{
+              position: "absolute",
+              left: 0,
+              top: 0,
+              bottom: "1px",
+              zIndex: 10,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              width: "42px",
+              background: "linear-gradient(to right, var(--bg-app, #f8f9fa) 60%, transparent)",
+              border: "none",
+              color: "var(--color-primary, #4147eb)",
+              cursor: "pointer",
+              paddingLeft: "2px",
+            }}
+            aria-label="Desplazar pestañas hacia la izquierda"
+          >
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: "50%",
+                backgroundColor: "#ffffff",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+                border: "1px solid var(--border-color)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <ChevronLeft size={16} strokeWidth={2.5} />
+            </div>
+          </button>
+        )}
 
-        <button
-          onClick={() => setActiveTab("loans")}
+        {/* Barra de Tabs con scroll */}
+        <div
+          ref={tabsRef}
+          onScroll={checkTabsScroll}
           style={{
-            display: "inline-flex",
-            alignItems: "center",
+            display: "flex",
             gap: "0.5rem",
-            padding: "0.75rem 1.25rem",
-            fontWeight: 600,
-            fontSize: "0.95rem",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            borderBottom: activeTab === "loans" ? "2px solid var(--color-primary)" : "2px solid transparent",
-            color: activeTab === "loans" ? "var(--color-primary)" : "var(--text-secondary)",
-            transition: "all 0.2s ease",
+            borderBottom: "1px solid var(--border-color)",
+            overflowX: "auto",
+            WebkitOverflowScrolling: "touch",
+            scrollbarWidth: "none",
+            paddingBottom: "2px",
+            paddingRight: isMobile && canScrollRight ? "2.5rem" : "0",
+            paddingLeft: isMobile && canScrollLeft ? "2.5rem" : "0",
+            transition: "padding 0.2s ease",
+            maxWidth: "100%",
           }}
         >
-          <Sliders size={18} />
-          <span>Políticas de Préstamos</span>
-        </button>
+          <button
+            onClick={() => setActiveTab("branding")}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              padding: isMobile ? "0.65rem 0.95rem" : "0.75rem 1.25rem",
+              fontWeight: 600,
+              fontSize: isMobile ? "0.875rem" : "0.95rem",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              borderBottom: activeTab === "branding" ? "2px solid var(--color-primary)" : "2px solid transparent",
+              color: activeTab === "branding" ? "var(--color-primary)" : "var(--text-secondary)",
+              transition: "all 0.2s ease",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}
+          >
+            <Palette size={18} />
+            <span>Personalización Visual</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab("security")}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            padding: "0.75rem 1.25rem",
-            fontWeight: 600,
-            fontSize: "0.95rem",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            borderBottom: activeTab === "security" ? "2px solid var(--color-primary)" : "2px solid transparent",
-            color: activeTab === "security" ? "var(--color-primary)" : "var(--text-secondary)",
-            transition: "all 0.2s ease",
-          }}
-        >
-          <ShieldCheck size={18} />
-          <span>Seguridad</span>
-        </button>
+          <button
+            onClick={() => setActiveTab("loans")}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              padding: isMobile ? "0.65rem 0.95rem" : "0.75rem 1.25rem",
+              fontWeight: 600,
+              fontSize: isMobile ? "0.875rem" : "0.95rem",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              borderBottom: activeTab === "loans" ? "2px solid var(--color-primary)" : "2px solid transparent",
+              color: activeTab === "loans" ? "var(--color-primary)" : "var(--text-secondary)",
+              transition: "all 0.2s ease",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}
+          >
+            <Sliders size={18} />
+            <span>Políticas de Préstamos</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("security")}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              padding: isMobile ? "0.65rem 0.95rem" : "0.75rem 1.25rem",
+              fontWeight: 600,
+              fontSize: isMobile ? "0.875rem" : "0.95rem",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              borderBottom: activeTab === "security" ? "2px solid var(--color-primary)" : "2px solid transparent",
+              color: activeTab === "security" ? "var(--color-primary)" : "var(--text-secondary)",
+              transition: "all 0.2s ease",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}
+          >
+            <ShieldCheck size={18} />
+            <span>Seguridad</span>
+          </button>
+        </div>
+
+        {/* Flecha Derecha (guía interactiva cuando hay pestañas ocultas) */}
+        {isMobile && canScrollRight && (
+          <button
+            type="button"
+            onClick={() => scrollTabs("right")}
+            style={{
+              position: "absolute",
+              right: 0,
+              top: 0,
+              bottom: "1px",
+              zIndex: 10,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              width: "42px",
+              background: "linear-gradient(to left, var(--bg-app, #f8f9fa) 60%, transparent)",
+              border: "none",
+              color: "var(--color-primary, #4147eb)",
+              cursor: "pointer",
+              paddingRight: "2px",
+            }}
+            aria-label="Ver más pestañas a la derecha"
+          >
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: "50%",
+                backgroundColor: "#ffffff",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+                border: "1px solid var(--border-color)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "var(--color-primary, #4147eb)",
+              }}
+            >
+              <ChevronRight size={16} strokeWidth={2.5} />
+            </div>
+          </button>
+        )}
       </div>
 
       {/* Alerta de Feedback */}
@@ -388,7 +557,7 @@ export default function ConfiguracionPage() {
           {/* TAB 1: PERSONALIZACIÓN VISUAL (BRANDING) */}
           {activeTab === "branding" && (
             <div style={{ display: "grid", gap: "1.75rem" }}>
-              <section className="card" style={{ padding: "1.75rem", borderRadius: "1rem" }}>
+              <section className="card" style={{ padding: isMobile ? "1.25rem" : "1.75rem", borderRadius: "1rem" }}>
                 <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "0.5rem" }}>
                   Colores del Sistema
                 </h2>
@@ -441,7 +610,7 @@ export default function ConfiguracionPage() {
                 </div>
 
                 {/* Selectores de Color Manuales */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? "1.25rem" : "1.5rem" }}>
                   <div>
                     <label className="label" style={{ fontWeight: 600 }}>Color Primario (Botones y Enlaces)</label>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginTop: "0.4rem" }}>
@@ -497,7 +666,7 @@ export default function ConfiguracionPage() {
               </section>
 
               {/* Carga de Ícono del Sistema */}
-              <section className="card" style={{ padding: "1.75rem", borderRadius: "1rem" }}>
+              <section className="card" style={{ padding: isMobile ? "1.25rem" : "1.75rem", borderRadius: "1rem" }}>
                 <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "0.5rem" }}>
                   Ícono o Isotipo del Sistema
                 </h2>
@@ -506,7 +675,14 @@ export default function ConfiguracionPage() {
                   en los comprobantes generados y en el favicon del navegador para todos tus cobradores.
                 </p>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", flexWrap: "wrap" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: isMobile ? "flex-start" : "center",
+                    gap: isMobile ? "1.25rem" : "1.5rem",
+                    flexDirection: isMobile ? "column" : "row",
+                  }}
+                >
                   {/* Vista Previa del Ícono */}
                   <div
                     style={{
@@ -520,6 +696,7 @@ export default function ConfiguracionPage() {
                       backgroundColor: "#f8fafc",
                       overflow: "hidden",
                       position: "relative",
+                      flexShrink: 0,
                     }}
                   >
                     {iconUrl ? (
@@ -537,7 +714,7 @@ export default function ConfiguracionPage() {
                   </div>
 
                   {/* Acciones de Carga */}
-                  <div>
+                  <div style={{ width: isMobile ? "100%" : "auto" }}>
                     <input
                       type="file"
                       ref={fileInputRef}
@@ -553,9 +730,11 @@ export default function ConfiguracionPage() {
                         style={{
                           display: "inline-flex",
                           alignItems: "center",
+                          justifyContent: "center",
                           gap: "0.5rem",
                           padding: "0.65rem 1.15rem",
                           fontSize: "0.9rem",
+                          width: isMobile ? "100%" : "auto",
                         }}
                       >
                         <Upload size={17} />
@@ -574,11 +753,13 @@ export default function ConfiguracionPage() {
                           style={{
                             display: "inline-flex",
                             alignItems: "center",
+                            justifyContent: "center",
                             gap: "0.4rem",
                             color: "#b91c1c",
                             borderColor: "#fca5a5",
                             padding: "0.65rem 1rem",
                             fontSize: "0.9rem",
+                            width: isMobile ? "100%" : "auto",
                           }}
                         >
                           <RotateCcw size={16} />
@@ -638,7 +819,14 @@ export default function ConfiguracionPage() {
               </section>
 
               {/* Botón de Guardado */}
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: isMobile ? "stretch" : "flex-end",
+                  marginTop: isMobile ? "0.5rem" : "0",
+                  marginBottom: isMobile ? "1rem" : "0",
+                }}
+              >
                 <button
                   type="button"
                   onClick={handleSaveSettings}
@@ -647,10 +835,12 @@ export default function ConfiguracionPage() {
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
+                    justifyContent: "center",
                     gap: "0.5rem",
                     padding: "0.75rem 1.75rem",
                     fontWeight: 600,
                     borderRadius: "0.75rem",
+                    width: isMobile ? "100%" : "auto",
                   }}
                 >
                   <Save size={18} />
@@ -663,7 +853,7 @@ export default function ConfiguracionPage() {
           {/* TAB 2: POLÍTICAS DE PRÉSTAMOS */}
           {activeTab === "loans" && (
             <div style={{ display: "grid", gap: "1.75rem" }}>
-              <section className="card" style={{ padding: "1.75rem", borderRadius: "1rem" }}>
+              <section className="card" style={{ padding: isMobile ? "1.25rem" : "1.75rem", borderRadius: "1rem" }}>
                 <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "0.5rem" }}>
                   Valores Predeterminados para Nuevos Préstamos
                 </h2>
@@ -672,7 +862,7 @@ export default function ConfiguracionPage() {
                   formulario de cobranza.
                 </p>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? "1.25rem" : "1.5rem" }}>
                   <div>
                     <label className="label" style={{ fontWeight: 600 }}>Días Predeterminados de Pago</label>
                     <input
@@ -712,13 +902,21 @@ export default function ConfiguracionPage() {
               <section
                 className="card"
                 style={{
-                  padding: "1.75rem",
+                  padding: isMobile ? "1.25rem" : "1.75rem",
                   borderRadius: "1rem",
                   border: "1px solid #e2e8f0",
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1.5rem" }}>
-                  <div>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: isMobile ? "column" : "row",
+                    justifyContent: "space-between",
+                    alignItems: isMobile ? "flex-start" : "flex-start",
+                    gap: isMobile ? "1rem" : "1.5rem",
+                  }}
+                >
+                  <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.35rem" }}>
                       <Sparkles size={20} color="#6366f1" />
                       <h2 style={{ fontSize: "1.15rem", fontWeight: 700, color: "var(--text-primary)" }}>
@@ -756,7 +954,7 @@ export default function ConfiguracionPage() {
                   </div>
 
                   {/* Switch / Toggle */}
-                  <div style={{ flexShrink: 0, marginTop: "0.5rem" }}>
+                  <div style={{ flexShrink: 0, marginTop: isMobile ? "0.25rem" : "0.5rem" }}>
                     <label
                       style={{
                         position: "relative",
@@ -806,7 +1004,14 @@ export default function ConfiguracionPage() {
               </section>
 
               {/* Botón de Guardado */}
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: isMobile ? "stretch" : "flex-end",
+                  marginTop: isMobile ? "0.5rem" : "0",
+                  marginBottom: isMobile ? "1rem" : "0",
+                }}
+              >
                 <button
                   type="button"
                   onClick={handleSaveSettings}
@@ -815,10 +1020,12 @@ export default function ConfiguracionPage() {
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
+                    justifyContent: "center",
                     gap: "0.5rem",
                     padding: "0.75rem 1.75rem",
                     fontWeight: 600,
                     borderRadius: "0.75rem",
+                    width: isMobile ? "100%" : "auto",
                   }}
                 >
                   <Save size={18} />
@@ -831,7 +1038,7 @@ export default function ConfiguracionPage() {
           {/* TAB 3: SEGURIDAD DE LA CUENTA */}
           {activeTab === "security" && (
             <div style={{ display: "grid", gap: "1.75rem" }}>
-              <section className="card" style={{ padding: "1.75rem", borderRadius: "1rem" }}>
+              <section className="card" style={{ padding: isMobile ? "1.25rem" : "1.75rem", borderRadius: "1rem" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.75rem" }}>
                   <KeyRound size={22} color="var(--color-primary)" />
                   <h2 style={{ fontSize: "1.25rem", fontWeight: 700 }}>Seguridad y Contraseña</h2>
@@ -848,9 +1055,11 @@ export default function ConfiguracionPage() {
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
+                      justifyContent: "center",
                       gap: "0.5rem",
                       padding: "0.7rem 1.35rem",
                       fontWeight: 600,
+                      width: isMobile ? "100%" : "auto",
                     }}
                   >
                     <KeyRound size={18} />

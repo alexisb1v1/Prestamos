@@ -20,6 +20,7 @@ import LoanActions from "../../components/LoanActions";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import LoanMobileCard from "../../components/LoanMobileCard";
 import DashboardFilterModal from "../../components/DashboardFilterModal";
+import CollectorDropdown from "../../components/CollectorDropdown";
 
 export default function PrestamosPage() {
   const [loans, setLoans] = useState<Loan[]>([]);
@@ -390,16 +391,17 @@ export default function PrestamosPage() {
                   </button>
                 )}
                 
-                <button
-                  onClick={() => setIsFilterModalOpen(true)}
-                  style={{ backgroundColor: "#f8fafc", padding: "0.5rem 0.75rem", borderRadius: "0.75rem", fontSize: "0.75rem", fontWeight: 600, color: "#475569", display: "flex", alignItems: "center", gap: "0.375rem", border: "1px solid #e2e8f0", cursor: "pointer" }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#64748b" }}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                  <span style={{ maxWidth: "120px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {selectedCollector ? collectors.find((c) => c.id === selectedCollector)?.username : "Todos los cobradores"}
-                  </span>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#94a3b8" }}><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </button>
+                <CollectorDropdown
+                  collectors={collectors}
+                  selectedCollectorId={selectedCollector}
+                  onSelectCollector={(id) => {
+                    setSelectedCollector(id);
+                    loadLoans(currentUser, selectedCompanyId, isLiquidated, id);
+                  }}
+                  allowAll={true}
+                  allLabel="Todos los cobradores"
+                  width="220px"
+                />
               </div>
             )}
           </div>
@@ -430,20 +432,20 @@ export default function PrestamosPage() {
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#94a3b8", flexShrink: 0 }}><path d="m6 9 6 6 6-6"></path></svg>
                   </button>
                 )}
-                <button
-                  onClick={() => setIsFilterModalOpen(true)}
-                  style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "white", border: "1px solid rgba(226, 232, 240, 0.9)", borderRadius: "1rem", padding: "0.5rem 0.75rem", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)", textAlign: "left", transition: "colors 0.2s" }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", overflow: "hidden" }}>
-                    <span style={{ padding: "0.25rem", borderRadius: "0.5rem", backgroundColor: "#f1f5f9", color: "#475569" }}>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                    </span>
-                    <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "#334155", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {selectedCollector ? collectors.find((c) => c.id === selectedCollector)?.username : "Todos los cobradores"}
-                    </span>
-                  </div>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#94a3b8", flexShrink: 0 }}><path d="m6 9 6 6 6-6"></path></svg>
-                </button>
+                <div style={{ flex: 1 }}>
+                  <CollectorDropdown
+                    collectors={collectors}
+                    selectedCollectorId={selectedCollector}
+                    onSelectCollector={(id) => {
+                      setSelectedCollector(id);
+                      loadLoans(currentUser, selectedCompanyId, isLiquidated, id);
+                    }}
+                    allowAll={true}
+                    allLabel="Todos los cobradores"
+                    isMobile={true}
+                    width="100%"
+                  />
+                </div>
               </div>
             </div>
           )}

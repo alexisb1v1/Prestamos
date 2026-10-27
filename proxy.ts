@@ -6,7 +6,15 @@ export function proxy(request: NextRequest) {
     const token = request.cookies.get('auth_token')?.value;
 
     // Define public paths that don't require authentication
-    const publicPaths = ['/login', '/favicon.ico', '/sw.js', '/manifest.json', '/icons', '/workbox-'];
+    const publicPaths = [
+        '/login',
+        '/compartir',
+        '/favicon.ico',
+        '/sw.js',
+        '/manifest.json',
+        '/icons',
+        '/workbox-',
+    ];
     const isPublicPath = publicPaths.some(path => request.nextUrl.pathname.startsWith(path)) ||
         request.nextUrl.pathname.startsWith('/_next');
 
