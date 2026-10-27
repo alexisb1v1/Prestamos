@@ -226,6 +226,12 @@ export const calculateLoanPerformance = (
         }
     }
 
+    // Regla de consistencia: Un préstamo activo no puede tener más cuotas con retraso que las que adeuda
+    if (!isLiquidated && (loan.fee ?? 0) > 0) {
+        const remainingFeeCount = Math.ceil((loan.remainingAmount ?? 0) / (loan.fee ?? 1));
+        missedPaymentDays = Math.min(missedPaymentDays, remainingFeeCount);
+    }
+
     const hasExtension = extensionDays > 0;
 
     // Badges descriptivos

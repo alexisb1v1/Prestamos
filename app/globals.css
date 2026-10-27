@@ -797,8 +797,8 @@ button {
   width: 68px;
   height: 68px;
   border-radius: 16px;
-  background: linear-gradient(to bottom right, #4f46e5, #4338ca, #3730a3);
-  box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.25);
+  background: var(--color-primary, #4147eb);
+  box-shadow: 0 10px 15px -3px color-mix(in srgb, var(--color-primary, #4147eb) 25%, transparent);
   padding: 2px;
   display: flex;
   align-items: center;
@@ -869,8 +869,8 @@ button {
 
 .login-input:focus {
   background-color: #ffffff;
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+  border-color: var(--color-primary, #4147eb);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary, #4147eb) 15%, transparent);
 }
 
 .login-input::placeholder {
@@ -885,18 +885,18 @@ button {
   justify-content: center;
   gap: 0.5rem;
   border-radius: 0.75rem;
-  background: linear-gradient(to right, #4f46e5, #4338ca, #4147eb);
+  background: var(--color-primary, #4147eb);
   color: white;
   font-size: 0.875rem;
   font-weight: 600;
   border: none;
-  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.25);
+  box-shadow: 0 4px 6px -1px color-mix(in srgb, var(--color-primary, #4147eb) 25%, transparent);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .login-btn:hover:not(:disabled) {
-  background: linear-gradient(to right, #4338ca, #3730a3);
+  background: var(--color-primary-hover, #353bd6);
 }
 
 .login-btn:active:not(:disabled) {

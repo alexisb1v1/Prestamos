@@ -47,4 +47,22 @@ export class CompanyRepositoryImpl implements CompanyRepository {
       {},
     );
   }
+
+  getMyCompany(companyId?: string): ResultAsync<Company, DomainError> {
+    const query = companyId ? `?companyId=${encodeURIComponent(companyId)}` : "";
+    return api.safe
+      .get<CompanyDto>(`/company/my-company${query}`)
+      .map((dto) => CompanyMapper.toDomain(dto));
+  }
+
+  updateMyCompanySettings(
+    settings: any,
+    companyId?: string,
+  ): ResultAsync<{ message: string; settings: any }, DomainError> {
+    const query = companyId ? `?companyId=${encodeURIComponent(companyId)}` : "";
+    return api.safe.patch<{ message: string; settings: any }>(
+      `/company/my-company/settings${query}`,
+      settings,
+    );
+  }
 }

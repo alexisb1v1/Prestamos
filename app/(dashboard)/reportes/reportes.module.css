@@ -49,7 +49,7 @@
 
 .tagText {
   font-size: 12px;
-  color: #4147eb;
+  color: var(--color-primary, #4147eb);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -107,11 +107,11 @@
 }
 
 .mobileDateRefreshBtn {
-  background: #e0e0ff;
+  background: color-mix(in srgb, var(--color-primary, #4147eb) 12%, transparent);
   border: none;
   border-radius: 8px;
   padding: 6px;
-  color: #4147eb;
+  color: var(--color-primary, #4147eb);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -145,9 +145,9 @@
 }
 
 .mobileDatePillActive {
-  background: #4147eb;
+  background: var(--color-primary, #4147eb);
   color: white;
-  box-shadow: 0 2px 8px rgba(65, 71, 235, 0.3);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary, #4147eb) 30%, transparent);
 }
 
 /* Símbolo de moneda en tarjeta gradiente */
@@ -208,7 +208,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: #4147eb;
+  background-color: var(--color-primary, #4147eb);
   padding: 8px 16px;
   border-radius: 12px;
   color: #ffffff;
@@ -216,12 +216,12 @@
   font-weight: 600;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 14px -2px rgba(65, 71, 235, 0.35);
+  box-shadow: 0 4px 14px -2px color-mix(in srgb, var(--color-primary, #4147eb) 35%, transparent);
   transition: all 0.2s;
 }
 
 .btnPrimary:hover {
-  background-color: #353bd6;
+  background-color: var(--color-primary-hover, #353bd6);
 }
 
 /* Master KPI Bento Ribbon */
@@ -260,9 +260,9 @@
 }
 
 .bentoCardGradient {
-  background: linear-gradient(135deg, #4147eb, #353bd6);
+  background: linear-gradient(135deg, var(--color-primary, #4147eb), var(--color-primary-hover, #353bd6));
   color: #ffffff;
-  box-shadow: 0 10px 25px -5px rgba(65, 71, 235, 0.4);
+  box-shadow: 0 10px 25px -5px color-mix(in srgb, var(--color-primary, #4147eb) 40%, transparent);
 }
 
 .bentoCardHeader {
@@ -294,8 +294,8 @@
 }
 
 .iconPrimary {
-  background-color: #e0e0ff;
-  color: #4147eb;
+  background-color: color-mix(in srgb, var(--color-primary, #4147eb) 12%, transparent);
+  color: var(--color-primary, #4147eb);
 }
 
 .iconDanger {
@@ -316,7 +316,7 @@
 
 .iconPrimaryDim {
   background-color: #bdc2ff;
-  color: #4147eb;
+  color: var(--color-primary, #4147eb);
   font-weight: bold;
 }
 
@@ -518,7 +518,7 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background-color: #4147eb;
+  background-color: var(--color-primary, #4147eb);
 }
 
 .legendDotInterest {
@@ -543,7 +543,7 @@
 }
 
 .stackedBarCapital {
-  background-color: #4147eb;
+  background-color: var(--color-primary, #4147eb);
   height: 100%;
   display: flex;
   align-items: center;
@@ -643,7 +643,7 @@
 
 .barFill {
   width: 100%;
-  background-color: #4147eb;
+  background-color: var(--color-primary, #4147eb);
   border-radius: 8px 8px 0 0;
   transition: height 0.3s ease;
 }
@@ -688,8 +688,8 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background-color: #e0e0ff;
-  color: #4147eb;
+  background-color: color-mix(in srgb, var(--color-primary, #4147eb) 12%, transparent);
+  color: var(--color-primary, #4147eb);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -742,7 +742,7 @@
   width: 40px;
   height: 40px;
   border: 4px solid #e0e0ff;
-  border-top-color: #4147eb;
+  border-top-color: var(--color-primary, #4147eb);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -758,12 +758,12 @@
 .filterGroup { display: flex; flex-direction: column; gap: 8px; }
 .filterLabel { font-size: 14px; font-weight: 500; color: #454652; }
 .filterInput { border: 1px solid #c6c5d4; padding: 8px 12px; border-radius: 8px; outline: none; }
-.primaryButton { background: #4147eb; color: white; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
+.primaryButton { background: var(--color-primary, #4147eb); color: white; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
 .dashboardGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
 .kpiCard { background: white; padding: 24px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
 .kpiLabel { font-size: 13px; color: #454652; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 8px; }
 .kpiValue { font-size: 28px; font-weight: 800; color: #191c1d; margin: 0; }
-.kpiNeutral { color: #4147eb; }
+.kpiNeutral { color: var(--color-primary, #4147eb); }
 .kpiPositive { color: #1b6d24; }
 .kpiNegative { color: #ba1a1a; }
 
@@ -774,7 +774,7 @@
 .tabsNav { display: flex; gap: 16px; border-bottom: 1px solid #e1e3e4; padding: 0; margin-bottom: 0px; }
 .tabItem { padding: 12px 16px 12px 0; font-size: 14px; font-weight: 600; color: #454652; text-decoration: none; border-bottom: 2px solid transparent; transition: all 0.2s; margin-bottom: -1px; }
 .tabItem:hover { color: #191c1d; border-bottom-color: #c6c5d4; }
-.activeTab { color: #4147eb; border-bottom-color: #4147eb; }
+.activeTab { color: var(--color-primary, #4147eb); border-bottom-color: var(--color-primary, #4147eb); }
 .mainContent { animation: fadeIn 0.4s ease-out forwards; padding-top: 16px; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -802,7 +802,7 @@
 .dataTable td { padding: 16px 12px; vertical-align: middle; border-bottom: 1px solid #f3f4f5; }
 .dataTable tr:hover td { background-color: #f8f9fa; }
 .tableCollectorInfo { display: flex; align-items: center; gap: 12px; }
-.tableAvatar { width: 40px; height: 40px; border-radius: 50%; background-color: #e0e0ff; color: #4147eb; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; flex-shrink: 0; }
+.tableAvatar { width: 40px; height: 40px; border-radius: 50%; background-color: color-mix(in srgb, var(--color-primary, #4147eb) 12%, transparent); color: var(--color-primary, #4147eb); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; flex-shrink: 0; }
 .tableCollectorName { font-size: 14px; font-weight: 700; color: #191c1d; margin-bottom: 2px; }
 .tableCollectorPhone { font-size: 11px; color: #454652; }
 .tagNeto { background: #dcfce7; color: #15803d; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 14px; }
@@ -899,8 +899,8 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background-color: #e0e0ff;
-  color: #4147eb;
+  background-color: color-mix(in srgb, var(--color-primary, #4147eb) 12%, transparent);
+  color: var(--color-primary, #4147eb);
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -972,7 +972,7 @@
 .collectorCardMobileDataValuePrimary {
   font-size: 14px;
   font-weight: 700;
-  color: #4147eb;
+  color: var(--color-primary, #4147eb);
 }
 
 .collectorCardMobileDataValueNeutral {
@@ -1201,8 +1201,8 @@
 }
 
 .statusActivo {
-  background-color: #e0e0ff;
-  color: #4147eb;
+  background-color: color-mix(in srgb, var(--color-primary, #4147eb) 12%, transparent);
+  color: var(--color-primary, #4147eb);
 }
 
 .loanHistoryDetails {
@@ -1481,7 +1481,7 @@
 
 .mobileStackedBarCapital {
   height: 100%;
-  background-color: #4147eb;
+  background-color: var(--color-primary, #4147eb);
 }
 
 .mobileStackedBarInterest {
@@ -1546,7 +1546,7 @@
   width: 56px;
   height: 56px;
   border-radius: 16px;
-  background: linear-gradient(135deg, #4147eb, #675ff3);
+  background: linear-gradient(135deg, var(--color-primary, #4147eb), var(--color-primary-hover, #353bd6));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1686,7 +1686,7 @@
 .mobileBreakdownNetValue {
   font-size: 14px;
   font-weight: 700;
-  color: #4147eb;
+  color: var(--color-primary, #4147eb);
 }
 
 /* Mobile Payments List */
@@ -1781,8 +1781,8 @@
     width: 56px;
     height: 56px;
     border-radius: 16px;
-    background-color: #e0e0ff;
-    color: #4147eb;
+    background-color: color-mix(in srgb, var(--color-primary, #4147eb) 12%, transparent);
+    color: var(--color-primary, #4147eb);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1934,7 +1934,7 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background-color: #4147eb;
+    background-color: var(--color-primary, #4147eb);
     flex-shrink: 0;
   }
   .mobileDotPurple {
@@ -1952,10 +1952,10 @@
 
   /* Mobile Gradient Card */
   .mobileCardGradient {
-    background: linear-gradient(135deg, #e0e0ff, #bfc2ff, #4147eb);
+    background: linear-gradient(135deg, var(--color-primary, #4147eb), var(--color-primary-hover, #353bd6), #100069);
     border-radius: 24px;
     padding: 20px;
-    box-shadow: 0 12px 32px rgba(65, 71, 235, 0.35);
+    box-shadow: 0 12px 32px color-mix(in srgb, var(--color-primary, #4147eb) 35%, transparent);
     color: #ffffff;
     display: flex;
     flex-direction: column;
@@ -1965,7 +1965,7 @@
   }
   /* Updated the background logic on gradient to match the design (Primary gradient) */
   .mobileCardGradient {
-    background: linear-gradient(135deg, #4147eb, #2326d4, #100069);
+    background: linear-gradient(135deg, var(--color-primary, #4147eb), var(--color-primary-hover, #353bd6), #100069);
   }
   
   .mobileCardGradientHeader {
@@ -2200,14 +2200,14 @@
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #4147eb, #2326d4);
+  background: linear-gradient(135deg, var(--color-primary, #4147eb), var(--color-primary-hover, #353bd6));
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
   font-size: 18px;
-  box-shadow: 0 4px 6px -1px rgba(65, 71, 235, 0.2);
+  box-shadow: 0 4px 6px -1px color-mix(in srgb, var(--color-primary, #4147eb) 20%, transparent);
   flex-shrink: 0;
 }
 
@@ -2246,7 +2246,7 @@
 
 .collectorCardMobileProgress {
   background-color: #f1f4fa;
-  color: #4147eb;
+  color: var(--color-primary, #4147eb);
   padding: 2px 8px;
   border-radius: 12px;
   font-size: 11px;

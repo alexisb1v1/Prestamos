@@ -8,10 +8,13 @@ import {
   Person,
 } from "@/app/features/people";
 import { createLoanUseCase } from "@/app/features/loans";
+import { CompanyRepositoryImpl } from "@/app/features/companies/repositories/company.repository.impl";
 import { authService } from "@/lib/auth";
 import { trackEvent } from "@/lib/analytics";
 import { User } from "@/app/features/users";
 import { Loan } from "@/lib/types";
+
+const companyRepo = new CompanyRepositoryImpl();
 import LoanShareGenerator, { LoanShareGeneratorRef } from "./LoanShareGenerator";
 import {
   Search,
@@ -88,9 +91,14 @@ export default function CreateLoanModal({
   const [amount, setAmount] = useState<number | "">("");
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
+  const [loanConfig, setLoanConfig] = useState({
+    defaultDays: 24,
+    interestRate: 0.2,
+    allowCollectorOverrideOver1000: false,
+  });
   const [days, setDays] = useState<number>(24);
 
-  const interestRate = 0.2;
+  const interestRate = loanConfig.interestRate;
 
   const resetState = useCallback(() => {
     setLoading(false);
@@ -120,7 +128,53 @@ export default function CreateLoanModal({
   useEffect(() => {
     if (isOpen) {
       const timer = setTimeout(() => {
-        setCurrentUser(authService.getUser());
+        const u = authService.getUser();
+        setCurrentUser(u);
+
+        // 1. Cargar caché rápido de localStorage si existe
+        let currentDefDays = 24;
+        try {
+          const stored = localStorage.getItem("company_settings");
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (parsed?.loans) {
+              const defDays = parsed.loans.defaultDays ?? 24;
+              const rate = (parsed.loans.defaultInterestRate ?? 20) / 100;
+              const allowOver = parsed.loans.allowCollectorOverrideOver1000 ?? false;
+              currentDefDays = defDays;
+              setLoanConfig({
+                defaultDays: defDays,
+                interestRate: rate,
+                allowCollectorOverrideOver1000: allowOver,
+              });
+            }
+          }
+        } catch {}
+
+        // 2. Consultar siempre las políticas frescas del tenant
+        companyRepo.getMyCompany().match(
+          (comp) => {
+            if (comp?.settings?.loans) {
+              const defDays = comp.settings.loans.defaultDays ?? 24;
+              const rate = (comp.settings.loans.defaultInterestRate ?? 20) / 100;
+              const allowOver = comp.settings.loans.allowCollectorOverrideOver1000 ?? false;
+              setLoanConfig({
+                defaultDays: defDays,
+                interestRate: rate,
+                allowCollectorOverrideOver1000: allowOver,
+              });
+              try {
+                localStorage.setItem("company_settings", JSON.stringify(comp.settings));
+              } catch {}
+              const isCobrador = u?.profile?.toUpperCase() === "COBRADOR";
+              if (isCobrador && (!allowOver || !amount || Number(amount) < 1000)) {
+                setDays(defDays);
+              }
+            }
+          },
+          () => {}
+        );
+
         if (loanToRenew) {
           const pid = loanToRenew.personId || loanToRenew.idPeople;
           setPerson({
@@ -135,11 +189,12 @@ export default function CreateLoanModal({
           setAmount(loanToRenew.amount);
           setAddress(loanToRenew.address);
           setPhone(loanToRenew.phone || "");
-          setDays(24);
+          setDays(currentDefDays);
           setSearchPerformed(true);
           setPassedRiskAssessment(true);
         } else {
           resetState();
+          setDays(currentDefDays);
         }
       }, 0);
       return () => clearTimeout(timer);
@@ -281,13 +336,19 @@ export default function CreateLoanModal({
     setLoading(true);
     setError("");
 
+    const isCobrador = currentUser?.profile?.toUpperCase() === "COBRADOR";
+    const finalDays =
+      isCobrador && (!loanConfig.allowCollectorOverrideOver1000 || Number(amount) < 1000)
+        ? loanConfig.defaultDays
+        : Number(days) || loanConfig.defaultDays;
+
     const result = await createLoanUseCase.execute({
       idPeople: Number(person.id),
       amount: Number(amount),
       phone,
       address,
       userId: Number(currentUser.id),
-      days,
+      days: finalDays,
       companyId: companyId || currentUser.idCompany,
     });
 
@@ -314,7 +375,12 @@ export default function CreateLoanModal({
     setAmount((prev) => {
       const current = typeof prev === "number" ? prev : 0;
       const next = current + val;
-      if (next < 1000) setDays(24);
+      const isCobrador = currentUser?.profile?.toUpperCase() === "COBRADOR";
+      if (isCobrador) {
+        if (!loanConfig.allowCollectorOverrideOver1000 || next < 1000) {
+          setDays(loanConfig.defaultDays);
+        }
+      }
       return next;
     });
   };
@@ -781,7 +847,9 @@ export default function CreateLoanModal({
                         <div className={styles.fieldGroup} style={{ marginTop: "0.25rem" }}>
                           <div className={styles.amountHeader}>
                             <label className={styles.fieldLabel}>Monto a Prestar (S/.)</label>
-                            <span className={styles.rateBadge}>Tasa: 20%</span>
+                            <span className={styles.rateBadge}>
+                              Tasa: {Math.round(loanConfig.interestRate * 100)}%
+                            </span>
                           </div>
                           <div className={styles.amountInputWrapper}>
                             <span className={styles.currencySymbol}>S/.</span>
@@ -798,7 +866,12 @@ export default function CreateLoanModal({
                                 const val = Number(raw);
                                 if (!isNaN(val)) {
                                   setAmount(val);
-                                  if (val < 1000) setDays(24);
+                                  const isCobrador = currentUser?.profile?.toUpperCase() === "COBRADOR";
+                                  if (isCobrador) {
+                                    if (!loanConfig.allowCollectorOverrideOver1000 || val < 1000) {
+                                      setDays(loanConfig.defaultDays);
+                                    }
+                                  }
                                 }
                               }}
                             />
@@ -835,10 +908,22 @@ export default function CreateLoanModal({
                                 const val = Number(raw);
                                 if (!isNaN(val)) setDays(val);
                               }}
-                              disabled={!!amount && Number(amount) < 1000}
+                              disabled={
+                                (currentUser?.profile?.toUpperCase() === "COBRADOR") &&
+                                (!loanConfig.allowCollectorOverrideOver1000 || !amount || Number(amount) < 1000)
+                              }
                             />
                             <span className={styles.periodSuffix}>Días</span>
                           </div>
+                          {currentUser?.profile?.toUpperCase() === "COBRADOR" && (
+                            <p style={{ fontSize: "11px", color: "#64748b", marginTop: "0.25rem" }}>
+                              {!loanConfig.allowCollectorOverrideOver1000
+                                ? `ℹ️ Política de empresa: El plazo está fijado en ${loanConfig.defaultDays} días y no puede ser modificado.`
+                                : !amount || Number(amount) < 1000
+                                ? `ℹ️ Montos menores a S/ 1,000 tienen plazo fijo de ${loanConfig.defaultDays} días.`
+                                : `✅ Monto mayor o igual a S/ 1,000 permite plazo personalizado.`}
+                            </p>
+                          )}
                         </div>
 
                         {/* Tarjeta Resumen */}

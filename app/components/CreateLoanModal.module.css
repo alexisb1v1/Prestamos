@@ -192,7 +192,7 @@
 .stepCircle {
   width: 20px;
   height: 20px;
-  background: #4147eb;
+  background: var(--color-primary, #4147eb);
   color: #ffffff;
   border-radius: 50%;
   display: flex;
@@ -222,7 +222,7 @@
 .dotActive {
   width: 20px;
   height: 6px;
-  background: #4147eb;
+  background: var(--color-primary, #4147eb);
   border-radius: 9999px;
 }
 
@@ -278,8 +278,8 @@
 }
 
 .integratedInput:focus-within {
-  border-color: #4147eb;
-  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+  border-color: var(--color-primary, #4147eb);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary, #4147eb) 20%, transparent);
 }
 
 .docTypeSelect {
@@ -326,7 +326,7 @@
 /* El botón que sea similar a los botones que ya tenemos en el sistema */
 .primaryBtn {
   width: 100%;
-  background: #4f46e5;
+  background: var(--color-primary, #4147eb);
   color: white;
   border: none;
   padding: 1rem;
@@ -371,7 +371,7 @@
 .registerBtn {
   background: none;
   border: none;
-  color: #4147eb;
+  color: var(--color-primary, #4147eb);
   font-weight: 700;
   cursor: pointer;
   padding: 0;
@@ -476,7 +476,7 @@
 .changeClientBtn {
   background: #ffffff;
   border: 1px solid #e0e7ff;
-  color: #4147eb;
+  color: var(--color-primary, #4147eb);
   padding: 0.25rem 0.625rem;
   font-size: 11px;
   font-weight: 600;
@@ -553,7 +553,7 @@
 .rateBadge {
   font-size: 10px;
   font-weight: 700;
-  color: #4147eb;
+  color: var(--color-primary, #4147eb);
   background: #eef2ff;
   padding: 2px 6px;
   border-radius: 4px;
@@ -623,7 +623,7 @@
 .interestBadge {
   font-size: 11px;
   font-weight: 500;
-  color: #4147eb;
+  color: var(--color-primary, #4147eb);
   background: #eef2ff;
   border: 1px solid rgba(224, 231, 255, 0.7);
   padding: 2px 8px;
@@ -876,7 +876,7 @@
 
 .shareBtn {
   width: 100%;
-  background: #4147eb;
+  background: var(--color-primary, #4147eb);
   color: white;
   border: none;
   padding: 1rem;

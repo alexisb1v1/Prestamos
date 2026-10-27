@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { authService } from "@/lib/auth";
 import { getLandingRoute } from "@/lib/utils";
 import { User, Lock, Eye, EyeOff, ArrowRight, ShieldCheck } from "lucide-react";
+import { applyTenantTheme } from "@/app/components/TenantThemeApplier";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [tenantName, setTenantName] = useState("Cargando...");
+  const [tenantIcon, setTenantIcon] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
   // Cargar usuario guardado al iniciar y extraer el nombre de la empresa
@@ -51,11 +53,17 @@ export default function LoginPage() {
 
     if (cachedData) {
       try {
-        const { name, timestamp } = JSON.parse(cachedData);
+        const parsed = JSON.parse(cachedData);
         const now = new Date().getTime();
         const oneDay = 24 * 60 * 60 * 1000;
-        if (now - timestamp < oneDay) {
-          setTenantName(name);
+        if (now - (parsed.timestamp || 0) < oneDay) {
+          setTenantName(parsed.name || sub);
+          if (parsed.branding) {
+            applyTenantTheme(parsed.branding);
+            if (parsed.branding.iconUrl) {
+              setTenantIcon(parsed.branding.iconUrl);
+            }
+          }
           return;
         }
       } catch (e) {
@@ -69,8 +77,18 @@ export default function LoginPage() {
       if (response.ok) {
         const data = await response.json();
         const companyName = data.companyName;
+        const branding = data.branding || null;
         setTenantName(companyName);
-        localStorage.setItem(cacheKey, JSON.stringify({ name: companyName, timestamp: new Date().getTime() }));
+        if (branding) {
+          applyTenantTheme(branding);
+          if (branding.iconUrl) {
+            setTenantIcon(branding.iconUrl);
+          }
+          try {
+            localStorage.setItem("app_branding", JSON.stringify(branding));
+          } catch {}
+        }
+        localStorage.setItem(cacheKey, JSON.stringify({ name: companyName, branding, timestamp: new Date().getTime() }));
       } else {
         setTenantName(sub.charAt(0).toUpperCase() + sub.slice(1));
       }
@@ -131,8 +149,16 @@ export default function LoginPage() {
           <header style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "1.75rem" }}>
             <div style={{ marginBottom: "1rem", position: "relative" }} className="group">
               <div className="login-brand-icon">
-                <div className="login-brand-icon-inner">
-                  <span aria-label="Bolsa de dinero" style={{ fontSize: "1.875rem", userSelect: "none" }} role="img">💰</span>
+                <div className="login-brand-icon-inner" style={{ overflow: "hidden" }}>
+                  {tenantIcon ? (
+                    <img
+                      src={tenantIcon}
+                      alt={tenantName}
+                      style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "12px", padding: "6px" }}
+                    />
+                  ) : (
+                    <span aria-label="Bolsa de dinero" style={{ fontSize: "1.875rem", userSelect: "none" }} role="img">💰</span>
+                  )}
                 </div>
               </div>
               <span
@@ -157,7 +183,7 @@ export default function LoginPage() {
 
             <h1 style={{ fontSize: "1.875rem", fontWeight: 800, letterSpacing: "-0.025em", marginBottom: "0.25rem", textTransform: "capitalize", color: "#0f172a", textAlign: "center" }}>
               {tenantName === "NeoCobros" ? (
-                <>Neo<span style={{ color: "#4147eb" }}>Cobros</span></>
+                <>Neo<span style={{ color: "var(--color-primary, #4147eb)" }}>Cobros</span></>
               ) : (
                 tenantName
               )}
@@ -248,7 +274,7 @@ export default function LoginPage() {
                   type="checkbox"
                   checked={rememberUser}
                   onChange={(e) => setRememberUser(e.target.checked)}
-                  style={{ width: "1rem", height: "1rem", borderRadius: "0.25rem", border: "1px solid #cbd5e1", accentColor: "#4f46e5", cursor: "pointer" }}
+                  style={{ width: "1rem", height: "1rem", borderRadius: "0.25rem", border: "1px solid #cbd5e1", accentColor: "var(--color-primary, #4147eb)", cursor: "pointer" }}
                 />
                 <span style={{ marginLeft: "0.5rem", fontSize: "0.75rem", fontWeight: 500, color: "#475569" }}>
                   Recordar sesión

@@ -223,7 +223,7 @@ export default function PorCobradorPage() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center', background: '#ffffff', borderRadius: '12px', padding: '8px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', gap: '12px' }}>
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#4147eb' }}></div>
+              <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: 'var(--color-primary, #4147eb)' }}></div>
               <select
                 value={selectedCollector}
                 onChange={(e) => setSelectedCollector(e.target.value)}
@@ -241,13 +241,13 @@ export default function PorCobradorPage() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
 
-          <button onClick={refreshData} disabled={!selectedCollector || loading} style={{ background: '#f1f4fa', color: '#4147eb', border: 'none', borderRadius: '12px', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, fontSize: '14px', cursor: (!selectedCollector || loading) ? 'not-allowed' : 'pointer', opacity: (!selectedCollector || loading) ? 0.6 : 1 }}>
+          <button onClick={refreshData} disabled={!selectedCollector || loading} style={{ background: '#f1f4fa', color: 'var(--color-primary, #4147eb)', border: 'none', borderRadius: '12px', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, fontSize: '14px', cursor: (!selectedCollector || loading) ? 'not-allowed' : 'pointer', opacity: (!selectedCollector || loading) ? 0.6 : 1 }}>
             <RefreshCw size={18} className={loading ? styles.spin : ''} />
             Refrescar
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', background: '#ffffff', borderRadius: '12px', padding: '8px 16px', gap: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-            <Calendar size={18} color="#4147eb" />
+            <Calendar size={18} color="var(--color-primary, #4147eb)" />
             <input
               type="date"
               value={startDate}
@@ -289,7 +289,7 @@ export default function PorCobradorPage() {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 1 }}>
                   <div style={{ display: 'flex', gap: '16px' }}>
-                    <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: 'linear-gradient(135deg, #4147eb, #675ff3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '24px', fontWeight: 800 }}>
+                    <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: 'linear-gradient(135deg, var(--color-primary, #4147eb), var(--color-primary-hover, #353bd6))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '24px', fontWeight: 800 }}>
                       {currentCollector?.firstName.charAt(0)}{currentCollector?.lastName.charAt(0)}
                     </div>
                     <div>
@@ -300,7 +300,7 @@ export default function PorCobradorPage() {
 
                     </div>
                   </div>
-                  <CheckCircle2 size={24} color="#4147eb" />
+                  <CheckCircle2 size={24} color="var(--color-primary, #4147eb)" />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginTop: '32px', position: 'relative', zIndex: 1 }}>
@@ -326,8 +326,8 @@ export default function PorCobradorPage() {
                 <div style={{ background: 'white', borderRadius: '24px', padding: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Cobrado</span>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#e0e0ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <PiggyBank size={20} color="#4147eb" />
+                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'color-mix(in srgb, var(--color-primary, #4147eb) 12%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <PiggyBank size={20} color="var(--color-primary, #4147eb)" />
                     </div>
                   </div>
                   <div style={{ margin: '24px 0' }}>
@@ -338,7 +338,7 @@ export default function PorCobradorPage() {
                   </div>
                   <div style={{ background: '#f1f4fa', borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                      <span style={{ color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#4147eb' }}></div> Efectivo</span>
+                      <span style={{ color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--color-primary, #4147eb)' }}></div> Efectivo</span>
                       <span style={{ fontWeight: 600, color: '#0f172a' }}>{formatCurrency(data.cashCollected || 0)}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
@@ -371,7 +371,7 @@ export default function PorCobradorPage() {
                 </div>
 
                 {/* Neto Liquidable */}
-                <div style={{ background: 'linear-gradient(135deg, #4147eb, #3730c4)', borderRadius: '24px', padding: '24px', boxShadow: '0 10px 25px rgba(65,71,235,0.3)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', color: 'white', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ background: 'linear-gradient(135deg, var(--color-primary, #4147eb), var(--color-primary-hover, #353bd6))', borderRadius: '24px', padding: '24px', boxShadow: '0 10px 25px color-mix(in srgb, var(--color-primary, #4147eb) 30%, transparent)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', color: 'white', position: 'relative', overflow: 'hidden' }}>
                   <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', width: '100px', height: '100px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%', filter: 'blur(20px)', zIndex: 0 }}></div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 }}>
@@ -397,7 +397,7 @@ export default function PorCobradorPage() {
             {/* Top Selector (Mockup style) */}
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <div style={{ background: 'white', borderRadius: '16px', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', width: '100%' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#e0e0ff', color: '#4147eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'color-mix(in srgb, var(--color-primary, #4147eb) 12%, transparent)', color: 'var(--color-primary, #4147eb)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <UserRound size={20} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -407,7 +407,7 @@ export default function PorCobradorPage() {
                   </div>
                   <span style={{ fontSize: '12px', color: '#64748b' }}>Ruta Norte • Cobrador Activo</span>
                 </div>
-                <div style={{ background: '#f1f4fa', borderRadius: '8px', padding: '8px', color: '#4147eb', flexShrink: 0 }}>
+                <div style={{ background: '#f1f4fa', borderRadius: '8px', padding: '8px', color: 'var(--color-primary, #4147eb)', flexShrink: 0 }}>
                   <ArrowLeftRight size={16} />
                 </div>
               </div>
@@ -417,7 +417,7 @@ export default function PorCobradorPage() {
             <div style={{ background: 'white', borderRadius: '24px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'linear-gradient(135deg, #4147eb, #2326d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '20px', fontWeight: 800, position: 'relative' }}>
+                  <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'linear-gradient(135deg, var(--color-primary, #4147eb), var(--color-primary-hover, #353bd6))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '20px', fontWeight: 800, position: 'relative' }}>
                     {currentCollector?.firstName?.charAt(0)}{currentCollector?.lastName?.charAt(0)}
                     <div style={{ position: 'absolute', bottom: '-4px', right: '-4px', background: '#10b981', color: 'white', borderRadius: '50%', padding: '2px', border: '2px solid white' }}>
                       <CheckCircle2 size={10} />
@@ -429,21 +429,21 @@ export default function PorCobradorPage() {
 
                   </div>
                 </div>
-                <span style={{ background: '#e0e0ff', color: '#4147eb', fontSize: '11px', fontWeight: 700, padding: '4px 8px', borderRadius: '8px' }}>
+                <span style={{ background: 'color-mix(in srgb, var(--color-primary, #4147eb) 12%, transparent)', color: 'var(--color-primary, #4147eb)', fontSize: '11px', fontWeight: 700, padding: '4px 8px', borderRadius: '8px' }}>
                   ID #CB-04
                 </span>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div style={{ background: '#f8f9fa', borderRadius: '16px', padding: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ background: '#e0e0ff', color: '#4147eb', padding: '8px', borderRadius: '10px' }}><Users size={16} /></div>
+                  <div style={{ background: 'color-mix(in srgb, var(--color-primary, #4147eb) 12%, transparent)', color: 'var(--color-primary, #4147eb)', padding: '8px', borderRadius: '10px' }}><Users size={16} /></div>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span style={{ fontSize: '11px', color: '#64748b' }}>Clientes</span>
                     <span style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>{data.clientes} <span style={{ fontSize: '11px', fontWeight: 500, color: '#64748b' }}>Asignados</span></span>
                   </div>
                 </div>
                 <div style={{ background: '#f8f9fa', borderRadius: '16px', padding: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ background: '#e0e0ff', color: '#4147eb', padding: '8px', borderRadius: '10px' }}><FileText size={16} /></div>
+                  <div style={{ background: 'color-mix(in srgb, var(--color-primary, #4147eb) 12%, transparent)', color: 'var(--color-primary, #4147eb)', padding: '8px', borderRadius: '10px' }}><FileText size={16} /></div>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span style={{ fontSize: '11px', color: '#64748b' }}>Préstamos</span>
                     <span style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>{data.paymentCount} <span style={{ fontSize: '11px', fontWeight: 500, color: '#64748b' }}>Activos</span></span>
@@ -467,7 +467,7 @@ export default function PorCobradorPage() {
             </div>
 
             {/* Cierre de Liquidación */}
-            <div style={{ background: 'linear-gradient(135deg, #2326d4, #4147eb)', borderRadius: '24px', padding: '24px', color: 'white', display: 'flex', flexDirection: 'column', gap: '16px', boxShadow: '0 12px 30px rgba(65, 71, 235, 0.3)' }}>
+            <div style={{ background: 'linear-gradient(135deg, var(--color-primary-hover, #353bd6), var(--color-primary, #4147eb))', borderRadius: '24px', padding: '24px', color: 'white', display: 'flex', flexDirection: 'column', gap: '16px', boxShadow: '0 12px 30px color-mix(in srgb, var(--color-primary, #4147eb) 30%, transparent)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.05em' }}>CIERRE DE LIQUIDACIÓN</span>
                 <span style={{ background: 'rgba(255,255,255,0.2)', padding: '4px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -548,7 +548,7 @@ export default function PorCobradorPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <CalendarRange size={24} color="#4147eb" />
+                  <CalendarRange size={24} color="var(--color-primary, #4147eb)" />
                   <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>Desglose Diario de Actividad</h3>
                 </div>
                 <span style={{ fontSize: '13px', color: '#64748b' }}>{dailyBreakdown.length} jornadas registradas</span>
@@ -559,7 +559,7 @@ export default function PorCobradorPage() {
                   <div key={idx} style={{ background: 'white', borderRadius: '20px', padding: '20px', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px', transition: 'all 0.2s', cursor: 'pointer' }} onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.06)'} onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.03)'}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>{day.dayName}</span>
-                      <span style={{ fontSize: '11px', fontWeight: 700, background: day.percent >= 100 ? '#e0e0ff' : '#f1f4fa', color: day.percent >= 100 ? '#2123d3' : '#64748b', padding: '2px 8px', borderRadius: '12px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 700, background: day.percent >= 100 ? 'color-mix(in srgb, var(--color-primary, #4147eb) 12%, transparent)' : '#f1f4fa', color: day.percent >= 100 ? 'var(--color-primary, #4147eb)' : '#64748b', padding: '2px 8px', borderRadius: '12px' }}>
                         {day.percent}%
                       </span>
                     </div>
@@ -572,7 +572,7 @@ export default function PorCobradorPage() {
 
                     <div style={{ background: (day.collectedAmount - day.expense) < 0 ? '#ffeae0' : '#f1f4fa', borderRadius: '12px', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
                       <span style={{ fontSize: '12px', color: (day.collectedAmount - day.expense) < 0 ? '#aa3a00' : '#64748b' }}>Neto:</span>
-                      <span style={{ fontSize: '14px', fontWeight: 700, color: (day.collectedAmount - day.expense) < 0 ? '#e11d48' : '#4147eb' }}>
+                      <span style={{ fontSize: '14px', fontWeight: 700, color: (day.collectedAmount - day.expense) < 0 ? '#e11d48' : 'var(--color-primary, #4147eb)' }}>
                         {(day.collectedAmount - day.expense) < 0 ? '-' : ''}{formatCurrency(Math.abs(day.collectedAmount - day.expense))}
                       </span>
                     </div>

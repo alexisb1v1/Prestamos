@@ -22,6 +22,8 @@ export default function ExpensesPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
 
   // Delete confirmation state
   const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
@@ -151,14 +153,14 @@ export default function ExpensesPage() {
   };
 
   const confirmDeleteExpense = async () => {
-    if (!expenseToDelete) return;
-
+    if (!expenseToDelete || isDeleting) return;
     try {
+      setIsDeleting(true);
       const result = await deleteExpenseUseCase.execute(expenseToDelete);
-      result.match(
-        () => {
+      await result.match(
+        async () => {
           setExpenseToDelete(null);
-          loadExpenses(currentUser, selectedCompanyId, date, selectedCollector);
+          await loadExpenses(currentUser, selectedCompanyId, date, selectedCollector);
         },
         (err) => {
           console.error("Error al eliminar gasto:", err);
@@ -168,6 +170,8 @@ export default function ExpensesPage() {
     } catch (err) {
       console.error("Excepción al eliminar gasto:", err);
       alert("Ocurrió un error inesperado al eliminar el gasto.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -175,13 +179,17 @@ export default function ExpensesPage() {
     <div style={{ position: "relative" }}>
       <ConfirmModal
         isOpen={!!expenseToDelete}
-        onClose={() => setExpenseToDelete(null)}
+        isLoading={isDeleting}
+        onClose={() => {
+          if (!isDeleting) setExpenseToDelete(null);
+        }}
         onConfirm={confirmDeleteExpense}
         title="Eliminar Gasto"
         message="¿Estás seguro de que deseas eliminar este gasto? Esta acción no se puede deshacer."
         confirmText="Eliminar"
         isDestructive={true}
       />
+
 
       <div
         style={{
@@ -213,7 +221,7 @@ export default function ExpensesPage() {
           }}
         >
           <div style={{ position: "absolute", top: "-1px", left: 0, right: 0, height: "2px", backgroundColor: "var(--bg-app)" }}></div>
-          
+
           {/* Date Filter Pill */}
           <div
             style={{
@@ -366,7 +374,7 @@ export default function ExpensesPage() {
               </svg>
             </div>
           )}
-          
+
           {/* Clear Filters Button (Only show if date is not today or collector is selected) */}
           {(date !== new Date().toISOString().split("T")[0] || selectedCollector) && (
             <button
@@ -418,7 +426,7 @@ export default function ExpensesPage() {
                 display: "flex",
                 alignItems: "center",
                 gap: "0.5rem",
-                backgroundColor: "#4f46e5",
+                backgroundColor: "var(--color-primary, #4147eb)",
                 color: "white",
                 padding: "0.5rem 1rem",
                 borderRadius: "0.75rem",
@@ -426,8 +434,8 @@ export default function ExpensesPage() {
                 fontSize: "0.875rem",
                 border: "none",
                 cursor: "pointer",
-                boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-                transition: "background-color 0.2s",
+                boxShadow: "0 4px 6px -1px color-mix(in srgb, var(--color-primary, #4147eb) 25%, transparent)",
+                transition: "all 0.2s",
               }}
             >
               <Plus size={16} />

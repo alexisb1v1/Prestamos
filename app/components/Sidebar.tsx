@@ -17,6 +17,7 @@ import {
   KeyRound,
   Users,
   Building2,
+  Server,
 } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { authService } from "@/lib/auth";
@@ -41,6 +42,27 @@ export default function Sidebar() {
   } = usePermissions();
 
   const [canInstall, setCanInstall] = useState(false);
+  const [companyIcon, setCompanyIcon] = useState<string>("");
+
+  useEffect(() => {
+    const updateIcon = () => {
+      try {
+        const stored = localStorage.getItem("company_settings");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed?.branding?.iconUrl) {
+            setCompanyIcon(parsed.branding.iconUrl);
+          } else {
+            setCompanyIcon("");
+          }
+        }
+      } catch {}
+    };
+
+    updateIcon();
+    window.addEventListener("company_theme_updated", updateIcon);
+    return () => window.removeEventListener("company_theme_updated", updateIcon);
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsMounted(true), 0);
@@ -84,7 +106,9 @@ export default function Sidebar() {
     boolean | null
   >(null);
   const isReportesExpanded =
-    manualReportesExpanded !== null ? manualReportesExpanded : false;
+    manualReportesExpanded !== null
+      ? manualReportesExpanded
+      : pathname.startsWith("/reportes");
   const toggleReportes = () =>
     setManualReportesExpanded(!isReportesExpanded);
 
@@ -183,6 +207,21 @@ export default function Sidebar() {
               minWidth: 0,
             }}
           >
+            {companyIcon ? (
+              <img
+                src={companyIcon}
+                alt="Logo Empresa"
+                style={{
+                  width: 34,
+                  height: 34,
+                  objectFit: "contain",
+                  borderRadius: "0.5rem",
+                  backgroundColor: "#ffffff",
+                  padding: 2,
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                }}
+              />
+            ) : null}
             <div className="sidebar-brand-text">
               <span className="sidebar-brand-title">
                 Neo<span>Cobros</span>
@@ -228,7 +267,7 @@ export default function Sidebar() {
                 <LayoutDashboard
                   size={19}
                   strokeWidth={isActive("/dashboard") ? 2.5 : 2}
-                  color={isActive("/dashboard") ? "#4147eb" : "#94a3b8"}
+                  color={isActive("/dashboard") ? "var(--color-primary, #4147eb)" : "#94a3b8"}
                 />
                 <span>Resumen del Día</span>
               </div>
@@ -254,7 +293,7 @@ export default function Sidebar() {
                 <Wallet
                   size={19}
                   strokeWidth={isActive("/prestamos") ? 2.5 : 2}
-                  color={isActive("/prestamos") ? "#4147eb" : "#94a3b8"}
+                  color={isActive("/prestamos") ? "var(--color-primary, #4147eb)" : "#94a3b8"}
                 />
                 <span>Préstamos</span>
               </div>
@@ -279,7 +318,7 @@ export default function Sidebar() {
                 <ReceiptText
                   size={19}
                   strokeWidth={isActive("/gastos") ? 2.5 : 2}
-                  color={isActive("/gastos") ? "#4147eb" : "#94a3b8"}
+                  color={isActive("/gastos") ? "var(--color-primary, #4147eb)" : "#94a3b8"}
                 />
                 <span>Gastos</span>
               </div>
@@ -319,7 +358,7 @@ export default function Sidebar() {
                         <BarChart
                           size={19}
                           strokeWidth={isReportesExpanded ? 2.5 : 2}
-                          color={isReportesExpanded ? "#4147eb" : "#94a3b8"}
+                          color={isReportesExpanded ? "var(--color-primary, #4147eb)" : "#94a3b8"}
                         />
                         <span>Reportes</span>
                       </div>
@@ -367,6 +406,17 @@ export default function Sidebar() {
                           <span className="sidebar-tutorial-dot" />
                           <span>Por Cobrador</span>
                         </Link>
+                        <Link
+                          href="/reportes/capital-inversion"
+                          className={`sidebar-tutorial-item ${isActive("/reportes/capital-inversion") ? "sidebar-active" : ""}`}
+                          onClick={() => {
+                            trackEvent("menu_click", { opcion: "reportes_capital_inversion" });
+                            setIsOpen(false);
+                          }}
+                        >
+                          <span className="sidebar-tutorial-dot" />
+                          <span>Capital e Inversión</span>
+                        </Link>
                       </div>
                     )}
                   </div>
@@ -392,7 +442,7 @@ export default function Sidebar() {
                       <Users
                         size={19}
                         strokeWidth={isActive("/cobradores") ? 2.5 : 2}
-                        color={isActive("/cobradores") ? "#4147eb" : "#94a3b8"}
+                        color={isActive("/cobradores") ? "var(--color-primary, #4147eb)" : "#94a3b8"}
                       />
                       <span>Usuarios</span>
                     </div>
@@ -422,7 +472,7 @@ export default function Sidebar() {
                       <Building2
                         size={19}
                         strokeWidth={isActive("/empresas") ? 2.5 : 2}
-                        color={isActive("/empresas") ? "#4147eb" : "#94a3b8"}
+                        color={isActive("/empresas") ? "var(--color-primary, #4147eb)" : "#94a3b8"}
                       />
                       <span>Empresas</span>
                     </div>
@@ -432,13 +482,13 @@ export default function Sidebar() {
                   </Link>
                 )}
 
-                {/* Configuración */}
-                {(isOwner) && (
+                {/* Configuración Empresa (Admin / Owner) */}
+                {(isAdmin || isOwner) && (
                   <Link
                     href="/configuracion"
                     className={`sidebar-item ${isActive("/configuracion") ? "sidebar-active" : ""}`}
                     onClick={() => {
-                      trackEvent("menu_click", { opcion: "configuracion" });
+                      trackEvent("menu_click", { opcion: "configuracion_empresa" });
                       setIsOpen(false);
                     }}
                   >
@@ -452,11 +502,41 @@ export default function Sidebar() {
                       <Settings
                         size={19}
                         strokeWidth={isActive("/configuracion") ? 2.5 : 2}
-                        color={isActive("/configuracion") ? "#4147eb" : "#94a3b8"}
+                        color={isActive("/configuracion") ? "var(--color-primary, #4147eb)" : "#94a3b8"}
                       />
-                      <span>Configuración</span>
+                      <span>Configuración Empresa</span>
                     </div>
                     {isActive("/configuracion") && (
+                      <span className="sidebar-item-pill" />
+                    )}
+                  </Link>
+                )}
+
+                {/* Configuración Sistema / Mantenimiento Masivo (Owner) */}
+                {isOwner && (
+                  <Link
+                    href="/configuracion/sistema"
+                    className={`sidebar-item ${isActive("/configuracion/sistema") ? "sidebar-active" : ""}`}
+                    onClick={() => {
+                      trackEvent("menu_click", { opcion: "configuracion_sistema" });
+                      setIsOpen(false);
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.75rem",
+                      }}
+                    >
+                      <Server
+                        size={19}
+                        strokeWidth={isActive("/configuracion/sistema") ? 2.5 : 2}
+                        color={isActive("/configuracion/sistema") ? "var(--color-primary, #4147eb)" : "#94a3b8"}
+                      />
+                      <span>Configuración Sistema</span>
+                    </div>
+                    {isActive("/configuracion/sistema") && (
                       <span className="sidebar-item-pill" />
                     )}
                   </Link>
@@ -490,7 +570,7 @@ export default function Sidebar() {
                     transform: isHelpExpanded
                       ? "rotate(180deg)"
                       : "rotate(0deg)",
-                    color: isHelpExpanded ? "#4147eb" : "#94a3b8",
+                    color: isHelpExpanded ? "var(--color-primary, #4147eb)" : "#94a3b8",
                   }}
                 />
               </button>
@@ -532,8 +612,8 @@ export default function Sidebar() {
                     width: "32px",
                     height: "32px",
                     borderRadius: "0.65rem",
-                    backgroundColor: "rgba(65, 71, 235, 0.1)",
-                    color: "#4147eb",
+                    backgroundColor: "color-mix(in srgb, var(--color-primary, #4147eb) 12%, transparent)",
+                    color: "var(--color-primary, #4147eb)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -578,7 +658,7 @@ export default function Sidebar() {
                 style={{
                   padding: "0.3rem 0.65rem",
                   borderRadius: "0.5rem",
-                  backgroundColor: "#4147eb",
+                  backgroundColor: "var(--color-primary, #4147eb)",
                   color: "white",
                   border: "none",
                   fontSize: "0.6875rem",
@@ -609,7 +689,7 @@ export default function Sidebar() {
                   width: "38px",
                   height: "38px",
                   borderRadius: "9999px",
-                  backgroundColor: "#4147eb",
+                  backgroundColor: "var(--color-primary, #4147eb)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -694,7 +774,7 @@ export default function Sidebar() {
                 type="button"
               >
                 <KeyRound size={15} color="#94a3b8" />
-                <span>Cambiar Clave</span>
+                <span>Cambiar Contraseña</span>
               </button>
 
               <button

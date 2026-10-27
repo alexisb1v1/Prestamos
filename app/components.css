@@ -954,7 +954,7 @@
 .create-user-input-icon {
   position: absolute;
   left: 1rem;
-  color: #3b82f6;
+  color: var(--color-primary, #4147eb);
   pointer-events: none;
 }
 
@@ -972,8 +972,8 @@
 }
 
 .create-user-input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: var(--color-primary, #4147eb);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #4147eb) 15%, transparent);
 }
 
 .create-user-input:disabled {
@@ -1000,7 +1000,7 @@
   border-radius: 12px;
   font-weight: 800;
   font-size: 1rem;
-  background: #3b82f6;
+  background: var(--color-primary, #4147eb);
   border: none;
   color: white;
   cursor: pointer;
@@ -1009,6 +1009,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary, #4147eb) 25%, transparent);
   transition: all 0.2s;
 }
 
@@ -1031,7 +1032,7 @@
 }
 
 .create-user-action-btn:hover:not(:disabled) {
-  background: #2563eb;
+  background: var(--color-primary-hover, #353bd6);
   transform: translateY(-1px);
 }
 
@@ -1612,7 +1613,7 @@
 }
 
 .sidebar-brand-title span {
-  color: #4147eb;
+  color: var(--color-primary, #4147eb);
 }
 
 .sidebar-brand-subtitle {
@@ -1688,8 +1689,8 @@
 }
 
 .sidebar-item.sidebar-active {
-  background-color: rgba(65, 71, 235, 0.08);
-  color: #4147eb;
+  background-color: color-mix(in srgb, var(--color-primary, #4147eb) 10%, transparent);
+  color: var(--color-primary, #4147eb);
   font-weight: 700;
 }
 
@@ -1697,7 +1698,7 @@
   width: 8px;
   height: 8px;
   border-radius: 9999px;
-  background-color: #4147eb;
+  background-color: var(--color-primary, #4147eb);
 }
 
 .sidebar-item-badge {
@@ -1719,7 +1720,7 @@
   border-radius: 0.75rem;
   background-color: rgba(248, 250, 252, 0.8);
   border: 1px solid #f1f5f9;
-  color: #4147eb;
+  color: var(--color-primary, #4147eb);
   font-weight: 700;
   font-size: 0.875rem;
   cursor: pointer;
@@ -2076,11 +2077,11 @@
 
 .bottom-nav-btn:hover,
 .bottom-nav-btn:active {
-  color: #4f46e5;
+  color: var(--color-primary, #4147eb);
 }
 
 .bottom-nav-btn.active {
-  color: #4f46e5;
+  color: var(--color-primary, #4147eb);
 }
 
 .bottom-nav-btn.danger:hover,

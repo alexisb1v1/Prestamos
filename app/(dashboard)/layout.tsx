@@ -6,6 +6,7 @@ import { authService } from "@/lib/auth";
 import Sidebar from "../components/Sidebar";
 import BottomNav from "../components/BottomNav";
 import TourRunner from "../components/TourRunner";
+import TenantThemeApplier from "../components/TenantThemeApplier";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -44,7 +45,7 @@ export default function DashboardLayout({
     }, 0);
 
     // Restricted paths logic
-    const ownerOnlyPaths = ["/empresas"];
+    const ownerOnlyPaths = ["/empresas", "/configuracion/sistema"];
     const adminAndOwnerPaths = ["/cobradores", "/reportes", "/configuracion"];
 
     if (user.profile === "COBRADOR") {
@@ -106,7 +107,7 @@ export default function DashboardLayout({
                 color: "#1e293b",
               }}
             >
-              Neo<span style={{ color: "#4f46e5" }}>Cobros</span>
+              Neo<span style={{ color: "var(--color-primary, #4147eb)" }}>Cobros</span>
             </span>
             <span
               style={{

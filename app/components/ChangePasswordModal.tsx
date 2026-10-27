@@ -71,6 +71,8 @@ export default function ChangePasswordModal({
 
   if (!isOpen) return null;
 
+  const isDemoCompany = String(currentUser?.idCompany) === '102';
+
   const resetForm = () => {
     setCurrentPassword("");
     setNewPassword("");
@@ -92,6 +94,11 @@ export default function ChangePasswordModal({
     e.preventDefault();
     setError("");
     setSuccessMessage("");
+
+    if (isDemoCompany) {
+      setError("Acción no permitida: Los usuarios de la empresa Demo no pueden modificar la contraseña.");
+      return;
+    }
 
     if (!currentPassword) {
       setError("Por favor ingresa tu contraseña actual.");
@@ -324,6 +331,32 @@ export default function ChangePasswordModal({
                   </div>
                 </div>
               </section>
+            )}
+
+            {/* Banner de Modo Demostración */}
+            {isDemoCompany && (
+              <div
+                style={{
+                  padding: "0.875rem 1rem",
+                  borderRadius: "0.875rem",
+                  backgroundColor: "#fffbeb",
+                  border: "1px solid #fde68a",
+                  color: "#92400e",
+                  fontSize: "0.85rem",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "0.75rem",
+                  lineHeight: 1.4,
+                }}
+              >
+                <Lock size={18} style={{ flexShrink: 0, marginTop: "2px", color: "#d97706" }} />
+                <div>
+                  <strong style={{ display: "block", marginBottom: "0.15rem", color: "#78350f" }}>
+                    Modo Demostración Activo
+                  </strong>
+                  Por seguridad, los usuarios de la empresa Demo tienen el cambio de contraseña deshabilitado para mantener disponible el entorno de pruebas.
+                </div>
+              </div>
             )}
 
             {/* Error Message */}
@@ -656,13 +689,17 @@ export default function ChangePasswordModal({
               </button>
               <button
                 type="submit"
-                disabled={loading || Boolean(successMessage)}
+                disabled={loading || Boolean(successMessage) || isDemoCompany}
                 style={{
                   padding: "0.75rem",
                   borderRadius: "0.75rem",
                   border: "none",
                   backgroundColor:
-                    loading || Boolean(successMessage) ? "#818cf8" : "#4f46e5",
+                    isDemoCompany
+                      ? "#94a3b8"
+                      : loading || Boolean(successMessage)
+                        ? "var(--color-primary-light, #818cf8)"
+                        : "var(--color-primary, #4f46e5)",
                   color: "white",
                   fontWeight: "bold",
                   fontSize: "0.875rem",
@@ -671,12 +708,17 @@ export default function ChangePasswordModal({
                   justifyContent: "center",
                   gap: "0.5rem",
                   cursor:
-                    loading || Boolean(successMessage)
+                    loading || Boolean(successMessage) || isDemoCompany
                       ? "not-allowed"
                       : "pointer",
+                  opacity: isDemoCompany ? 0.7 : 1,
                 }}
               >
-                {loading ? "Actualizando..." : "Guardar Contraseña"}
+                {isDemoCompany
+                  ? "Acción restringida en Demo"
+                  : loading
+                    ? "Actualizando..."
+                    : "Guardar Contraseña"}
               </button>
             </div>
           </footer>

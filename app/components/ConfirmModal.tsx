@@ -5,11 +5,14 @@ interface ConfirmModalProps {
   onClose: () => void;
   onConfirm: () => void;
   title: string;
-  message: string;
+  message: string | React.ReactNode;
   confirmText?: string;
   cancelText?: string;
   isDestructive?: boolean;
   isLoading?: boolean;
+  icon?: React.ReactNode;
+  /** Deshabilita únicamente el botón de confirmar (ej. recursos protegidos). */
+  confirmDisabled?: boolean;
 }
 
 export default function ConfirmModal({
@@ -22,6 +25,8 @@ export default function ConfirmModal({
   cancelText = "Cancelar",
   isDestructive = true,
   isLoading = false,
+  icon,
+  confirmDisabled = false,
 }: ConfirmModalProps) {
   if (!isOpen) return null;
 
@@ -36,11 +41,12 @@ export default function ConfirmModal({
         {/* Mobile Handle */}
         <div className="confirm-modal-handle-bar"></div>
 
-        <div className="confirm-modal-header">
-          <h2 className="confirm-modal-title">{title}</h2>
+        <div className="confirm-modal-header" style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          {icon && <div style={{ flexShrink: 0 }}>{icon}</div>}
+          <h2 className="confirm-modal-title" style={{ margin: 0 }}>{title}</h2>
         </div>
 
-        <p className="confirm-modal-message">{message}</p>
+        <div className="confirm-modal-message">{message}</div>
 
         <div className="confirm-modal-actions">
           <button
@@ -57,11 +63,12 @@ export default function ConfirmModal({
           <button
             className="confirm-modal-confirm-btn"
             onClick={onConfirm}
-            disabled={isLoading}
+            disabled={isLoading || confirmDisabled}
+            aria-disabled={isLoading || confirmDisabled}
             style={{
-              backgroundColor: isDestructive ? "#ef4444" : "#3b82f6",
-              opacity: isLoading ? 0.8 : 1,
-              cursor: isLoading ? "not-allowed" : "pointer",
+              backgroundColor: isDestructive ? "#ef4444" : "var(--color-primary, #4147eb)",
+              opacity: confirmDisabled ? 0.45 : isLoading ? 0.8 : 1,
+              cursor: isLoading || confirmDisabled ? "not-allowed" : "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",

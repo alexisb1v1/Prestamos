@@ -44,4 +44,17 @@ export interface CompanyRepository {
   refreshKeyToken(
     id: string,
   ): ResultAsync<{ message: string; newKeyToken?: string }, DomainError>;
+
+  /**
+   * Obtiene la empresa y configuraciones del usuario autenticado (o la empresa especificada si es OWNER).
+   */
+  getMyCompany(companyId?: string): ResultAsync<Company, DomainError>;
+
+  /**
+   * Actualiza las configuraciones de branding y préstamos de la empresa.
+   */
+  updateMyCompanySettings(
+    settings: any,
+    companyId?: string,
+  ): ResultAsync<{ message: string; settings: any }, DomainError>;
 }

@@ -304,9 +304,9 @@ export default function CreateUserModal({
             style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}
           >
             {userToEdit ? (
-              <UserIcon size={20} color="#3b82f6" strokeWidth={2.5} />
+              <UserIcon size={20} color="var(--color-primary, #4147eb)" strokeWidth={2.5} />
             ) : (
-              <UserPlus size={20} color="#3b82f6" strokeWidth={2.5} />
+              <UserPlus size={20} color="var(--color-primary, #4147eb)" strokeWidth={2.5} />
             )}
             <h2 className="create-user-title">
               {userToEdit ? "Editar Perfil" : "Nuevo Usuario"}
@@ -351,7 +351,10 @@ export default function CreateUserModal({
             !searchingPerson && (
               <div
                 className="create-user-section"
-                style={{ background: "#eff6ff", borderColor: "#dbeafe" }}
+                style={{
+                  background: "color-mix(in srgb, var(--color-primary, #4147eb) 8%, white)",
+                  borderColor: "color-mix(in srgb, var(--color-primary, #4147eb) 20%, transparent)"
+                }}
               >
                 <div
                   style={{
@@ -360,11 +363,11 @@ export default function CreateUserModal({
                     alignItems: "center",
                   }}
                 >
-                  <Info size={20} color="#3b82f6" />
+                  <Info size={20} color="var(--color-primary, #4147eb)" />
                   <div
                     style={{
                       fontSize: "0.85rem",
-                      color: "#1e40af",
+                      color: "var(--color-primary, #4147eb)",
                       fontWeight: 600,
                     }}
                   >

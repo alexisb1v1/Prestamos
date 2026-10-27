@@ -262,20 +262,20 @@ export default function PrestamosPage() {
               <div style={{ backgroundColor: "rgba(226, 232, 240, 0.7)", padding: "0.25rem", borderRadius: "0.75rem", display: "flex", alignItems: "center", fontSize: "0.75rem", fontWeight: 600 }}>
                 <button 
                   onClick={() => { setIsLiquidated(false); loadLoans(currentUser, selectedCompanyId, false); }}
-                  style={{ padding: "0.375rem 0.875rem", borderRadius: "0.5rem", border: "none", backgroundColor: !isLiquidated ? "#4f46e5" : "transparent", color: !isLiquidated ? "white" : "#475569", cursor: "pointer", transition: "all 0.2s", boxShadow: !isLiquidated ? "0 1px 2px 0 rgba(0, 0, 0, 0.05)" : "none" }}>
+                  style={{ padding: "0.375rem 0.875rem", borderRadius: "0.5rem", border: "none", backgroundColor: !isLiquidated ? "var(--color-primary, #4147eb)" : "transparent", color: !isLiquidated ? "white" : "#475569", cursor: "pointer", transition: "all 0.2s", boxShadow: !isLiquidated ? "0 1px 2px 0 rgba(0, 0, 0, 0.05)" : "none" }}>
                   ACTIVOS
                 </button>
                 <button 
                   onClick={() => { setIsLiquidated(true); loadLoans(currentUser, selectedCompanyId, true); }}
-                  style={{ padding: "0.375rem 0.875rem", borderRadius: "0.5rem", border: "none", backgroundColor: isLiquidated ? "#4f46e5" : "transparent", color: isLiquidated ? "white" : "#475569", cursor: "pointer", transition: "all 0.2s", boxShadow: isLiquidated ? "0 1px 2px 0 rgba(0, 0, 0, 0.05)" : "none" }}>
-                  LIQUIDADOS
+                  style={{ padding: "0.375rem 0.875rem", borderRadius: "0.5rem", border: "none", backgroundColor: isLiquidated ? "var(--color-primary, #4147eb)" : "transparent", color: isLiquidated ? "white" : "#475569", cursor: "pointer", transition: "all 0.2s", boxShadow: isLiquidated ? "0 1px 2px 0 rgba(0, 0, 0, 0.05)" : "none" }}>
+                  LIQUIDADO
                 </button>
               </div>
               
               {/* Create Button */}
               <button 
                 onClick={() => setIsCreateModalOpen(true)}
-                style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", backgroundColor: "#4f46e5", color: "white", fontWeight: 600, fontSize: "0.75rem", padding: "0.625rem 1rem", borderRadius: "0.75rem", border: "none", cursor: "pointer", boxShadow: "0 4px 6px -1px rgba(79, 70, 229, 0.25)" }}>
+                style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", backgroundColor: "var(--color-primary, #4147eb)", color: "white", fontWeight: 600, fontSize: "0.75rem", padding: "0.625rem 1rem", borderRadius: "0.75rem", border: "none", cursor: "pointer", boxShadow: "0 4px 6px -1px color-mix(in srgb, var(--color-primary, #4147eb) 25%, transparent)" }}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
                 <span>Nuevo Préstamo</span>
               </button>
@@ -289,7 +289,7 @@ export default function PrestamosPage() {
                 <p style={{ fontSize: "11px", fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", margin: 0 }}>Capital Colocado</p>
                 <p style={{ fontSize: "1.25rem", fontWeight: 700, color: "#1e293b", marginTop: "0.125rem", margin: 0 }}>{formatMoney(capitalColocado)}</p>
               </div>
-              <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", backgroundColor: "#eef2ff", color: "#4f46e5", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", backgroundColor: "color-mix(in srgb, var(--color-primary, #4147eb) 12%, transparent)", color: "var(--color-primary, #4147eb)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path><path d="M12 18V6"></path></svg>
               </div>
             </div>
@@ -297,9 +297,9 @@ export default function PrestamosPage() {
             <div style={{ backgroundColor: "white", borderRadius: "1rem", padding: "1rem", border: "1px solid rgba(226, 232, 240, 0.8)", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)" }}>
               <div>
                 <p style={{ fontSize: "11px", fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", margin: 0 }}>Saldo Por Cobrar</p>
-                <p style={{ fontSize: "1.25rem", fontWeight: 700, color: "#4f46e5", marginTop: "0.125rem", margin: 0 }}>{formatMoney(saldoPorCobrar)}</p>
+                <p style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--color-primary, #4147eb)", marginTop: "0.125rem", margin: 0 }}>{formatMoney(saldoPorCobrar)}</p>
               </div>
-              <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", backgroundColor: "#eef2ff", color: "#4f46e5", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "0.75rem", backgroundColor: "color-mix(in srgb, var(--color-primary, #4147eb) 12%, transparent)", color: "var(--color-primary, #4147eb)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
               </div>
             </div>
@@ -462,9 +462,9 @@ export default function PrestamosPage() {
             <div style={{ backgroundColor: "white", borderRadius: "1rem", padding: "0.75rem", border: "1px solid rgba(226, 232, 240, 0.8)", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)" }}>
               <div>
                 <span style={{ fontSize: "10px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", display: "block" }}>Saldo Por Cobrar</span>
-                <p style={{ fontSize: "0.875rem", fontWeight: 800, color: "#4f46e5", marginTop: "0.125rem", margin: 0 }}>{formatMoney(saldoPorCobrar)}</p>
+                <p style={{ fontSize: "0.875rem", fontWeight: 800, color: "var(--color-primary, #4147eb)", marginTop: "0.125rem", margin: 0 }}>{formatMoney(saldoPorCobrar)}</p>
               </div>
-              <div style={{ width: "2rem", height: "2rem", borderRadius: "0.75rem", backgroundColor: "#eef2ff", color: "#4f46e5", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <div style={{ width: "2rem", height: "2rem", borderRadius: "0.75rem", backgroundColor: "color-mix(in srgb, var(--color-primary, #4147eb) 12%, transparent)", color: "var(--color-primary, #4147eb)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               </div>
             </div>
@@ -502,13 +502,13 @@ export default function PrestamosPage() {
               <div style={{ display: "flex", alignItems: "center", backgroundColor: "rgba(226, 232, 240, 0.7)", padding: "0.25rem", borderRadius: "0.75rem", gap: "0.25rem", fontSize: "11px", fontWeight: 700 }}>
                 <button
                   onClick={() => { setIsLiquidated(false); loadLoans(currentUser, selectedCompanyId, false); }}
-                  style={{ padding: "0.25rem 0.75rem", borderRadius: "0.5rem", backgroundColor: !isLiquidated ? "#4f46e5" : "transparent", color: !isLiquidated ? "white" : "#475569", boxShadow: !isLiquidated ? "0 1px 2px rgba(0,0,0,0.05)" : "none", border: "none", cursor: "pointer", transition: "colors 0.2s" }}
+                  style={{ padding: "0.25rem 0.75rem", borderRadius: "0.5rem", backgroundColor: !isLiquidated ? "var(--color-primary, #4147eb)" : "transparent", color: !isLiquidated ? "white" : "#475569", boxShadow: !isLiquidated ? "0 1px 2px rgba(0,0,0,0.05)" : "none", border: "none", cursor: "pointer", transition: "colors 0.2s" }}
                 >
                   ACTIVOS
                 </button>
                 <button
                   onClick={() => { setIsLiquidated(true); loadLoans(currentUser, selectedCompanyId, true); }}
-                  style={{ padding: "0.25rem 0.625rem", borderRadius: "0.5rem", backgroundColor: isLiquidated ? "#4f46e5" : "transparent", color: isLiquidated ? "white" : "#475569", boxShadow: isLiquidated ? "0 1px 2px rgba(0,0,0,0.05)" : "none", border: "none", cursor: "pointer", transition: "colors 0.2s" }}
+                  style={{ padding: "0.25rem 0.625rem", borderRadius: "0.5rem", backgroundColor: isLiquidated ? "var(--color-primary, #4147eb)" : "transparent", color: isLiquidated ? "white" : "#475569", boxShadow: isLiquidated ? "0 1px 2px rgba(0,0,0,0.05)" : "none", border: "none", cursor: "pointer", transition: "colors 0.2s" }}
                 >
                   LIQ
                 </button>
@@ -727,7 +727,7 @@ export default function PrestamosPage() {
                                 </div>
                               )}
                               {loan.phone && (
-                                <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", color: "#4f46e5", fontSize: "12px", fontWeight: 600 }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", color: "var(--color-primary, #4147eb)", fontSize: "12px", fontWeight: 600 }}>
                                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
                                   <span>{loan.phone}</span>
                                 </div>
@@ -741,11 +741,11 @@ export default function PrestamosPage() {
                           <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
                             <div style={{ fontSize: "13px", fontWeight: 500, color: "#64748b", display: "flex", alignItems: "center", gap: "0.375rem" }}>
                               <span>Inicio:</span>
-                              <span style={{ color: "#4f46e5" }}>{formatDateUTC(loan.startDate)}</span>
+                              <span style={{ color: "var(--color-primary, #4147eb)" }}>{formatDateUTC(loan.startDate)}</span>
                             </div>
                             <div style={{ fontSize: "13px", fontWeight: 500, color: "#64748b", display: "flex", alignItems: "center", gap: "0.375rem" }}>
                               <span>Fin:</span>
-                              <span style={{ color: "#4f46e5" }}>{formatDateUTC(loan.endDate)}</span>
+                              <span style={{ color: "var(--color-primary, #4147eb)" }}>{formatDateUTC(loan.endDate)}</span>
                             </div>
                             <div style={{ marginTop: "0.5rem" }}>
                                 <span style={{
@@ -784,7 +784,7 @@ export default function PrestamosPage() {
                         <td style={{ padding: "1rem", verticalAlign: "top" }}>
                           <div style={{ marginBottom: "0.5rem" }}>
                             <span style={{ fontSize: "11px", fontWeight: 600, color: "#94a3b8", textTransform: "uppercase" }}>Total:</span>
-                            <div style={{ fontSize: "16px", fontWeight: 700, color: "#4f46e5", lineHeight: 1.1 }}>{formatMoney(totalAmount)}</div>
+                            <div style={{ fontSize: "16px", fontWeight: 700, color: "var(--color-primary, #4147eb)", lineHeight: 1.1 }}>{formatMoney(totalAmount)}</div>
                           </div>
                           
                           <div style={{ marginBottom: "0.375rem" }}>
@@ -794,7 +794,7 @@ export default function PrestamosPage() {
                           
                           <div style={{ marginTop: "0.5rem", width: "120px" }}>
                             <div style={{ width: "100%", height: "6px", backgroundColor: "#e2e8f0", borderRadius: "9999px", overflow: "hidden" }}>
-                              <div style={{ height: "100%", backgroundColor: "#4f46e5", borderRadius: "9999px", width: `${progress}%`, transition: 'width 0.5s ease' }}></div>
+                              <div style={{ height: "100%", backgroundColor: "var(--color-primary, #4147eb)", borderRadius: "9999px", width: `${progress}%`, transition: 'width 0.5s ease' }}></div>
                             </div>
                             <div style={{ fontSize: "11px", fontWeight: 600, color: "#94a3b8", marginTop: "0.25rem" }}>
                               {paidCuotas.toLocaleString("es-PE", { minimumFractionDigits: 0, maximumFractionDigits: 1 })} de {totalCuotas} cuotas

@@ -17,6 +17,11 @@ import LoadingSpinner from "@/app/components/LoadingSpinner";
 import { logger } from "@/lib/logging-service";
 import { KeyRound } from "lucide-react";
 
+/** Usuarios demo protegidos: no pueden eliminarse (accesos públicos de la empresa demo). */
+const PROTECTED_USER_IDS: readonly string[] = ["9", "11"];
+const isProtectedUser = (userId?: string | number | null): boolean =>
+  userId !== undefined && userId !== null && PROTECTED_USER_IDS.includes(String(userId));
+
 export default function CobradoresPage() {
   const [users, setUsers] = useState<UserModel[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -142,6 +147,7 @@ export default function CobradoresPage() {
 
   const executeAction = async () => {
     if (!confirmation.user || !confirmation.action) return;
+    if (confirmation.action === "DELETE" && isProtectedUser(confirmation.user.id)) return;
 
     setLoading(true);
     setError("");
@@ -151,9 +157,9 @@ export default function CobradoresPage() {
         ? await deleteUserUseCase.execute(confirmation.user.id)
         : confirmation.action === "TOGGLE_DAY"
           ? await toggleDayStatusUseCase.execute(
-              confirmation.user.id,
-              !confirmation.user.isDayClosed,
-            )
+            confirmation.user.id,
+            !confirmation.user.isDayClosed,
+          )
           : await resetUserPasswordUseCase.execute(confirmation.user.id);
 
     actionResult.match(
@@ -201,7 +207,7 @@ export default function CobradoresPage() {
           >
             {/* Ocultar el borde del header para fusionarlos visualmente */}
             <div style={{ position: "absolute", top: "-1px", left: 0, right: 0, height: "2px", backgroundColor: "var(--bg-app)" }}></div>
-            
+
             <div
               style={{
                 flex: 1,
@@ -551,7 +557,7 @@ export default function CobradoresPage() {
                   </button>
 
                   {/* Edit */}
-                  <button
+                  {/*  <button
                     onClick={() => handleEdit(user)}
                     title="Editar"
                     style={{
@@ -582,7 +588,7 @@ export default function CobradoresPage() {
                         d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
                       />
                     </svg>
-                  </button>
+                  </button> */}
 
                   {/* Reset Password */}
                   <button
@@ -769,13 +775,12 @@ export default function CobradoresPage() {
                                 : user.profile === "OWNER"
                                   ? "#d97706"
                                   : "#2563eb",
-                            border: `1px solid ${
-                              user.profile === "ADMIN"
-                                ? "rgba(124, 58, 237, 0.2)"
-                                : user.profile === "OWNER"
-                                  ? "rgba(245, 158, 11, 0.2)"
-                                  : "rgba(59, 130, 246, 0.2)"
-                            }`,
+                            border: `1px solid ${user.profile === "ADMIN"
+                              ? "rgba(124, 58, 237, 0.2)"
+                              : user.profile === "OWNER"
+                                ? "rgba(245, 158, 11, 0.2)"
+                                : "rgba(59, 130, 246, 0.2)"
+                              }`,
                           }}
                         >
                           {user.profile}
@@ -856,7 +861,7 @@ export default function CobradoresPage() {
                           </button>
 
                           {/* Edit */}
-                          <button
+                          {/* <button
                             onClick={() => handleEdit(user)}
                             className="btn-icon primary"
                             title="Editar"
@@ -876,7 +881,7 @@ export default function CobradoresPage() {
                                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                               />
                             </svg>
-                          </button>
+                          </button> */}
 
                           {/* Reset Password */}
                           <button
@@ -942,6 +947,9 @@ export default function CobradoresPage() {
           setConfirmation({ isOpen: false, action: null, user: null })
         }
         onConfirm={executeAction}
+        confirmDisabled={
+          confirmation.action === "DELETE" && isProtectedUser(confirmation.user?.id)
+        }
         title={
           confirmation.action === "DELETE"
             ? "Eliminar Usuario"
@@ -953,7 +961,9 @@ export default function CobradoresPage() {
         }
         message={
           confirmation.action === "DELETE"
-            ? "¿Estás seguro de que deseas eliminar este usuario? Esta acción lo desactivará."
+            ? isProtectedUser(confirmation.user?.id)
+              ? "Este usuario está protegido por el sistema (acceso demo) y no puede ser eliminado."
+              : "¿Estás seguro de que deseas eliminar este usuario? Esta acción lo desactivará."
             : confirmation.action === "TOGGLE_DAY"
               ? `¿Estás seguro de que deseas ${confirmation.user?.isDayClosed ? "abrir" : "cerrar"} el día para ${confirmation.user?.username}?`
               : `¿Estás seguro de que deseas restablecer la contraseña para ${confirmation.user?.firstName || confirmation.user?.username} ${confirmation.user?.lastName || ""}? Su contraseña volverá a ser su número de documento (${confirmation.user?.documentNumber || "DNI"}).`

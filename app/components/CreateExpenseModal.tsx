@@ -281,7 +281,7 @@ export default function CreateExpenseModal({
               flex: "2",
               padding: "0.875rem 1rem",
               borderRadius: "0.75rem",
-              backgroundColor: loading ? "#94a3b8" : "#4147eb",
+              backgroundColor: loading ? "#94a3b8" : "var(--color-primary, #4147eb)",
               color: "white",
               fontWeight: "bold",
               fontSize: "0.875rem",
@@ -291,7 +291,7 @@ export default function CreateExpenseModal({
               alignItems: "center",
               justifyContent: "center",
               gap: "0.5rem",
-              boxShadow: "0 4px 6px -1px rgba(79, 70, 229, 0.2)",
+              boxShadow: "0 4px 6px -1px color-mix(in srgb, var(--color-primary, #4147eb) 20%, transparent)",
             }}
           >
             <span>{loading ? "Registrando..." : "Guardar Gasto"}</span>

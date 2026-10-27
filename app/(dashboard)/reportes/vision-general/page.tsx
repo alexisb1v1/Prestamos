@@ -159,7 +159,7 @@ export default function VisionGeneralPage() {
 
         <div className={styles.commandActions}>
           <div className={styles.datePickerPill}>
-            <CalendarRange size={18} color="#4147eb" />
+            <CalendarRange size={18} color="var(--color-primary, #4147eb)" />
             <input
               type="date"
               className={styles.pillInput}
@@ -301,7 +301,7 @@ export default function VisionGeneralPage() {
           <div className={styles.mobileDashboardLayout}>
             {/* Control de fechas mobile */}
             <div className={styles.mobileDatePickerRow}>
-              <CalendarRange size={16} color="#4147eb" />
+              <CalendarRange size={16} color="var(--color-primary, #4147eb)" />
               <input
                 type="date"
                 className={styles.mobileDateInput}
@@ -465,7 +465,7 @@ export default function VisionGeneralPage() {
 
               <div className={styles.chartFooter}>
                 <div className={styles.chartFooterLeft}>
-                  <TrendingUp size={20} color="#4147eb" />
+                  <TrendingUp size={20} color="var(--color-primary, #4147eb)" />
                   <span className={styles.chartFooterLabel}>Promedio diario recaudado:</span>
                   <span className={styles.chartFooterValue}>
                     {formatCurrency(data && data.dailyCollections && data.dailyCollections.length > 0 ? (data.totalCollected / data.dailyCollections.length) : 0)} / día
