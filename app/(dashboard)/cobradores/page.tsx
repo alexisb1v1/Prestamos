@@ -40,12 +40,20 @@ export default function CobradoresPage() {
   const [isMobile, setIsMobile] = useState(false);
 
   const loadUsers = useCallback(
-    async (companyId?: string) => {
-      const compId = companyId !== undefined ? companyId : selectedCompanyId;
+    async (companyId?: string, termOverride?: string) => {
+      let compId: string | undefined;
+      if (currentUser?.profile === "OWNER") {
+        compId = companyId !== undefined ? companyId : selectedCompanyId;
+      } else {
+        compId = currentUser?.idCompany || "";
+      }
+
+      const term = termOverride !== undefined ? termOverride : searchTerm;
+
       setLoading(true);
       setError("");
 
-      const result = await getAllUsersUseCase.execute(searchTerm, compId);
+      const result = await getAllUsersUseCase.execute(term, compId);
 
       result.match(
         (data) => setUsers(data),
@@ -56,7 +64,7 @@ export default function CobradoresPage() {
       );
       setLoading(false);
     },
-    [selectedCompanyId, searchTerm],
+    [currentUser, selectedCompanyId, searchTerm],
   );
 
   useEffect(() => {
@@ -104,6 +112,16 @@ export default function CobradoresPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     loadUsers();
+  };
+
+  const handleClear = () => {
+    setSearchTerm("");
+    if (currentUser?.profile === "OWNER") {
+      setSelectedCompanyId("");
+      loadUsers("", "");
+    } else {
+      loadUsers(currentUser?.idCompany, "");
+    }
   };
 
   const handleEdit = async (user: UserModel) => {
@@ -342,15 +360,11 @@ export default function CobradoresPage() {
               >
                 Filtrar
               </button>
-              {(searchTerm || selectedCompanyId) && (
+              {(searchTerm.trim() !== "" || (currentUser?.profile === "OWNER" && selectedCompanyId !== "")) && (
                 <button
                   type="button"
                   className="btn"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setSelectedCompanyId("");
-                    loadUsers("");
-                  }}
+                  onClick={handleClear}
                   style={{
                     border: "1px solid var(--border-color)",
                     flex: isMobile ? 1 : "initial",
