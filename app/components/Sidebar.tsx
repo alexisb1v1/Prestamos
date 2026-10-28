@@ -577,17 +577,24 @@ export default function Sidebar() {
 
               {isHelpExpanded && (
                 <div className="sidebar-tutorial-sublist">
-                  {Object.values(TOURS).map((tour) => (
-                    <button
-                      key={tour.id}
-                      className="sidebar-tutorial-item"
-                      onClick={() => handleStartTour(tour.path, tour.title)}
-                      type="button"
-                    >
-                      <span className="sidebar-tutorial-dot" />
-                      <span>{tour.title}</span>
-                    </button>
-                  ))}
+                  {Object.values(TOURS)
+                    .filter((tour) => {
+                      if (tour.path === "/configuracion") {
+                        return isAdmin || isOwner;
+                      }
+                      return true;
+                    })
+                    .map((tour) => (
+                      <button
+                        key={tour.id}
+                        className="sidebar-tutorial-item"
+                        onClick={() => handleStartTour(tour.path, tour.title)}
+                        type="button"
+                      >
+                        <span className="sidebar-tutorial-dot" />
+                        <span>{tour.title}</span>
+                      </button>
+                    ))}
                 </div>
               )}
             </div>

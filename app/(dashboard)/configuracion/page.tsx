@@ -305,7 +305,7 @@ export default function ConfiguracionPage() {
       }}
     >
       {/* Cabecera */}
-      <div style={{ marginBottom: isMobile ? "1.25rem" : "2rem" }}>
+      <div id="header-configuracion" style={{ marginBottom: isMobile ? "1.25rem" : "2rem" }}>
         <div
           style={{
             display: "flex",
@@ -416,6 +416,7 @@ export default function ConfiguracionPage() {
           }}
         >
           <button
+            id="tab-branding"
             onClick={() => setActiveTab("branding")}
             style={{
               display: "inline-flex",
@@ -439,6 +440,7 @@ export default function ConfiguracionPage() {
           </button>
 
           <button
+            id="tab-loans"
             onClick={() => setActiveTab("loans")}
             style={{
               display: "inline-flex",
@@ -462,6 +464,7 @@ export default function ConfiguracionPage() {
           </button>
 
           <button
+            id="tab-security"
             onClick={() => setActiveTab("security")}
             style={{
               display: "inline-flex",
@@ -557,7 +560,7 @@ export default function ConfiguracionPage() {
           {/* TAB 1: PERSONALIZACIÓN VISUAL (BRANDING) */}
           {activeTab === "branding" && (
             <div style={{ display: "grid", gap: "1.75rem" }}>
-              <section className="card" style={{ padding: isMobile ? "1.25rem" : "1.75rem", borderRadius: "1rem" }}>
+              <section id="seccion-colores" className="card" style={{ padding: isMobile ? "1.25rem" : "1.75rem", borderRadius: "1rem" }}>
                 <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "0.5rem" }}>
                   Colores del Sistema
                 </h2>
@@ -666,7 +669,7 @@ export default function ConfiguracionPage() {
               </section>
 
               {/* Carga de Ícono del Sistema */}
-              <section className="card" style={{ padding: isMobile ? "1.25rem" : "1.75rem", borderRadius: "1rem" }}>
+              <section id="seccion-icono" className="card" style={{ padding: isMobile ? "1.25rem" : "1.75rem", borderRadius: "1rem" }}>
                 <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "0.5rem" }}>
                   Ícono o Isotipo del Sistema
                 </h2>
@@ -828,6 +831,7 @@ export default function ConfiguracionPage() {
                 }}
               >
                 <button
+                  id="btn-guardar-configuracion"
                   type="button"
                   onClick={handleSaveSettings}
                   disabled={saving}
@@ -853,7 +857,7 @@ export default function ConfiguracionPage() {
           {/* TAB 2: POLÍTICAS DE PRÉSTAMOS */}
           {activeTab === "loans" && (
             <div style={{ display: "grid", gap: "1.75rem" }}>
-              <section className="card" style={{ padding: isMobile ? "1.25rem" : "1.75rem", borderRadius: "1rem" }}>
+              <section id="seccion-prestamos-params" className="card" style={{ padding: isMobile ? "1.25rem" : "1.75rem", borderRadius: "1rem" }}>
                 <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "0.5rem" }}>
                   Valores Predeterminados para Nuevos Préstamos
                 </h2>
@@ -1013,6 +1017,7 @@ export default function ConfiguracionPage() {
                 }}
               >
                 <button
+                  id="btn-guardar-configuracion"
                   type="button"
                   onClick={handleSaveSettings}
                   disabled={saving}
@@ -1038,7 +1043,7 @@ export default function ConfiguracionPage() {
           {/* TAB 3: SEGURIDAD DE LA CUENTA */}
           {activeTab === "security" && (
             <div style={{ display: "grid", gap: "1.75rem" }}>
-              <section className="card" style={{ padding: isMobile ? "1.25rem" : "1.75rem", borderRadius: "1rem" }}>
+              <section id="seccion-seguridad-pass" className="card" style={{ padding: isMobile ? "1.25rem" : "1.75rem", borderRadius: "1rem" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.75rem" }}>
                   <KeyRound size={22} color="var(--color-primary)" />
                   <h2 style={{ fontSize: "1.25rem", fontWeight: 700 }}>Seguridad y Contraseña</h2>
