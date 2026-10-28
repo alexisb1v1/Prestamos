@@ -160,17 +160,18 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
             const originalContainerStyle =
               container.getAttribute("style") || "";
 
-            // Make container visible
-            // Make container visible but keep it off-screen
-            container.style.position = "fixed"; // Keep fixed to avoid scroll issues
-            container.style.top = "-9999px"; // Keep it off-screen vertical
-            container.style.left = "-9999px"; // Keep it off-screen horizontal
+            // Make container visible but keep it behind the page (invisible to user, fully measurable by html2canvas)
+            container.style.position = "fixed";
+            container.style.top = "0px";
+            container.style.left = "0px";
             container.style.zIndex = "-9999";
-            container.style.opacity = "1"; // Needed for capture
-            container.style.visibility = "visible"; // Needed for capture
+            container.style.opacity = "1";
+            container.style.visibility = "visible";
+            container.style.pointerEvents = "none";
+            container.style.transform = "none";
 
             // Wait for rendering visibility
-            await new Promise((resolve) => setTimeout(resolve, 200));
+            await new Promise((resolve) => setTimeout(resolve, 250));
 
             const canvas = await html2canvas(element, {
               scale: 2,
@@ -178,53 +179,70 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
               logging: false,
               useCORS: true,
               allowTaint: true,
+              scrollX: 0,
+              scrollY: 0,
+              windowWidth: element.scrollWidth || 450,
+              windowHeight: element.scrollHeight,
             } as any);
 
             // Restore original styles
             container.setAttribute("style", originalContainerStyle);
 
-            canvas.toBlob(async (blob) => {
-              if (!blob) {
-                logger.error("Failed to create blob");
-                return;
+            const blob = await new Promise<Blob | null>((resolve) =>
+              canvas.toBlob(resolve, "image/png")
+            );
+
+            if (!blob) {
+              logger.error("Failed to create blob");
+              return;
+            }
+
+            const { loan } = auditData;
+            const fileName = `Ficha_${loan.clientName.replace(/\s+/g, "_")}_${format(new Date(), "yyyyMMdd")}.png`;
+            const file = new File([blob], fileName, { type: "image/png" });
+
+            let sharedSuccessfully = false;
+
+            if (
+              typeof navigator !== "undefined" &&
+              navigator.share &&
+              navigator.canShare &&
+              navigator.canShare({ files: [file] })
+            ) {
+              try {
+                await navigator.share({
+                  files: [file],
+                  title: "Ficha de Préstamo",
+                  text: `Detalles del préstamo de ${loan.clientName}`,
+                });
+                sharedSuccessfully = true;
+              } catch (shareErr) {
+                logger.warn(
+                  "navigator.share failed or was cancelled, falling back to download",
+                  shareErr,
+                );
               }
+            }
 
-              const { loan } = auditData;
-              const fileName = `Ficha_${loan.clientName.replace(/\s+/g, "_")}_${format(new Date(), "yyyyMMdd")}.png`;
-              const file = new File([blob], fileName, { type: "image/png" });
+            if (!sharedSuccessfully) {
+              const link = document.createElement("a");
+              link.href = canvas.toDataURL("image/png");
+              link.download = fileName;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }
 
-              if (
-                navigator.share &&
-                navigator.canShare &&
-                navigator.canShare({ files: [file] })
-              ) {
-                try {
-                  await navigator.share({
-                    files: [file],
-                    title: "Ficha de Préstamo",
-                    text: `Detalles del préstamo de ${loan.clientName}`,
-                  });
-                } catch {
-                  // Cancelled or failed
-                }
-              } else {
-                const link = document.createElement("a");
-                link.href = canvas.toDataURL("image/png");
-                link.download = fileName;
-                link.click();
-              }
+            // Cleanup
+            const tempCanvases = document.querySelectorAll(
+              'canvas[style*="position"][style*="absolute"]',
+            );
+            tempCanvases.forEach((c) => c.remove());
 
-              // Cleanup
-              const tempCanvases = document.querySelectorAll(
-                'canvas[style*="position"][style*="absolute"]',
-              );
-              tempCanvases.forEach((c) => c.remove());
-
-              // Reset
-              setReadyToCapture(false);
-              setGenerating(false);
-              setAuditData(null);
-            }, "image/png");
+            // Reset
+            setReadyToCapture(false);
+            setGenerating(false);
+            setAuditData(null);
           } catch (e) {
             logger.error("Error capturing:", e);
             setReadyToCapture(false);
@@ -328,12 +346,11 @@ const LoanShareGenerator = forwardRef<LoanShareGeneratorRef, object>(
         id="loan-share-container"
         style={{
           position: "fixed",
-          top: "-9999px",
-          left: "-9999px",
+          top: 0,
+          left: 0,
           zIndex: -9999,
           opacity: 0,
           pointerEvents: "none",
-          visibility: "hidden",
         }}
       >
         <div

@@ -55,46 +55,93 @@ export default function ShareButton() {
         },
       );
 
-      // Wait for render (short timeout to ensure DOM is updated with new stats)
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Wait for render
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
       if (!captureRef.current) return;
 
+      const element = captureRef.current;
+      const prevTransform = element.style.transform;
+      const prevZIndex = element.style.zIndex;
+      const prevPosition = element.style.position;
+      const prevTop = element.style.top;
+      const prevLeft = element.style.left;
+      const prevOpacity = element.style.opacity;
+
+      // Colocarlo en el viewport detrás de la página para que html2canvas lo mida exactamente
+      element.style.position = "fixed";
+      element.style.top = "0px";
+      element.style.left = "0px";
+      element.style.zIndex = "-9999";
+      element.style.transform = "none";
+      element.style.opacity = "1";
+      element.style.pointerEvents = "none";
+
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
       // 3. Generate Image
-      const canvas = await html2canvas(captureRef.current, {
-        scale: 2, // Higher resolution
+      const canvas = await html2canvas(element, {
+        scale: 2,
         backgroundColor: "#f8fafc",
         logging: false,
+        useCORS: true,
+        allowTaint: true,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: element.scrollWidth || 400,
+        windowHeight: element.scrollHeight,
       } as any);
+
+      // Restaurar estilos
+      element.style.transform = prevTransform;
+      element.style.zIndex = prevZIndex;
+      element.style.position = prevPosition;
+      element.style.top = prevTop;
+      element.style.left = prevLeft;
+      element.style.opacity = prevOpacity;
 
       const filename = `cierre-${format(new Date(), "yyyy-MM-dd")}-${currentUser.username}.png`;
 
-      canvas.toBlob(async (blob) => {
-        if (!blob) {
-          throw new Error("Error al generar la imagen");
-        }
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/png"),
+      );
 
-        const file = new File([blob], filename, { type: "image/png" });
+      if (!blob) {
+        throw new Error("Error al generar la imagen");
+      }
 
-        // 4. Share
-        if (
-          navigator.share &&
-          navigator.canShare &&
-          navigator.canShare({ files: [file] })
-        ) {
+      const file = new File([blob], filename, { type: "image/png" });
+
+      let shared = false;
+      if (
+        typeof navigator !== "undefined" &&
+        navigator.share &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
+        try {
           await navigator.share({
             title: "Cierre del Día",
             text: `Resumen de cobranza - ${format(new Date(), "dd/MM/yyyy")}`,
             files: [file],
           });
-        } else {
-          // Fallback for desktop: Download
-          const link = document.createElement("a");
-          link.href = canvas.toDataURL("image/png");
-          link.download = filename;
-          link.click();
+          shared = true;
+        } catch (shareErr) {
+          logger.warn(
+            "navigator.share fue cancelado o no soportado, usando descarga directa",
+            shareErr,
+          );
         }
-      }, "image/png");
+      }
+
+      if (!shared) {
+        const link = document.createElement("a");
+        link.href = canvas.toDataURL("image/png");
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
     } catch (error) {
       logger.error("Error sharing stats:", error);
       alert("Error al generar o compartir el resumen.");
