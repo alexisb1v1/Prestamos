@@ -91,17 +91,30 @@ function LoanDetailsModal({
     setIsSyncingReniec(true);
     setSyncStatus("idle");
     try {
-      const response = await apiRequest<{ success: boolean; data?: { fullName: string; isSynced: boolean }; message?: string }>(
+      const response = await apiRequest<{
+        success: boolean;
+        data?: { fullName?: string; firstName?: string; lastName?: string; isSynced?: boolean };
+        person?: { fullName?: string; firstName?: string; lastName?: string; isSynced?: boolean };
+        message?: string;
+      }>(
         `/person/${loan.documentNumber}/sync-reniec`,
         { method: "POST" }
       );
-      if (response && response.data?.fullName) {
-        setCurrentClientName(response.data.fullName);
+
+      const personData = response?.data || response?.person;
+      const resolvedFullName =
+        personData?.fullName ||
+        (personData?.firstName && personData?.lastName
+          ? `${personData.firstName} ${personData.lastName}`.trim()
+          : "");
+
+      if (response && resolvedFullName) {
+        setCurrentClientName(resolvedFullName);
         if (details) {
           setDetails({ ...details, isPersonSynced: true });
         }
         if (loan) {
-          loan.clientName = response.data.fullName;
+          loan.clientName = resolvedFullName;
           loan.isPersonSynced = true;
         }
         setSyncStatus("success");
