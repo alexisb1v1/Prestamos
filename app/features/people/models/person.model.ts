@@ -36,5 +36,6 @@ export interface Person {
   riskScoringEnabled?: boolean;
   creditScore?: number;
   creditScoreDetail?: CreditScoreDetail;
+  isSynced?: boolean;
 }
 

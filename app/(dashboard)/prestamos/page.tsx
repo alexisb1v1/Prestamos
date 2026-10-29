@@ -21,6 +21,7 @@ import LoadingSpinner from "../../components/LoadingSpinner";
 import LoanMobileCard from "../../components/LoanMobileCard";
 import DashboardFilterModal from "../../components/DashboardFilterModal";
 import CollectorDropdown from "../../components/CollectorDropdown";
+import MigrationDrawer from "../../components/MigrationDrawer";
 
 export default function PrestamosPage() {
   const [loans, setLoans] = useState<Loan[]>([]);
@@ -61,6 +62,8 @@ export default function PrestamosPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedLoanForDelete, setSelectedLoanForDelete] =
     useState<Loan | null>(null);
+
+  const [isMigrationDrawerOpen, setIsMigrationDrawerOpen] = useState(false);
 
   const shareRef = useRef<LoanShareGeneratorRef>(null);
 
@@ -273,6 +276,35 @@ export default function PrestamosPage() {
                 </button>
               </div>
               
+              {/* Migrar Cartera CTA (Solo ADMIN y OWNER) */}
+              {(currentUser?.profile === "ADMIN" || currentUser?.profile === "OWNER") && (
+                <button
+                  onClick={() => setIsMigrationDrawerOpen(true)}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    backgroundColor: "#f8fafc",
+                    color: "#334155",
+                    fontWeight: 700,
+                    fontSize: "0.75rem",
+                    padding: "0.625rem 0.875rem",
+                    borderRadius: "0.75rem",
+                    border: "1px solid #cbd5e1",
+                    cursor: "pointer",
+                    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                  }}
+                  title="Importar cartera activa o histórica desde Excel"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  <span>Migrar Excel</span>
+                </button>
+              )}
+
               {/* Create Button */}
               <button 
                 onClick={() => setIsCreateModalOpen(true)}
@@ -910,6 +942,9 @@ export default function PrestamosPage() {
         onPaymentDeleted={() => {
           if (currentUser) loadLoans(currentUser);
         }}
+        onClientUpdated={() => {
+          if (currentUser) loadLoans(currentUser);
+        }}
       />
       <ReassignLoanModal
         isOpen={isReassignModalOpen}
@@ -932,6 +967,14 @@ export default function PrestamosPage() {
           if (currentUser) loadLoans(currentUser);
         }}
         loan={selectedLoanForDelete}
+      />
+      <MigrationDrawer
+        isOpen={isMigrationDrawerOpen}
+        onClose={() => setIsMigrationDrawerOpen(false)}
+        companyId={selectedCompanyId || currentUser?.idCompany}
+        onSuccess={() => {
+          if (currentUser) loadLoans(currentUser);
+        }}
       />
       <LoanShareGenerator ref={shareRef} />
     </div>

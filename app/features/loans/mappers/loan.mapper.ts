@@ -51,6 +51,7 @@ export class LoanMapper {
       extensionDays: dto.extensionDays,
       delayDays: dto.delayDays,
       creditRating: dto.creditRating,
+      isPersonSynced: dto.isPersonSynced,
     };
   }
 
@@ -103,6 +104,7 @@ export class LoanMapper {
       extensionDays: dto.extensionDays,
       delayDays: dto.delayDays,
       creditRating: dto.creditRating,
+      isPersonSynced: dto.isPersonSynced,
       installments: dto.installments
         ? dto.installments.map((i) => this.toInstallmentDetailDomain(i))
         : [],

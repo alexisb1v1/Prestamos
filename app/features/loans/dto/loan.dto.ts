@@ -26,6 +26,7 @@ export interface LoanDto {
   extensionDays?: number;
   delayDays?: number;
   creditRating?: string | null;
+  isPersonSynced?: boolean;
 }
 
 export interface CreateLoanRequestDto {
@@ -62,6 +63,7 @@ export interface LoanDetailsDto {
   extensionDays?: number;
   delayDays?: number;
   creditRating?: string | null;
+  isPersonSynced?: boolean;
   installments: InstallmentDetailDto[];
 }
 

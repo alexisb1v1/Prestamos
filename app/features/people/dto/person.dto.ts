@@ -10,6 +10,7 @@ export interface PersonDto {
   riskScoringEnabled?: boolean;
   creditScore?: number;
   creditScoreDetail?: any;
+  isSynced?: boolean;
 }
 
 export interface CreatePersonRequestDto {

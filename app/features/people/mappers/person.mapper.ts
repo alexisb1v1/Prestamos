@@ -15,6 +15,7 @@ export class PersonMapper {
       riskScoringEnabled: dto.riskScoringEnabled,
       creditScore: dto.creditScore,
       creditScoreDetail: dto.creditScoreDetail,
+      isSynced: dto.isSynced,
     };
   }
 }

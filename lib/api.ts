@@ -1,4 +1,4 @@
-import { ResultAsync } from 'neverthrow';
+﻿import { ResultAsync } from 'neverthrow';
 import Cookies from 'js-cookie';
 import { DomainError } from './domain-error';
 import { logger } from './logging-service';
@@ -28,6 +28,10 @@ export async function apiRequest<T = unknown>(
         'Content-Type': 'application/json',
         ...(fetchOptions.headers as Record<string, string>),
     };
+
+    if (fetchOptions.body instanceof FormData || headers['Content-Type'] === '') {
+        delete headers['Content-Type'];
+    }
 
     // Automatically add Authorization header if token exists
     if (token) {

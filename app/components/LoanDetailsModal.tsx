@@ -27,6 +27,7 @@ import ConfirmModal from "./ConfirmModal";
 import LoadingSpinner from "./LoadingSpinner";
 import { logger } from "@/lib/logging-service";
 import { trackEvent } from "@/lib/analytics";
+import { apiRequest } from "@/lib/api";
 import {
   ArrowLeft,
   Share2,
@@ -40,6 +41,7 @@ import {
   Link2,
   Check,
   AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 
 interface LoanDetailsModalProps {
@@ -48,6 +50,7 @@ interface LoanDetailsModalProps {
   loan: Loan | null;
   shareRef?: React.RefObject<LoanShareGeneratorRef | null>;
   onPaymentDeleted?: () => void;
+  onClientUpdated?: () => void;
 }
 
 function LoanDetailsModal({
@@ -56,6 +59,7 @@ function LoanDetailsModal({
   loan,
   shareRef,
   onPaymentDeleted,
+  onClientUpdated,
 }: LoanDetailsModalProps) {
   const [details, setDetails] = useState<LoanDetails | null>(null);
   const [loading, setLoading] = useState(false);
@@ -69,6 +73,51 @@ function LoanDetailsModal({
   const [isMobile, setIsMobile] = useState(false);
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+
+  // Sincronización con RENIEC
+  const [isSyncingReniec, setIsSyncingReniec] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<"idle" | "success" | "error">("idle");
+  const [currentClientName, setCurrentClientName] = useState("");
+
+  useEffect(() => {
+    if (loan) {
+      setCurrentClientName(loan.clientName);
+      setSyncStatus("idle");
+    }
+  }, [loan]);
+
+  const handleSyncReniec = async () => {
+    if (!loan?.documentNumber || isSyncingReniec) return;
+    setIsSyncingReniec(true);
+    setSyncStatus("idle");
+    try {
+      const response = await apiRequest<{ success: boolean; data?: { fullName: string; isSynced: boolean }; message?: string }>(
+        `/person/${loan.documentNumber}/sync-reniec`,
+        { method: "POST" }
+      );
+      if (response && response.data?.fullName) {
+        setCurrentClientName(response.data.fullName);
+        if (details) {
+          setDetails({ ...details, isPersonSynced: true });
+        }
+        if (loan) {
+          loan.clientName = response.data.fullName;
+          loan.isPersonSynced = true;
+        }
+        setSyncStatus("success");
+        if (onClientUpdated) {
+          onClientUpdated();
+        }
+      } else {
+        setSyncStatus("error");
+      }
+    } catch (err: any) {
+      logger.error("Error sincronizando RENIEC:", err);
+      setSyncStatus("error");
+    } finally {
+      setIsSyncingReniec(false);
+    }
+  };
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -528,16 +577,77 @@ function LoanDetailsModal({
             >
               <div style={{ position: "relative", zIndex: 10, display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1rem" }}>
                 <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem", flexWrap: "wrap" }}>
                     <span style={{ fontSize: "10px", letterSpacing: "0.05em", textTransform: "uppercase", fontWeight: 600, color: "#c7d2fe" }}>
                       Cliente
                     </span>
                     <span style={{ padding: "2px 8px", borderRadius: "9999px", backgroundColor: "rgba(255,255,255,0.2)", fontSize: "10px", fontWeight: "bold", backdropFilter: "blur(4px)" }}>
                       ID: #{loan.id}
                     </span>
+                    {/* Badge / Botón de Sincronización RENIEC si isPersonSynced === false */}
+                    {(details?.isPersonSynced === false || (details?.isPersonSynced === undefined && loan.isPersonSynced === false)) && (
+                      <button
+                        type="button"
+                        onClick={handleSyncReniec}
+                        disabled={isSyncingReniec}
+                        title="DNI registrado con nombre provisional. Clic para sincronizar con RENIEC"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          padding: "2px 8px",
+                          borderRadius: "9999px",
+                          backgroundColor: "#f59e0b",
+                          color: "#78350f",
+                          fontSize: "10px",
+                          fontWeight: 700,
+                          border: "none",
+                          cursor: isSyncingReniec ? "wait" : "pointer",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        <RefreshCw size={11} className={isSyncingReniec ? "animate-spin" : ""} />
+                        <span>{isSyncingReniec ? "Sincronizando..." : "Sincronizar RENIEC"}</span>
+                      </button>
+                    )}
+                    {syncStatus === "success" && (
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          padding: "2px 8px",
+                          borderRadius: "9999px",
+                          backgroundColor: "#10b981",
+                          color: "white",
+                          fontSize: "10px",
+                          fontWeight: 700,
+                        }}
+                      >
+                        <Check size={11} /> Sincronizado
+                      </span>
+                    )}
+                    {syncStatus === "error" && (
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          padding: "2px 8px",
+                          borderRadius: "9999px",
+                          backgroundColor: "#ef4444",
+                          color: "white",
+                          fontSize: "10px",
+                          fontWeight: 700,
+                        }}
+                      >
+                        <AlertTriangle size={11} /> Sin consultas
+                      </span>
+                    )}
                   </div>
                   <h2 style={{ fontSize: "1.25rem", fontWeight: 800, color: "white", margin: 0, letterSpacing: "-0.025em" }}>
-                    {loan.clientName}
+                    {currentClientName || loan.clientName}
                   </h2>
                 </div>
                 <div style={{ textAlign: "right" }}>
