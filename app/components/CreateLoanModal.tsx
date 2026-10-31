@@ -7,7 +7,7 @@ import {
   recalculateScoreUseCase,
   Person,
 } from "@/app/features/people";
-import { createLoanUseCase } from "@/app/features/loans";
+import { createLoanUseCase, generateShareLinkUseCase } from "@/app/features/loans";
 import { CompanyRepositoryImpl } from "@/app/features/companies/repositories/company.repository.impl";
 import { authService } from "@/lib/auth";
 import { trackEvent } from "@/lib/analytics";
@@ -30,6 +30,8 @@ import {
   ChevronDown,
   ChevronUp,
   ArrowRight,
+  Link2,
+  Check,
 } from "lucide-react";
 
 import styles from "./CreateLoanModal.module.css";
@@ -100,9 +102,14 @@ export default function CreateLoanModal({
 
   const interestRate = loanConfig.interestRate;
 
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
   const resetState = useCallback(() => {
     setLoading(false);
     setError("");
+    setIsGeneratingLink(false);
+    setCopiedLink(false);
     setSearchPerformed(false);
     setIsRegistering(false);
     setCreatedLoan(null);
@@ -383,6 +390,53 @@ export default function CreateLoanModal({
       }
       return next;
     });
+  };
+
+  const handleShareLink = async () => {
+    if (!createdLoan?.id || isGeneratingLink) return;
+
+    trackEvent("click_compartir_link_nuevo_prestamo", {
+      prestamoId: createdLoan.id,
+    });
+    setIsGeneratingLink(true);
+    const result = await generateShareLinkUseCase.execute(createdLoan.id.toString());
+
+    result.match(
+      async ({ shareUrl }) => {
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(shareUrl);
+          } else {
+            const textArea = document.createElement("textarea");
+            textArea.value = shareUrl;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand("copy");
+            textArea.remove();
+          }
+          setCopiedLink(true);
+          setTimeout(() => setCopiedLink(false), 2500);
+
+          if (navigator.share) {
+            try {
+              await navigator.share({
+                title: `Estado de Préstamo - ${createdLoan.clientName}`,
+                text: `Hola ${createdLoan.clientName}, aquí puedes consultar tu estado de cuenta y cronograma:`,
+                url: shareUrl,
+              });
+            } catch (e) {}
+          }
+        } catch (err) {
+          console.error("Error al copiar enlace:", err);
+        } finally {
+          setIsGeneratingLink(false);
+        }
+      },
+      (err) => {
+        console.error("Error al generar enlace:", err);
+        setIsGeneratingLink(false);
+      }
+    );
   };
 
   const handleShare = async () => {
@@ -982,11 +1036,18 @@ export default function CreateLoanModal({
                   <button
                     type="button"
                     className={styles.shareBtn}
-                    onClick={handleShare}
-                    disabled={loading}
+                    onClick={handleShareLink}
+                    disabled={isGeneratingLink}
+                    style={{
+                      backgroundColor: copiedLink ? "#10b981" : "var(--color-primary, #4147eb)",
+                    }}
                   >
-                    <Share2 size={18} />
-                    {loading ? "Generando..." : "Compartir Tarjeta"}
+                    {copiedLink ? <Check size={18} /> : <Link2 size={18} />}
+                    {isGeneratingLink
+                      ? "Generando enlace..."
+                      : copiedLink
+                      ? "¡Enlace Copiado!"
+                      : "Compartir Enlace de Pago"}
                   </button>
                   <button
                     type="button"

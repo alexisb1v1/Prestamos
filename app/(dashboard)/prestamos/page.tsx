@@ -628,7 +628,7 @@ export default function PrestamosPage() {
       )}
 
       {isMobile ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "1rem", paddingBottom: "6rem" }}>
           {loading ? (
             <LoadingSpinner message="Cargando préstamos..." />
           ) : loans.length === 0 ? (
@@ -881,7 +881,7 @@ export default function PrestamosPage() {
 
       {/* Pagination Controls */}
       {loans.length > itemsPerPage && (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem", borderTop: "1px solid #f1f5f9", marginTop: "1rem" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem", borderTop: "1px solid #f1f5f9", marginTop: "1rem", marginBottom: isMobile ? "6rem" : "0" }}>
           <div style={{ fontSize: "0.875rem", color: "#64748b" }}>
             Mostrando {indexOfFirstItem + 1} a {Math.min(indexOfLastItem, loans.length)} de {loans.length} préstamos
           </div>
