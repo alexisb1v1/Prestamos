@@ -895,6 +895,49 @@
   background: #3730a3;
 }
 
+.whatsappBtn {
+  width: 100%;
+  background: #25d366;
+  color: white;
+  border: none;
+  padding: 1rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(37, 211, 102, 0.25);
+}
+
+.whatsappBtn:hover:not(:disabled) {
+  background: #20ba59;
+}
+
+.copyLinkSecondaryBtn {
+  width: 100%;
+  background: #f8fafc;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  padding: 0.75rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+.copyLinkSecondaryBtn:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
 .doneBtn {
   width: 100%;
   background: transparent;
