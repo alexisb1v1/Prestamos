@@ -116,10 +116,12 @@ export default function LoginPage() {
     }
 
     try {
-      const response = await authService.login(username, password, rawTenant);
+      const cleanUsername = username.trim().toLowerCase();
+      const cleanPassword = password.trim();
+      const response = await authService.login(cleanUsername, cleanPassword, rawTenant);
 
       if (rememberUser) {
-        localStorage.setItem("remembered_username", username);
+        localStorage.setItem("remembered_username", cleanUsername);
       } else {
         localStorage.removeItem("remembered_username");
       }
