@@ -348,6 +348,12 @@
   color: #1b6d24;
 }
 
+.bentoValuePrimary {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--color-primary, #4147eb);
+}
+
 .bentoSubtext {
   font-size: 12px;
   color: #454652;
@@ -618,16 +624,28 @@
 
 .barValueTooltip {
   font-size: 11px;
-  font-weight: 600;
-  color: #454652;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #f8fafc;
+  background-color: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px 12px;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
   opacity: 0;
-  transition: opacity 0.2s;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
   position: absolute;
-  top: -20px;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  z-index: 50;
+  white-space: nowrap;
 }
 
 .barColumn:hover .barValueTooltip {
   opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 .barTrack {

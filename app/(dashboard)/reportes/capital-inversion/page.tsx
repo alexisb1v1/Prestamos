@@ -46,6 +46,7 @@ interface CapitalReportResponse {
     historicalTotalLent: number;
     historicalCapitalRecovered: number;
     historicalInterestEarned: number;
+    historicalProjectedInterest?: number;
     historicalExpenses: number;
     netProfit: number;
     roi: number;
@@ -183,54 +184,123 @@ export default function CapitalInversionPage() {
           {/* 2. Bento Ribbon de Métricas Patrimoniales Clave */}
           <div className={styles.desktopDashboardLayout}>
             <div className={styles.bentoRibbon}>
-              {/* Tarjeta 1: Saldo Total en Calle (Con desglose de Capital Propio e Interés) */}
+              {/* Tarjeta 1: Lo Invertido (Capital Colocado Histórico) */}
               <div className={`${styles.bentoCard} ${styles.bentoCardGradient}`}>
                 <div className={styles.bentoCardHeader}>
-                  <span className={styles.bentoCardTitleWhite}>Saldo Total en Calle</span>
+                  <span className={styles.bentoCardTitleWhite}>Lo Invertido (Capital Colocado)</span>
                   <span className={`${styles.bentoIcon} ${styles.iconWhite}`}>
-                    <Landmark size={18} />
+                    <Layers size={18} />
                   </span>
                 </div>
                 <div className={styles.bentoCardBody}>
                   <div className={styles.bentoValueWhite}>
-                    {formatCurrency(summary.activeTotalRemaining ?? summary.activeCapitalInStreet)}
+                    {formatCurrency(summary.historicalTotalLent)}
                   </div>
                   <span className={styles.bentoSubtextWhite}>
-                    Saldo total por cobrar ({summary.activeLoansCount} préstamos activos)
+                    Capital desembolsado ({summary.activeLoansCount} préstamos activos)
                   </span>
                 </div>
                 <div className={styles.bentoCardFooterGlass} style={{ flexDirection: 'column', gap: 6, alignItems: 'stretch' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11 }}>
-                    <span style={{ opacity: 0.85 }}>Capital propio pendiente:</span>
-                    <span style={{ fontWeight: 700 }}>{formatCurrency(summary.activeCapitalInStreet)}</span>
+                    <span style={{ opacity: 0.85 }}>Saldo total en calle:</span>
+                    <span style={{ fontWeight: 700 }}>{formatCurrency(summary.activeTotalRemaining ?? summary.activeCapitalInStreet)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11 }}>
-                    <span style={{ opacity: 0.85 }}>Interés futuro por cobrar:</span>
-                    <span style={{ fontWeight: 700 }}>+{formatCurrency(summary.activeInterestRemaining ?? 0)}</span>
+                    <span style={{ opacity: 0.85 }}>Capital propio pendiente:</span>
+                    <span style={{ fontWeight: 700 }}>{formatCurrency(summary.activeCapitalInStreet)}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Tarjeta 2: Ganancia Limpia Acumulada */}
+              {/* Tarjeta 2: Ganancia Proyectada (Interés Total Pactado) */}
               <div className={styles.bentoCard}>
                 <div className={styles.bentoCardHeader}>
-                  <span className={styles.bentoCardTitle}>Ganancia Limpia Acumulada</span>
+                  <span className={styles.bentoCardTitle}>Ganancia Proyectada</span>
+                  <span className={`${styles.bentoIcon} ${styles.iconPrimaryDim}`}>
+                    <TrendingUp size={18} />
+                  </span>
+                </div>
+                <div className={styles.bentoCardBody}>
+                  <div className={styles.bentoValuePrimary}>
+                    {formatCurrency(summary.historicalProjectedInterest ?? 0)}
+                  </div>
+                  <span className={styles.bentoSubtext}>
+                    Interés total pactado de la cartera colocada
+                  </span>
+                </div>
+                <div className={styles.bentoCardFooterSingle}>
+                  <span>Rentabilidad pactada:</span>
+                  <span className={styles.footerValueSuccess}>
+                    {summary.historicalTotalLent > 0
+                      ? (((summary.historicalProjectedInterest ?? 0) / summary.historicalTotalLent) * 100).toFixed(1)
+                      : 0}% sobre capital
+                  </span>
+                </div>
+              </div>
+
+              {/* Tarjeta 3: Capital que ya Retornó (Amortizado) */}
+              <div className={styles.bentoCard}>
+                <div className={styles.bentoCardHeader}>
+                  <span className={styles.bentoCardTitle}>Capital Retornado</span>
+                  <span className={`${styles.bentoIcon} ${styles.iconSuccess}`}>
+                    <CheckCircle2 size={18} />
+                  </span>
+                </div>
+                <div className={styles.bentoCardBody}>
+                  <div className={styles.bentoValue}>
+                    {formatCurrency(summary.historicalCapitalRecovered)}
+                  </div>
+                  <span className={styles.bentoSubtext}>
+                    Capital recuperado que ya volvió a la caja
+                  </span>
+                </div>
+                <div className={styles.bentoCardFooterProgress}>
+                  <div className={styles.progressBarBg}>
+                    <div
+                      className={styles.progressBarFill}
+                      style={{
+                        width: `${Math.min(
+                          summary.historicalTotalLent > 0
+                            ? (summary.historicalCapitalRecovered / summary.historicalTotalLent) * 100
+                            : 0,
+                          100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                  <div className={styles.progressLabels}>
+                    <span>En calle: {formatCurrency(summary.activeCapitalInStreet)}</span>
+                    <span className={styles.progressHighlight}>
+                      {summary.historicalTotalLent > 0
+                        ? ((summary.historicalCapitalRecovered / summary.historicalTotalLent) * 100).toFixed(1)
+                        : 0}% recuperado
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tarjeta 4: Ganancia Recaudada (Interés Cobrado) */}
+              <div className={styles.bentoCard}>
+                <div className={styles.bentoCardHeader}>
+                  <span className={styles.bentoCardTitle}>Ganancia Recaudada</span>
                   <span className={`${styles.bentoIcon} ${summary.netProfit >= 0 ? styles.iconSuccess : styles.iconDanger}`}>
                     <PiggyBank size={18} />
                   </span>
                 </div>
                 <div className={styles.bentoCardBody}>
-                  <div className={summary.netProfit >= 0 ? styles.bentoValueSuccess : styles.bentoValueDanger}>
-                    {formatCurrency(summary.netProfit)}
+                  <div className={summary.historicalInterestEarned >= 0 ? styles.bentoValueSuccess : styles.bentoValueDanger}>
+                    {formatCurrency(summary.historicalInterestEarned)}
                   </div>
                   <span className={styles.bentoSubtext}>
-                    Intereses cobrados menos gastos de ruta
+                    Intereses ya cobrados en cuotas pagadas
                   </span>
                 </div>
                 <div className={styles.bentoCardFooter}>
                   <div className={styles.footerRow}>
-                    <span>Intereses cobrados</span>
-                    <span className={styles.footerRowValuePrimary}>{formatCurrency(summary.historicalInterestEarned)}</span>
+                    <span>Ganancia limpia (neta)</span>
+                    <span className={summary.netProfit >= 0 ? styles.footerRowValuePrimary : styles.footerRowValueDanger}>
+                      {formatCurrency(summary.netProfit)}
+                    </span>
                   </div>
                   <div className={styles.footerRow}>
                     <span>Gastos de ruta</span>
@@ -238,89 +308,33 @@ export default function CapitalInversionPage() {
                   </div>
                 </div>
               </div>
-
-              {/* Tarjeta 3: Margen de Ganancia Neta sobre Intereses */}
-              <div className={styles.bentoCard}>
-                <div className={styles.bentoCardHeader}>
-                  <span className={styles.bentoCardTitle}>Margen de Ganancia Neta</span>
-                  <span className={`${styles.bentoIcon} ${styles.iconPrimaryDim}`}>
-                    <TrendingUp size={18} />
-                  </span>
-                </div>
-                <div className={styles.bentoCardBody}>
-                  <div className={styles.bentoValuePrimary}>
-                    {summary.profitMarginOnInterest ?? 19.5}%
-                  </div>
-                  <span className={styles.bentoSubtext}>
-                    De cada S/ 100 de interés, te quedan S/ {summary.profitMarginOnInterest ?? 19.5} limpios
-                  </span>
-                </div>
-                <div className={styles.bentoCardFooterProgress}>
-                  <div className={styles.progressBarBg}>
-                    <div
-                      className={styles.progressBarFill}
-                      style={{ width: `${Math.min(Math.max(summary.profitMarginOnInterest ?? 19.5, 0), 100)}%` }}
-                    />
-                  </div>
-                  <div className={styles.progressLabels}>
-                    <span>Retenido tras gastos</span>
-                    <span className={styles.progressHighlight}>
-                      +{(summary.profitMarginOnInterest ?? 19.5)}% neto
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tarjeta 4: Total Prestado (La Rueda) */}
-              <div className={styles.bentoCard}>
-                <div className={styles.bentoCardHeader}>
-                  <span className={styles.bentoCardTitle}>Total Prestado (La Rueda)</span>
-                  <span className={`${styles.bentoIcon} ${styles.iconSuccess}`}>
-                    <PieChart size={18} />
-                  </span>
-                </div>
-                <div className={styles.bentoCardBody}>
-                  <div className={styles.bentoValue}>{formatCurrency(summary.historicalTotalLent)}</div>
-                  <span className={styles.bentoSubtext}>
-                    Suma de todos los préstamos (rotación continua)
-                  </span>
-                </div>
-                <div className={styles.bentoCardFooterSingle}>
-                  <span>Capital devuelto: {formatCurrency(summary.historicalCapitalRecovered)}</span>
-                  <span className={styles.footerValueSuccess}>
-                    {summary.historicalTotalLent > 0
-                      ? ((summary.historicalCapitalRecovered / summary.historicalTotalLent) * 100).toFixed(1)
-                      : 0}% cobrado
-                  </span>
-                </div>
-              </div>
             </div>
           </div>
 
           {/* Versión Mobile de Resumen Rápido */}
           <div className={styles.mobileDashboardLayout}>
-            {/* Card Gradiente Saldo Total en Calle */}
+            {/* Card Principal: Lo Invertido */}
             <div className={styles.mobileCardGradient}>
               <div className={styles.mobileCardGradientHeader}>
                 <div className={styles.mobileCardGradientTitle}>
-                  <Landmark size={14} /> SALDO TOTAL EN CALLE
+                  <Layers size={14} /> LO INVERTIDO (TOTAL COLOCADO)
                 </div>
               </div>
               <div className={styles.mobileCardGradientValue}>
                 <span className={styles.mobileCurrencySymbol}>S/</span>{' '}
-                {formatNumber(summary.activeTotalRemaining ?? summary.activeCapitalInStreet)}
+                {formatNumber(summary.historicalTotalLent)}
               </div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', margin: '4px 0 8px' }}>
                 {summary.activeLoansCount} Préstamos activos en curso
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4, background: 'rgba(255,255,255,0.15)', borderRadius: 8, padding: '8px 10px', fontSize: 11 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Capital propio:</span>
-                  <span style={{ fontWeight: 700 }}>{formatCurrency(summary.activeCapitalInStreet)}</span>
+                  <span>Saldo total en calle:</span>
+                  <span style={{ fontWeight: 700 }}>{formatCurrency(summary.activeTotalRemaining ?? summary.activeCapitalInStreet)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Interés por cobrar:</span>
-                  <span style={{ fontWeight: 700 }}>+{formatCurrency(summary.activeInterestRemaining ?? 0)}</span>
+                  <span>Capital propio pendiente:</span>
+                  <span style={{ fontWeight: 700 }}>{formatCurrency(summary.activeCapitalInStreet)}</span>
                 </div>
               </div>
             </div>
@@ -329,53 +343,57 @@ export default function CapitalInversionPage() {
             <div className={styles.mobileMetricsGrid}>
               <div className={styles.mobileCardWhite}>
                 <div className={styles.mobileCardWhiteHeader}>
-                  <span className={styles.mobileCardWhiteTitle}>Ganancia Limpia</span>
-                  <PiggyBank size={16} color="var(--color-primary, #4147eb)" />
-                </div>
-                <div className={styles.mobileMetricContent}>
-                  <span className={summary.netProfit >= 0 ? styles.mobileCardWhiteValueSuccess : styles.mobileCardWhiteValueDanger}>
-                    S/ {formatNumber(summary.netProfit)}
-                  </span>
-                  <span className={styles.bentoSubtext}>En el bolsillo</span>
-                </div>
-              </div>
-
-              <div className={styles.mobileCardWhite}>
-                <div className={styles.mobileCardWhiteHeader}>
-                  <span className={styles.mobileCardWhiteTitle}>Margen Neto</span>
-                  <TrendingUp size={16} color="#10b981" />
+                  <span className={styles.mobileCardWhiteTitle}>Ganancia Proy.</span>
+                  <TrendingUp size={16} color="var(--color-primary, #4147eb)" />
                 </div>
                 <div className={styles.mobileMetricContent}>
                   <span className={styles.mobileCardWhiteValue}>
-                    {summary.profitMarginOnInterest ?? 19.5}%
+                    S/ {formatNumber(summary.historicalProjectedInterest ?? 0)}
                   </span>
-                  <span className={styles.bentoSubtext}>Sobre intereses</span>
+                  <span className={styles.bentoSubtext}>Interés pactado</span>
                 </div>
               </div>
 
               <div className={styles.mobileCardWhite}>
                 <div className={styles.mobileCardWhiteHeader}>
-                  <span className={styles.mobileCardWhiteTitle}>Cap. Cobrado</span>
-                  <DollarSign size={16} color="#059669" />
+                  <span className={styles.mobileCardWhiteTitle}>Cap. Retornado</span>
+                  <CheckCircle2 size={16} color="#10b981" />
                 </div>
                 <div className={styles.mobileMetricContent}>
                   <span className={styles.mobileCardWhiteValue}>
                     S/ {formatNumber(summary.historicalCapitalRecovered)}
                   </span>
-                  <span className={styles.bentoSubtext}>Retornado</span>
+                  <span className={styles.bentoSubtext}>
+                    {summary.historicalTotalLent > 0
+                      ? ((summary.historicalCapitalRecovered / summary.historicalTotalLent) * 100).toFixed(0)
+                      : 0}% cobrado
+                  </span>
                 </div>
               </div>
 
               <div className={styles.mobileCardWhite}>
                 <div className={styles.mobileCardWhiteHeader}>
-                  <span className={styles.mobileCardWhiteTitle}>Total Prestado</span>
-                  <Layers size={16} color="#6366f1" />
+                  <span className={styles.mobileCardWhiteTitle}>Ganancia Recaudada</span>
+                  <PiggyBank size={16} color="#059669" />
                 </div>
                 <div className={styles.mobileMetricContent}>
-                  <span className={styles.mobileCardWhiteValue}>
-                    S/ {formatNumber(summary.historicalTotalLent)}
+                  <span className={styles.mobileCardWhiteValueSuccess}>
+                    S/ {formatNumber(summary.historicalInterestEarned)}
                   </span>
-                  <span className={styles.bentoSubtext}>La rueda total</span>
+                  <span className={styles.bentoSubtext}>Interés cobrado</span>
+                </div>
+              </div>
+
+              <div className={styles.mobileCardWhite}>
+                <div className={styles.mobileCardWhiteHeader}>
+                  <span className={styles.mobileCardWhiteTitle}>Ganancia Limpia</span>
+                  <DollarSign size={16} color="#6366f1" />
+                </div>
+                <div className={styles.mobileMetricContent}>
+                  <span className={summary.netProfit >= 0 ? styles.mobileCardWhiteValueSuccess : styles.mobileCardWhiteValueDanger}>
+                    S/ {formatNumber(summary.netProfit)}
+                  </span>
+                  <span className={styles.bentoSubtext}>Tras gastos</span>
                 </div>
               </div>
             </div>
