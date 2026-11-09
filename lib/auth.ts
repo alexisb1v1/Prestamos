@@ -84,7 +84,8 @@ export const authService = {
         if (typeof window !== 'undefined') {
             const keysToKeep = ['remembered_username'];
             Object.keys(localStorage).forEach(key => {
-                if (!keysToKeep.includes(key)) {
+                // Conservar 'remembered_username' y el estado de los tutoriales ya vistos (tour_*)
+                if (!keysToKeep.includes(key) && !key.startsWith('tour_')) {
                     localStorage.removeItem(key);
                 }
             });
