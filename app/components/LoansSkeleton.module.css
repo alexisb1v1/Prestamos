@@ -1,0 +1,113 @@
+.skeletonPulse {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Mobile cards */
+.mobileCardsList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cardSkeleton {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nameLine {
+  width: 60%;
+  height: 16px;
+}
+
+.metaLine {
+  width: 40%;
+  height: 12px;
+}
+
+.financialBox {
+  width: 100%;
+  height: 58px;
+  border-radius: 8px;
+}
+
+.addressRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 0;
+}
+
+.addressLine {
+  width: 50%;
+  height: 12px;
+}
+
+.phoneCircle {
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+}
+
+.actionsRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.actionBtn {
+  flex: 1;
+  height: 36px;
+  border-radius: 9px;
+}
+
+.iconBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+}
+
+/* Desktop Table Rows */
+.tableSkeletonWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.tableRowSkeleton {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  gap: 1.5rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.col1 { width: 25%; height: 20px; }
+.col2 { width: 15%; height: 20px; }
+.col3 { width: 20%; height: 20px; }
+.col4 { width: 15%; height: 20px; }
+.col5 { width: 15%; height: 20px; }
+.col6 { width: 10%; height: 32px; border-radius: 8px; }
+

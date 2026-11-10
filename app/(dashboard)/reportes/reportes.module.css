@@ -245,7 +245,8 @@
 }
 
 .bentoCard {
-  background-color: #ffffff;
+  background-color: #fcfdff;
+  border: 1.5px solid #a5b4fc;
   border-radius: 16px;
   padding: 24px;
   box-shadow: 0 8px 30px rgba(0,0,0,0.03);
@@ -261,6 +262,7 @@
 
 .bentoCardGradient {
   background: linear-gradient(135deg, var(--color-primary, #4147eb), var(--color-primary-hover, #353bd6));
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
   color: #ffffff;
   box-shadow: 0 10px 25px -5px color-mix(in srgb, var(--color-primary, #4147eb) 40%, transparent);
 }
@@ -1288,6 +1290,7 @@
 /* Balance Neto Card */
 .mobileCardGradient {
   background: linear-gradient(135deg, #5c55fc, #4137e8);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
   border-radius: 20px;
   padding: 20px;
   color: white;
@@ -1354,7 +1357,8 @@
 
 /* Common Mobile Card */
 .mobileCardWhite {
-  background-color: white;
+  background-color: #fcfdff;
+  border: 1.5px solid #a5b4fc;
   border-radius: 20px;
   padding: 16px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);

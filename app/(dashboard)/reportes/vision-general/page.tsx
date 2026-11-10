@@ -20,7 +20,8 @@ import {
   TrendingUp,
   TrendingDown,
   Target,
-  ChevronRight
+  ChevronRight,
+  DollarSign
 } from 'lucide-react';
 
 interface ConsolidatedData {
@@ -32,6 +33,9 @@ interface ConsolidatedData {
   totalExpenses: number;
   expectedAmount?: number;
   netBalance: number;
+  currentDeclaredCapital?: number | null;
+  availableCashInHand?: number | null;
+  activeCapitalInStreet?: number;
   dailyCollections?: { date: string; amount: number }[];
 }
 
@@ -265,35 +269,37 @@ export default function VisionGeneralPage() {
                 </div>
               </div>
 
-              {/* Card 5: Eficiencia Global */}
+              {/* Card 5: Disponible para Prestar (Caja/Bancos) */}
               <div className={styles.bentoCard}>
                 <div className={styles.bentoCardHeader}>
-                  <span className={styles.bentoCardTitle}>Cumplimiento Meta Global</span>
-                  <span className={`${styles.bentoIcon} ${styles.iconPrimaryDim}`}>
-                    <Activity size={18} />
+                  <span className={styles.bentoCardTitle} style={{ color: 'var(--color-primary, #4147eb)', fontWeight: 700 }}>
+                    Disponible para Prestar
+                  </span>
+                  <span className={`${styles.bentoIcon}`} style={{ backgroundColor: '#e0e7ff', color: 'var(--color-primary, #4147eb)' }}>
+                    <Landmark size={18} />
                   </span>
                 </div>
                 <div className={styles.bentoCardBody}>
-                  <div className={styles.bentoValueSuccess}>{getEfficiencyPercent(data)}%</div>
-                  <span className={styles.bentoSubtext}>Recaudado vs Esperado</span>
+                  <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--color-primary, #4147eb)' }}>
+                    {data.availableCashInHand !== null && data.availableCashInHand !== undefined
+                      ? formatCurrency(data.availableCashInHand)
+                      : formatCurrency(data.netBalance)}
+                  </div>
+                  <span className={styles.bentoSubtext}>
+                    Saldo en caja/Yape para colocar
+                  </span>
                 </div>
-                <div className={styles.bentoCardFooterProgress}>
-                  <div className={styles.progressBarBg}>
-                    <div className={styles.progressBarFill} style={{ width: `${Math.min(getEfficiencyPercent(data), 100)}%` }}></div>
-                  </div>
-                  <div className={styles.progressLabels}>
-                    <span>Meta: {formatCurrency(data.expectedAmount || 0)}</span>
-                    <span className={styles.progressHighlight}>
-                      {getEfficiencyPercent(data) >= 100 ? '+' : ''}{(getEfficiencyPercent(data) - 100).toFixed(1)}%
-                    </span>
-                  </div>
+                <div className={styles.bentoCardFooterSingle}>
+                  <span>Capital base:</span>
+                  <span style={{ fontWeight: 700, color: '#0f172a' }}>
+                    {formatCurrency(data.currentDeclaredCapital ?? 0)}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
 
           <div className={styles.mobileDashboardLayout}>
-            {/* Control de fechas mobile */}
             {/* Control de fechas mobile con DateRangePicker */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', width: '100%' }}>
               <div style={{ flex: 1 }}>
@@ -318,90 +324,109 @@ export default function VisionGeneralPage() {
               </button>
             </div>
 
-            {/* Balance Neto */}
+            {/* 1. Hero Principal Gradiente: Disponible para Prestar (Yape / Caja) */}
             <div className={styles.mobileCardGradient}>
               <div className={styles.mobileCardGradientHeader}>
                 <div className={styles.mobileCardGradientTitle}>
-                  <Landmark size={14} /> BALANCE NETO EN CAJA
+                  <Landmark size={14} /> DISPONIBLE PARA PRESTAR (YAPE / CAJA)
                 </div>
               </div>
               <div className={styles.mobileCardGradientValue}>
-                <span className={styles.mobileCurrencySymbol}>S/</span> {new Intl.NumberFormat('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(data.netBalance)}
+                <span className={styles.mobileCurrencySymbol}>S/</span>{' '}
+                {new Intl.NumberFormat('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
+                  data.availableCashInHand !== null && data.availableCashInHand !== undefined
+                    ? data.availableCashInHand
+                    : data.netBalance
+                )}
               </div>
-              <div className={styles.mobileCardGradientFooter}>
-                <div className={styles.mobileCardGradientFooterLeft}>
-                  <CheckCircle size={14} /> Liquidación semanal al día
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', margin: '4px 0 8px' }}>
+                Liquidez total en caja/bancos para colocar
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, background: 'rgba(255,255,255,0.15)', borderRadius: 8, padding: '8px 10px', fontSize: 11 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Capital base aportado:</span>
+                  <span style={{ fontWeight: 700 }}>{formatCurrency(data.currentDeclaredCapital ?? 0)}</span>
                 </div>
+                {data.activeCapitalInStreet !== undefined && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Capital activo en calle:</span>
+                    <span style={{ fontWeight: 700 }}>{formatCurrency(data.activeCapitalInStreet)}</span>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Total Cobrado */}
-            <div className={styles.mobileCardWhite}>
-              <div className={styles.mobileCardWhiteHeader}>
-                <span className={styles.mobileCardWhiteTitle}>Total Cobrado</span>
-                <div className={styles.mobileCardWhiteIcon}>
-                  <Banknote size={16} />
-                </div>
-              </div>
-              <div className={styles.mobileCardWhiteValueRow}>
-                <span className={styles.mobileCardWhiteValue}>S/ {new Intl.NumberFormat('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(data.totalCollected)}</span>
-                {data.totalCollected > 0 && <span className={styles.mobileCardWhiteTrend}><TrendingUp size={12} style={{ marginRight: '2px' }} /> +8.2%</span>}
-              </div>
-
-              <div className={styles.mobilePillsRow}>
-                <div className={styles.mobilePill}>
-                  <div className={styles.mobilePillHeader}>
-                    <div className={styles.mobileDotGreen}></div> Efectivo
-                  </div>
-                  <span className={styles.mobilePillValue}>S/ {new Intl.NumberFormat('es-PE').format(data.cashCollected)}</span>
-                </div>
-                <div className={styles.mobilePill}>
-                  <div className={styles.mobilePillHeader}>
-                    <div className={styles.mobileDotPurple}></div> Yape / Plin
-                  </div>
-                  <span className={styles.mobilePillValue}>S/ {new Intl.NumberFormat('es-PE').format(data.digitalCollected)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Gastos Ruta & Eficiencia */}
+            {/* 2. Grid 2x2 para mobile: Métricas del Periodo */}
             <div className={styles.mobileMetricsGrid}>
+              {/* Celda 1: Total Cobrado */}
+              <div className={styles.mobileCardWhite}>
+                <div className={styles.mobileCardWhiteHeader}>
+                  <span className={styles.mobileCardWhiteTitle}>Total Cobrado</span>
+                  <Banknote size={16} color="var(--color-primary, #4147eb)" />
+                </div>
+                <div className={styles.mobileMetricContent}>
+                  <span className={styles.mobileCardWhiteValue}>
+                    S/ {new Intl.NumberFormat('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(data.totalCollected)}
+                  </span>
+                  <span className={styles.bentoSubtext}>
+                    Efec: S/ {new Intl.NumberFormat('es-PE').format(data.cashCollected)} | Dig: S/ {new Intl.NumberFormat('es-PE').format(data.digitalCollected)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Celda 2: Gastos Operativos */}
               <div className={styles.mobileCardWhite}>
                 <div className={styles.mobileCardWhiteHeader}>
                   <span className={styles.mobileCardWhiteTitle}>Gastos Ruta</span>
-                  <div className={`${styles.mobileCardWhiteIcon} ${styles.mobileCardWhiteIconDanger}`}>
-                    <TrendingDown size={16} />
-                  </div>
+                  <TrendingDown size={16} color="#ef4444" />
                 </div>
                 <div className={styles.mobileMetricContent}>
-                  <div className={styles.mobileCardWhiteValue} style={{ fontSize: '18px' }}>S/ {new Intl.NumberFormat('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(data.totalExpenses)}</div>
-                  <div className={styles.mobileMetricSubtextDanger}>
-                    -{data.totalCollected > 0 ? ((data.totalExpenses / data.totalCollected) * 100).toFixed(2) : 0}% del total
-                  </div>
+                  <span className={styles.mobileCardWhiteValue}>
+                    S/ {new Intl.NumberFormat('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(data.totalExpenses)}
+                  </span>
+                  <span className={styles.bentoSubtext}>
+                    {data.totalCollected > 0 ? ((data.totalExpenses / data.totalCollected) * 100).toFixed(1) : 0}% del recaudo
+                  </span>
                 </div>
               </div>
 
+              {/* Celda 3: Capital Recuperado */}
               <div className={styles.mobileCardWhite}>
                 <div className={styles.mobileCardWhiteHeader}>
-                  <span className={styles.mobileCardWhiteTitle}>Eficiencia</span>
-                  <div className={styles.mobileCardWhiteIcon}>
-                    <Target size={16} />
-                  </div>
+                  <span className={styles.mobileCardWhiteTitle}>Cap. Recuperado</span>
+                  <PieChart size={16} color="#10b981" />
                 </div>
                 <div className={styles.mobileMetricContent}>
-                  <div className={styles.mobileCardWhiteValue} style={{ fontSize: '18px' }}>{getEfficiencyPercent(data)}%</div>
-                  <div className={styles.mobileMetricSubtextSuccess}>
-                    Meta {getEfficiencyPercent(data) >= 100 ? 'superada' : 'en progreso'}
-                  </div>
+                  <span className={styles.mobileCardWhiteValue}>
+                    S/ {new Intl.NumberFormat('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(data.capitalRecovered)}
+                  </span>
+                  <span className={styles.bentoSubtext}>
+                    {data.totalCollected > 0 ? ((data.capitalRecovered / data.totalCollected) * 100).toFixed(0) : 0}% devuelto
+                  </span>
+                </div>
+              </div>
+
+              {/* Celda 4: Interés Ganado */}
+              <div className={styles.mobileCardWhite}>
+                <div className={styles.mobileCardWhiteHeader}>
+                  <span className={styles.mobileCardWhiteTitle}>Interés Ganado</span>
+                  <DollarSign size={16} color="#059669" />
+                </div>
+                <div className={styles.mobileMetricContent}>
+                  <span className={styles.mobileCardWhiteValue}>
+                    S/ {new Intl.NumberFormat('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(data.interestEarned)}
+                  </span>
+                  <span className={styles.bentoSubtext}>Ganancia del periodo</span>
                 </div>
               </div>
             </div>
 
-            {/* Recupero de Capital vs Interés */}
-            <div className={styles.mobileCardWhite}>
+            {/* 3. Barra visual: Recupero de Capital vs Interés */}
+            <div className={styles.mobileCardWhite} style={{ marginTop: '12px' }}>
               <div className={styles.mobileCardWhiteHeader}>
-                <span className={styles.mobileCardWhiteTitle} style={{ fontSize: '16px', fontWeight: '700' }}>Recupero de Capital vs Interés</span>
-                <span className={styles.mobileCardWhiteTitle} style={{ fontSize: '11px', color: '#64748b', fontWeight: '500' }}>Semana 18</span>
+                <span className={styles.mobileCardWhiteTitle} style={{ fontSize: '15px', fontWeight: '700' }}>
+                  Recupero de Capital vs Interés
+                </span>
               </div>
               <div className={styles.mobileStackedBarContainer}>
                 <div className={styles.mobileStackedBarCapital} style={{ width: `${data.totalCollected > 0 ? (data.capitalRecovered / data.totalCollected) * 100 : 0}%` }}></div>

@@ -65,4 +65,14 @@ export class CompanyRepositoryImpl implements CompanyRepository {
       settings,
     );
   }
+
+  updateCapital(
+    amount: number,
+    note?: string,
+  ): ResultAsync<{ message: string; initialCapital: number; currentCapital: number; history: any[] }, DomainError> {
+    return api.safe.post<{ message: string; initialCapital: number; currentCapital: number; history: any[] }>(
+      `/company/my-company/capital`,
+      { amount, note },
+    );
+  }
 }

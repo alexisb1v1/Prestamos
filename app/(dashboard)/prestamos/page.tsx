@@ -21,7 +21,9 @@ import LoadingSpinner from "../../components/LoadingSpinner";
 import LoanMobileCard from "../../components/LoanMobileCard";
 import DashboardFilterModal from "../../components/DashboardFilterModal";
 import CollectorDropdown from "../../components/CollectorDropdown";
+import CompanyDropdown from "../../components/CompanyDropdown";
 import MigrationDrawer from "../../components/MigrationDrawer";
+import LoansSkeleton from "../../components/LoansSkeleton";
 
 export default function PrestamosPage() {
   const [loans, setLoans] = useState<Loan[]>([]);
@@ -245,6 +247,59 @@ export default function PrestamosPage() {
 
   return (
     <div style={{ position: 'relative' }}>
+      {/* Barra de Filtros Global Superior (Estandarizada como en Dashboard) */}
+      {(currentUser?.profile === "ADMIN" || currentUser?.profile === "OWNER") && (
+        <div
+          id="filtro-prestamos-superior"
+          style={{
+            backgroundColor: "var(--bg-app)",
+            margin: "-1.5rem -1rem 1rem -1rem",
+            padding: "0 1rem 0.6rem 1rem",
+            display: "flex",
+            gap: "0.5rem",
+            borderBottom: "1px solid var(--border-color)",
+            position: "relative",
+            zIndex: 40,
+            flexWrap: "wrap",
+            overflow: "visible",
+          }}
+        >
+          {/* Ocultar el borde del header para fusionarlos visualmente */}
+          <div style={{ position: "absolute", top: "-1px", left: 0, right: 0, height: "2px", backgroundColor: "var(--bg-app)" }}></div>
+
+          {currentUser?.profile === "OWNER" && (
+            <div style={{ flex: isMobile ? 1 : "0 0 250px", minWidth: isMobile ? "140px" : "220px" }}>
+              <CompanyDropdown
+                companies={companies}
+                selectedCompanyId={selectedCompanyId}
+                onSelectCompany={(id) => {
+                  setSelectedCompanyId(id);
+                  loadLoans(currentUser, id, isLiquidated, selectedCollector);
+                }}
+                allowAll={true}
+                allLabel="Todas las empresas"
+                isMobile={isMobile}
+                width="100%"
+              />
+            </div>
+          )}
+
+          <div style={{ flex: 1, minWidth: "150px" }}>
+            <CollectorDropdown
+              collectors={collectors}
+              selectedCollectorId={selectedCollector}
+              onSelectCollector={(id) => {
+                setSelectedCollector(id);
+                loadLoans(currentUser, selectedCompanyId, isLiquidated, id);
+              }}
+              allowAll={true}
+              allLabel="Todos los cobradores"
+              isMobile={isMobile}
+              width="100%"
+            />
+          </div>
+        </div>
+      )}
 
       {/* HEADER DESKTOP */}
       {!isMobile && (
@@ -317,7 +372,7 @@ export default function PrestamosPage() {
 
           {/* Quick Metrics Summary Bar */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
-            <div style={{ backgroundColor: "white", borderRadius: "1rem", padding: "1rem", border: "1px solid rgba(226, 232, 240, 0.8)", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)" }}>
+            <div style={{ backgroundColor: "#fcfdff", borderRadius: "1rem", padding: "1rem", border: "1.5px solid #a5b4fc", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)" }}>
               <div>
                 <p style={{ fontSize: "11px", fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", margin: 0 }}>Capital Colocado</p>
                 <p style={{ fontSize: "1.25rem", fontWeight: 700, color: "#1e293b", marginTop: "0.125rem", margin: 0 }}>{formatMoney(capitalColocado)}</p>
@@ -327,7 +382,7 @@ export default function PrestamosPage() {
               </div>
             </div>
             
-            <div style={{ backgroundColor: "white", borderRadius: "1rem", padding: "1rem", border: "1px solid rgba(226, 232, 240, 0.8)", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)" }}>
+            <div style={{ backgroundColor: "#fcfdff", borderRadius: "1rem", padding: "1rem", border: "1.5px solid #a5b4fc", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)" }}>
               <div>
                 <p style={{ fontSize: "11px", fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", margin: 0 }}>Saldo Por Cobrar</p>
                 <p style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--color-primary, #4147eb)", marginTop: "0.125rem", margin: 0 }}>{formatMoney(saldoPorCobrar)}</p>
@@ -337,7 +392,7 @@ export default function PrestamosPage() {
               </div>
             </div>
             
-            <div style={{ backgroundColor: "white", borderRadius: "1rem", padding: "1rem", border: "1px solid rgba(226, 232, 240, 0.8)", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)" }}>
+            <div style={{ backgroundColor: "#fcfdff", borderRadius: "1rem", padding: "1rem", border: "1.5px solid #a5b4fc", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)" }}>
               <div>
                 <p style={{ fontSize: "11px", fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", margin: 0 }}>Mora Acumulada</p>
                 <p style={{ fontSize: "1.25rem", fontWeight: 700, color: "#d97706", marginTop: "0.125rem", margin: 0 }}>{formatMoney(moraAcumulada)}</p>
@@ -347,7 +402,7 @@ export default function PrestamosPage() {
               </div>
             </div>
 
-            <div style={{ backgroundColor: "white", borderRadius: "1rem", padding: "1rem", border: "1px solid rgba(226, 232, 240, 0.8)", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)" }}>
+            <div style={{ backgroundColor: "#fcfdff", borderRadius: "1rem", padding: "1rem", border: "1.5px solid #a5b4fc", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)" }}>
               <div>
                 <p style={{ fontSize: "11px", fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", margin: 0 }}>Cuotas Hoy</p>
                 <p style={{ fontSize: "1.25rem", fontWeight: 700, color: "#059669", marginTop: "0.125rem", margin: 0 }}>{cuotasPagadasHoy} / {totalActivos}</p>
@@ -406,36 +461,6 @@ export default function PrestamosPage() {
                 </button>
               </form>
             </div>
-            
-            {/* Solo mantenemos los filtros si es owner o admin */}
-            {(currentUser?.profile === "ADMIN" || currentUser?.profile === "OWNER") && (
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginLeft: "auto" }}>
-                {currentUser?.profile === "OWNER" && (
-                  <button
-                    onClick={() => setIsFilterModalOpen(true)}
-                    style={{ backgroundColor: "#f8fafc", padding: "0.5rem 0.75rem", borderRadius: "0.75rem", fontSize: "0.75rem", fontWeight: 600, color: "#475569", display: "flex", alignItems: "center", gap: "0.375rem", border: "1px solid #e2e8f0", cursor: "pointer" }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#64748b" }}><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path></svg>
-                    <span style={{ maxWidth: "120px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {selectedCompanyId ? companies.find((c) => c.id === selectedCompanyId)?.companyName : "Todas las empresas"}
-                    </span>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#94a3b8" }}><polyline points="6 9 12 15 18 9"></polyline></svg>
-                  </button>
-                )}
-                
-                <CollectorDropdown
-                  collectors={collectors}
-                  selectedCollectorId={selectedCollector}
-                  onSelectCollector={(id) => {
-                    setSelectedCollector(id);
-                    loadLoans(currentUser, selectedCompanyId, isLiquidated, id);
-                  }}
-                  allowAll={true}
-                  allLabel="Todos los cobradores"
-                  width="220px"
-                />
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -443,48 +468,10 @@ export default function PrestamosPage() {
 
       {/* HEADER MÓVIL (Listado de Préstamos - NeoCobros) */}
       {isMobile && (
-        <div style={{ margin: "0 -1rem", padding: "0 1rem 0.5rem 1rem", position: "sticky", top: "4rem", zIndex: 20, backgroundColor: "var(--bg-app)", boxShadow: "0 10px 30px -10px rgba(0,0,0,0.05)" }}>
-          {/* Selector rápido de cobrador o empresa */}
-          {(currentUser?.profile === "ADMIN" || currentUser?.profile === "OWNER") && (
-            <div style={{ marginBottom: "1rem", marginTop: "-0.5rem" }}>
-              <div style={{ display: "flex", gap: "0.5rem" }}>
-                {currentUser?.profile === "OWNER" && (
-                  <button
-                    onClick={() => setIsFilterModalOpen(true)}
-                    style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "white", border: "1px solid rgba(226, 232, 240, 0.9)", borderRadius: "1rem", padding: "0.5rem 0.75rem", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)", textAlign: "left", transition: "colors 0.2s" }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", overflow: "hidden" }}>
-                      <span style={{ padding: "0.25rem", borderRadius: "0.5rem", backgroundColor: "#f1f5f9", color: "#475569" }}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path></svg>
-                      </span>
-                      <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "#334155", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {selectedCompanyId ? companies.find((c) => c.id === selectedCompanyId)?.companyName : "Todas las empresas"}
-                      </span>
-                    </div>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#94a3b8", flexShrink: 0 }}><path d="m6 9 6 6 6-6"></path></svg>
-                  </button>
-                )}
-                <div style={{ flex: 1 }}>
-                  <CollectorDropdown
-                    collectors={collectors}
-                    selectedCollectorId={selectedCollector}
-                    onSelectCollector={(id) => {
-                      setSelectedCollector(id);
-                      loadLoans(currentUser, selectedCompanyId, isLiquidated, id);
-                    }}
-                    allowAll={true}
-                    allLabel="Todos los cobradores"
-                    isMobile={true}
-                    width="100%"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Resumen de Métricas Clave */}
-          <section style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.625rem", marginBottom: "1rem" }}>
-            <div style={{ backgroundColor: "white", borderRadius: "1rem", padding: "0.75rem", border: "1px solid rgba(226, 232, 240, 0.8)", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)" }}>
+        <>
+          {/* Resumen de Métricas Clave (Fluye con el scroll normal, se oculta al bajar) */}
+          <section style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.625rem", marginBottom: "0.875rem" }}>
+            <div style={{ backgroundColor: "#fcfdff", borderRadius: "1rem", padding: "0.75rem", border: "1.5px solid #a5b4fc", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)" }}>
               <div>
                 <span style={{ fontSize: "10px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", display: "block" }}>Capital Colocado</span>
                 <p style={{ fontSize: "0.875rem", fontWeight: 800, color: "#0f172a", marginTop: "0.125rem", margin: 0 }}>{formatMoney(capitalColocado)}</p>
@@ -493,7 +480,7 @@ export default function PrestamosPage() {
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
               </div>
             </div>
-            <div style={{ backgroundColor: "white", borderRadius: "1rem", padding: "0.75rem", border: "1px solid rgba(226, 232, 240, 0.8)", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)" }}>
+            <div style={{ backgroundColor: "#fcfdff", borderRadius: "1rem", padding: "0.75rem", border: "1.5px solid #a5b4fc", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)" }}>
               <div>
                 <span style={{ fontSize: "10px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", display: "block" }}>Saldo Por Cobrar</span>
                 <p style={{ fontSize: "0.875rem", fontWeight: 800, color: "var(--color-primary, #4147eb)", marginTop: "0.125rem", margin: 0 }}>{formatMoney(saldoPorCobrar)}</p>
@@ -502,7 +489,7 @@ export default function PrestamosPage() {
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               </div>
             </div>
-            <div style={{ backgroundColor: "white", borderRadius: "1rem", padding: "0.75rem", border: "1px solid rgba(226, 232, 240, 0.8)", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)" }}>
+            <div style={{ backgroundColor: "#fcfdff", borderRadius: "1rem", padding: "0.75rem", border: "1.5px solid #a5b4fc", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)" }}>
               <div>
                 <span style={{ fontSize: "10px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", display: "block" }}>Mora Acumulada</span>
                 <p style={{ fontSize: "0.875rem", fontWeight: 800, color: "#d97706", marginTop: "0.125rem", margin: 0 }}>{formatMoney(moraAcumulada)}</p>
@@ -511,7 +498,7 @@ export default function PrestamosPage() {
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
               </div>
             </div>
-            <div style={{ backgroundColor: "white", borderRadius: "1rem", padding: "0.75rem", border: "1px solid rgba(226, 232, 240, 0.8)", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)" }}>
+            <div style={{ backgroundColor: "#fcfdff", borderRadius: "1rem", padding: "0.75rem", border: "1.5px solid #a5b4fc", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 2px 0 rgba(0,0,0,0.05)" }}>
               <div>
                 <span style={{ fontSize: "10px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", display: "block" }}>Cuotas Hoy</span>
                 <p style={{ fontSize: "0.875rem", fontWeight: 800, color: "#059669", marginTop: "0.125rem", margin: 0 }}>{cuotasPagadasHoy} / {totalActivos}</p>
@@ -522,67 +509,69 @@ export default function PrestamosPage() {
             </div>
           </section>
 
-          {/* Cabecera de listado y filtros de estado */}
-          <section style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem" }}>
-                <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#0f172a", letterSpacing: "-0.025em", margin: 0 }}>Préstamos</h2>
-                <span style={{ fontSize: "0.75rem", fontWeight: 700, padding: "0.125rem 0.5rem", borderRadius: "9999px", backgroundColor: "rgba(226, 232, 240, 0.7)", color: "#475569" }}>
-                  {loans.length}
-                </span>
+          {/* Buscador y Filtros Fijos en la parte superior (Sticky Header) */}
+          <div style={{ margin: "0 -1rem 0.75rem -1rem", padding: "0.5rem 1rem", position: "sticky", top: "4rem", zIndex: 25, backgroundColor: "var(--bg-app)", borderBottom: "1px solid rgba(226, 232, 240, 0.8)", boxShadow: "0 4px 12px -2px rgba(0,0,0,0.05)" }}>
+            <section style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem" }}>
+                  <h2 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#0f172a", letterSpacing: "-0.025em", margin: 0 }}>Préstamos</h2>
+                  <span style={{ fontSize: "0.7rem", fontWeight: 700, padding: "0.1rem 0.45rem", borderRadius: "9999px", backgroundColor: "rgba(226, 232, 240, 0.7)", color: "#475569" }}>
+                    {loans.length}
+                  </span>
+                </div>
+                
+                {/* Filtros Tipo Pill */}
+                <div style={{ display: "flex", alignItems: "center", backgroundColor: "rgba(226, 232, 240, 0.7)", padding: "0.2rem", borderRadius: "0.625rem", gap: "0.2rem", fontSize: "10px", fontWeight: 700 }}>
+                  <button
+                    onClick={() => { setIsLiquidated(false); loadLoans(currentUser, selectedCompanyId, false); }}
+                    style={{ padding: "0.2rem 0.625rem", borderRadius: "0.45rem", backgroundColor: !isLiquidated ? "var(--color-primary, #4147eb)" : "transparent", color: !isLiquidated ? "white" : "#475569", boxShadow: !isLiquidated ? "0 1px 2px rgba(0,0,0,0.05)" : "none", border: "none", cursor: "pointer", transition: "colors 0.2s" }}
+                  >
+                    ACTIVOS
+                  </button>
+                  <button
+                    onClick={() => { setIsLiquidated(true); loadLoans(currentUser, selectedCompanyId, true); }}
+                    style={{ padding: "0.2rem 0.5rem", borderRadius: "0.45rem", backgroundColor: isLiquidated ? "var(--color-primary, #4147eb)" : "transparent", color: isLiquidated ? "white" : "#475569", boxShadow: isLiquidated ? "0 1px 2px rgba(0,0,0,0.05)" : "none", border: "none", cursor: "pointer", transition: "colors 0.2s" }}
+                  >
+                    LIQ
+                  </button>
+                </div>
               </div>
-              
-              {/* Filtros Tipo Pill */}
-              <div style={{ display: "flex", alignItems: "center", backgroundColor: "rgba(226, 232, 240, 0.7)", padding: "0.25rem", borderRadius: "0.75rem", gap: "0.25rem", fontSize: "11px", fontWeight: 700 }}>
-                <button
-                  onClick={() => { setIsLiquidated(false); loadLoans(currentUser, selectedCompanyId, false); }}
-                  style={{ padding: "0.25rem 0.75rem", borderRadius: "0.5rem", backgroundColor: !isLiquidated ? "var(--color-primary, #4147eb)" : "transparent", color: !isLiquidated ? "white" : "#475569", boxShadow: !isLiquidated ? "0 1px 2px rgba(0,0,0,0.05)" : "none", border: "none", cursor: "pointer", transition: "colors 0.2s" }}
-                >
-                  ACTIVOS
-                </button>
-                <button
-                  onClick={() => { setIsLiquidated(true); loadLoans(currentUser, selectedCompanyId, true); }}
-                  style={{ padding: "0.25rem 0.625rem", borderRadius: "0.5rem", backgroundColor: isLiquidated ? "var(--color-primary, #4147eb)" : "transparent", color: isLiquidated ? "white" : "#475569", boxShadow: isLiquidated ? "0 1px 2px rgba(0,0,0,0.05)" : "none", border: "none", cursor: "pointer", transition: "colors 0.2s" }}
-                >
-                  LIQ
-                </button>
-              </div>
-            </div>
 
-            {/* Barra de Búsqueda */}
-            <div style={{ position: "relative" }}>
-              <div style={{ position: "absolute", left: "0", top: "0", bottom: "0", paddingLeft: "0.875rem", display: "flex", alignItems: "center", pointerEvents: "none", color: "#94a3b8" }}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+              {/* Barra de Búsqueda */}
+              <div style={{ position: "relative" }}>
+                <div style={{ position: "absolute", left: "0", top: "0", bottom: "0", paddingLeft: "0.75rem", display: "flex", alignItems: "center", pointerEvents: "none", color: "#94a3b8" }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+                </div>
+                <form onSubmit={handleSearch} style={{ margin: 0, display: "flex", gap: "0.5rem" }}>
+                  <input
+                    type="search"
+                    placeholder="Buscar por Nombre o DNI..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "0.5rem 0.875rem 0.5rem 2.25rem",
+                      backgroundColor: "white",
+                      border: "1px solid rgba(226, 232, 240, 0.9)",
+                      borderRadius: "0.75rem",
+                      fontSize: "0.8125rem",
+                      color: "#0f172a",
+                      boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                      outline: "none"
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => loadLoans(currentUser, selectedCompanyId, isLiquidated)}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "2.25rem", height: "2.25rem", flexShrink: 0, backgroundColor: "white", border: "1px solid rgba(226, 232, 240, 0.9)", borderRadius: "0.75rem", color: "#64748b", cursor: "pointer", boxShadow: "0 1px 2px rgba(0,0,0,0.04)" }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                  </button>
+                </form>
               </div>
-              <form onSubmit={handleSearch} style={{ margin: 0, display: "flex", gap: "0.5rem" }}>
-                <input
-                  type="search"
-                  placeholder="Buscar por Nombre o DNI..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "0.625rem 1rem 0.625rem 2.5rem",
-                    backgroundColor: "white",
-                    border: "1px solid rgba(226, 232, 240, 0.9)",
-                    borderRadius: "1rem",
-                    fontSize: "0.875rem",
-                    color: "#0f172a",
-                    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-                    outline: "none"
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => loadLoans(currentUser, selectedCompanyId, isLiquidated)}
-                  style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "2.5rem", height: "2.5rem", flexShrink: 0, backgroundColor: "white", border: "1px solid rgba(226, 232, 240, 0.9)", borderRadius: "1rem", color: "#64748b", cursor: "pointer", boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
-                </button>
-              </form>
-            </div>
-          </section>
-        </div>
+            </section>
+          </div>
+        </>
       )}
 
       <DashboardFilterModal
@@ -630,7 +619,7 @@ export default function PrestamosPage() {
       {isMobile ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem", paddingBottom: "6rem" }}>
           {loading ? (
-            <LoadingSpinner message="Cargando préstamos..." />
+            <LoansSkeleton isMobile={true} />
           ) : loans.length === 0 ? (
             <div
               style={{
@@ -675,8 +664,8 @@ export default function PrestamosPage() {
               <tbody style={{ borderTopWidth: "1px", borderTopColor: "#f1f5f9" }}>
                 {loading ? (
                   <tr>
-                    <td colSpan={6}>
-                      <LoadingSpinner message="Cargando préstamos..." />
+                    <td colSpan={6} style={{ padding: 0 }}>
+                      <LoansSkeleton isMobile={false} />
                     </td>
                   </tr>
                 ) : loans.length === 0 ? (
@@ -743,8 +732,8 @@ export default function PrestamosPage() {
                             {/* Punto de estado alineado al texto */}
                             <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: badgeColors.dot, marginTop: "6px", flexShrink: 0 }}></div>
                             <div>
-                              <div style={{ fontWeight: 700, color: "#0f172a", fontSize: "14px", lineHeight: 1.25 }}>
-                                {loan.clientName?.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) || "SIN NOMBRE"}
+                              <div style={{ fontWeight: 700, color: "#0f172a", fontSize: "14px", lineHeight: 1.25, textTransform: "uppercase" }}>
+                                {loan.clientName || "SIN NOMBRE"}
                               </div>
                               <div style={{ fontSize: "12px", fontWeight: 500, color: "#94a3b8", marginTop: "0.125rem" }}>
                                 DNI: {loan.documentNumber || "Sin Documento"}

@@ -72,20 +72,17 @@ export default function ClientCard({
 
   return (
     <article className={`${styles.card} ${isDragging ? styles.dragging : ""}`}>
-      {/* Header: Avatar, Info, Handle */}
+      {/* Header: Info, Handle */}
       <div className={styles.header}>
         <div className={styles.headerInfo}>
-          <div className={`${styles.avatar} ${styles[status]}`}>
-            {initials}
-          </div>
           <div className={styles.clientDetails}>
-            <div className={styles.titleRow}>
-              <h2 className={styles.clientName}>{loan.clientName}</h2>
+            <h2 className={styles.clientName}>{loan.clientName}</h2>
+            <div className={styles.metaRow}>
               <span className={`${styles.badge} ${styles[status]}`}>
                 {statusText}
               </span>
+              <span className={styles.document}>DNI: {loan.documentNumber}</span>
             </div>
-            <span className={styles.document}>DNI: {loan.documentNumber}</span>
           </div>
         </div>
         

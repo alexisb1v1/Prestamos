@@ -6,6 +6,7 @@ export interface CompanyDto {
   status: string;
   createdAt: string;
   keyToken?: string;
+  initialCapital?: number | null;
   settings?: Record<string, any>;
   isDemo?: boolean;
 }

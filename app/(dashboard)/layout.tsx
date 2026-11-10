@@ -6,6 +6,7 @@ import { authService } from "@/lib/auth";
 import Sidebar from "../components/Sidebar";
 import BottomNav from "../components/BottomNav";
 import TourRunner from "../components/TourRunner";
+import InitialCapitalModal from "../components/InitialCapitalModal";
 import TenantThemeApplier from "../components/TenantThemeApplier";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -19,14 +20,15 @@ export default function DashboardLayout({
   const pathname = usePathname();
 
   const [showShareButton, setShowShareButton] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth < 768 : false
+  );
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    const timer = setTimeout(checkMobile, 0);
+    checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => {
-      clearTimeout(timer);
       window.removeEventListener("resize", checkMobile);
     };
   }, []);
@@ -176,6 +178,7 @@ export default function DashboardLayout({
         {showShareButton && isMobile && <BottomNav />}
       </div>
       <TourRunner />
+      <InitialCapitalModal />
     </div>
   );
 }

@@ -27,6 +27,8 @@ import LoanActions from "../../components/LoanActions";
 import DashboardFilterModal from "../../components/DashboardFilterModal";
 import UpdateLoanInfoModal from "../../components/UpdateLoanInfoModal";
 import CollectorDropdown from "../../components/CollectorDropdown";
+import CompanyDropdown from "../../components/CompanyDropdown";
+import DashboardSkeleton from "../../components/DashboardSkeleton";
 import {
   DndContext,
   closestCenter,
@@ -56,7 +58,9 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth < 768 : false
+  );
   const [searchTermLocal, setSearchTermLocal] = useState("");
 
   // Share Generator Ref
@@ -423,7 +427,13 @@ export default function DashboardPage() {
     );
   }
 
-  if (loading && !data) return <LoadingSpinner message="Cargando resumen..." />;
+  if (loading && !data) {
+    return (
+      <div style={{ paddingBottom: isMobile ? "7.5rem" : "2rem" }}>
+        <DashboardSkeleton isMobile={isMobile} />
+      </div>
+    );
+  }
   if (error)
     return (
       <div style={{ padding: "2rem", color: "red", textAlign: "center" }}>
@@ -456,35 +466,20 @@ export default function DashboardPage() {
           <div style={{ position: "absolute", top: "-1px", left: 0, right: 0, height: "2px", backgroundColor: "var(--bg-app)" }}></div>
 
           {currentUser?.profile === "OWNER" && (
-            <button
-              onClick={() => setIsFilterModalOpen(true)}
-              style={{
-                flex: 1,
-                backgroundColor: "white",
-                padding: "0.45rem 0.5rem",
-                borderRadius: "2rem",
-                fontSize: "0.7rem",
-                fontWeight: 600,
-                color: "#475569",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.3rem",
-                border: "1px solid var(--border-color)",
-                cursor: "pointer",
-                transition: "all 0.2s"
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#64748b" }}>
-                <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
-                <path d="M9 22v-4h6v4"></path>
-              </svg>
-              <span style={{ flex: 1, textAlign: "left", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {selectedCompanyId ? companies.find((c) => c.id === selectedCompanyId)?.companyName : "Todas las empresas"}
-              </span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#94a3b8" }}>
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </button>
+            <div style={{ flex: isMobile ? 1 : "0 0 250px", minWidth: isMobile ? "140px" : "220px" }}>
+              <CompanyDropdown
+                companies={companies}
+                selectedCompanyId={selectedCompanyId}
+                onSelectCompany={(id) => {
+                  setSelectedCompanyId(id);
+                  loadDashboard(selectedUserId, id);
+                }}
+                allowAll={true}
+                allLabel="Todas las empresas"
+                isMobile={isMobile}
+                width="100%"
+              />
+            </div>
           )}
 
           <div style={{ flex: 1, minWidth: "150px" }}>
@@ -532,7 +527,8 @@ export default function DashboardPage() {
             <div
               id="stats-dashboard"
               style={{
-                backgroundColor: "white",
+                backgroundColor: "#fcfdff",
+                border: "1.5px solid #a5b4fc",
                 borderRadius: "1rem",
                 padding: "1rem",
                 marginBottom: "1rem",
@@ -617,7 +613,7 @@ export default function DashboardPage() {
               }}
             >
               {/* Gran Tarjeta de Recaudación del Día */}
-              <div style={{ gridColumn: "span 2", backgroundColor: "white", borderRadius: "1.5rem", padding: "1.5rem", boxShadow: "0 4px 20px rgba(35,38,212,0.05)", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
+              <div style={{ gridColumn: "span 2", backgroundColor: "#fcfdff", border: "1.5px solid #a5b4fc", borderRadius: "1.5rem", padding: "1.5rem", boxShadow: "0 4px 20px rgba(35,38,212,0.05)", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
                 <div style={{ position: "absolute", right: "-2rem", top: "-2rem", width: "10rem", height: "10rem", backgroundColor: "rgba(65, 71, 235, 0.05)", borderRadius: "50%", filter: "blur(24px)", pointerEvents: "none" }}></div>
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: "0.5rem" }}>
@@ -654,7 +650,7 @@ export default function DashboardPage() {
               </div>
 
               {/* 4 KPIs Operativos en Grid (Cada uno toma 1 columna) */}
-              <div style={{ gridColumn: "span 1", backgroundColor: "white", borderRadius: "1.5rem", padding: "1.25rem", boxShadow: "0 4px 16px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <div style={{ gridColumn: "span 1", backgroundColor: "#fcfdff", border: "1.5px solid #a5b4fc", borderRadius: "1.5rem", padding: "1.25rem", boxShadow: "0 4px 16px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                 <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "50%", backgroundColor: "#eff6ff", color: "#3b82f6", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                 </div>
@@ -667,7 +663,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div style={{ gridColumn: "span 1", backgroundColor: "white", borderRadius: "1.5rem", padding: "1.25rem", boxShadow: "0 4px 16px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <div style={{ gridColumn: "span 1", backgroundColor: "#fcfdff", border: "1.5px solid #a5b4fc", borderRadius: "1.5rem", padding: "1.25rem", boxShadow: "0 4px 16px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                 <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "50%", backgroundColor: "#eff6ff", color: "#8b5cf6", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                 </div>
@@ -683,7 +679,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div style={{ gridColumn: "span 1", backgroundColor: "white", borderRadius: "1.5rem", padding: "1.25rem", boxShadow: "0 4px 16px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <div style={{ gridColumn: "span 1", backgroundColor: "#fcfdff", border: "1.5px solid #a5b4fc", borderRadius: "1.5rem", padding: "1.25rem", boxShadow: "0 4px 16px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                 <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "50%", backgroundColor: "#fef2f2", color: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
                 </div>
@@ -693,7 +689,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div style={{ gridColumn: "span 1", backgroundColor: "white", borderRadius: "1.5rem", padding: "1.25rem", boxShadow: "0 4px 16px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <div style={{ gridColumn: "span 1", backgroundColor: "#fcfdff", border: "1.5px solid #a5b4fc", borderRadius: "1.5rem", padding: "1.25rem", boxShadow: "0 4px 16px rgba(0,0,0,0.03)", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                 <div style={{ width: "2.5rem", height: "2.5rem", borderRadius: "50%", backgroundColor: "#ecfdf5", color: "#10b981", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
                 </div>

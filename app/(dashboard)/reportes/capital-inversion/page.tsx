@@ -51,6 +51,8 @@ interface CapitalReportResponse {
     netProfit: number;
     roi: number;
     profitMarginOnInterest?: number;
+    currentDeclaredCapital?: number | null;
+    availableCashInHand?: number | null;
   };
   monthlyEvolution: MonthlyCapitalEvolution[];
 }
@@ -185,7 +187,7 @@ export default function CapitalInversionPage() {
           <div className={styles.desktopDashboardLayout}>
             <div className={styles.bentoRibbon}>
               {/* Tarjeta 1: Lo Invertido (Capital Colocado Histórico) */}
-              <div className={`${styles.bentoCard} ${styles.bentoCardGradient}`}>
+              <div className={`${styles.bentoCard} ${styles.bentoCardGradient}`} style={{ border: '1.5px solid rgba(255, 255, 255, 0.35)' }}>
                 <div className={styles.bentoCardHeader}>
                   <span className={styles.bentoCardTitleWhite}>Lo Invertido (Capital Colocado)</span>
                   <span className={`${styles.bentoIcon} ${styles.iconWhite}`}>
@@ -213,7 +215,7 @@ export default function CapitalInversionPage() {
               </div>
 
               {/* Tarjeta 2: Ganancia Proyectada (Interés Total Pactado) */}
-              <div className={styles.bentoCard}>
+              <div className={styles.bentoCard} style={{ border: '1.5px solid #a5b4fc', backgroundColor: '#fcfdff' }}>
                 <div className={styles.bentoCardHeader}>
                   <span className={styles.bentoCardTitle}>Ganancia Proyectada</span>
                   <span className={`${styles.bentoIcon} ${styles.iconPrimaryDim}`}>
@@ -239,7 +241,7 @@ export default function CapitalInversionPage() {
               </div>
 
               {/* Tarjeta 3: Capital que ya Retornó (Amortizado) */}
-              <div className={styles.bentoCard}>
+              <div className={styles.bentoCard} style={{ border: '1.5px solid #a5b4fc', backgroundColor: '#fcfdff' }}>
                 <div className={styles.bentoCardHeader}>
                   <span className={styles.bentoCardTitle}>Capital Retornado</span>
                   <span className={`${styles.bentoIcon} ${styles.iconSuccess}`}>
@@ -280,7 +282,7 @@ export default function CapitalInversionPage() {
               </div>
 
               {/* Tarjeta 4: Ganancia Recaudada (Interés Cobrado) */}
-              <div className={styles.bentoCard}>
+              <div className={styles.bentoCard} style={{ border: '1.5px solid #a5b4fc', backgroundColor: '#fcfdff' }}>
                 <div className={styles.bentoCardHeader}>
                   <span className={styles.bentoCardTitle}>Ganancia Recaudada</span>
                   <span className={`${styles.bentoIcon} ${summary.netProfit >= 0 ? styles.iconSuccess : styles.iconDanger}`}>
@@ -308,6 +310,34 @@ export default function CapitalInversionPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Tarjeta 5: Disponible en Billetera / Caja para Prestar (Calculado) */}
+              {summary.availableCashInHand !== null && summary.availableCashInHand !== undefined && (
+                <div className={styles.bentoCard} style={{ border: '1.5px solid #a5b4fc', backgroundColor: '#fcfdff' }}>
+                  <div className={styles.bentoCardHeader}>
+                    <span className={styles.bentoCardTitle} style={{ color: 'var(--color-primary, #4147eb)', fontWeight: 700 }}>
+                      Disponible para Prestar (Yape/Caja)
+                    </span>
+                    <span className={`${styles.bentoIcon}`} style={{ backgroundColor: '#e0e7ff', color: 'var(--color-primary, #4147eb)' }}>
+                      <DollarSign size={18} />
+                    </span>
+                  </div>
+                  <div className={styles.bentoCardBody}>
+                    <div className={styles.bentoValuePrimary} style={{ fontSize: 26 }}>
+                      {formatCurrency(summary.availableCashInHand)}
+                    </div>
+                    <span className={styles.bentoSubtext}>
+                      Saldo teórico que debes tener en mano/Yape
+                    </span>
+                  </div>
+                  <div className={styles.bentoCardFooter} style={{ backgroundColor: '#eef2ff' }}>
+                    <div className={styles.footerRow}>
+                      <span>Capital aportado base:</span>
+                      <span style={{ fontWeight: 700, color: '#1e1b4b' }}>{formatCurrency(summary.currentDeclaredCapital ?? 0)}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -397,6 +427,26 @@ export default function CapitalInversionPage() {
                 </div>
               </div>
             </div>
+
+            {/* Tarjeta Mobile Disponible para Prestar */}
+            {summary.availableCashInHand !== null && summary.availableCashInHand !== undefined && (
+              <div className={styles.mobileCardWhite} style={{ border: '1.5px solid #a5b4fc', backgroundColor: '#fcfdff', marginTop: '12px' }}>
+                <div className={styles.mobileCardWhiteHeader}>
+                  <span className={styles.mobileCardWhiteTitle} style={{ color: 'var(--color-primary, #4147eb)', fontWeight: 700 }}>
+                    Disponible para Prestar (Yape/Caja)
+                  </span>
+                  <DollarSign size={16} color="var(--color-primary, #4147eb)" />
+                </div>
+                <div className={styles.mobileMetricContent}>
+                  <span className={styles.mobileCardWhiteValue} style={{ fontSize: 24, color: 'var(--color-primary, #4147eb)' }}>
+                    S/ {formatNumber(summary.availableCashInHand)}
+                  </span>
+                  <span className={styles.bentoSubtext}>
+                    Capital base aportado: <b>S/ {formatNumber(summary.currentDeclaredCapital ?? 0)}</b>
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 3. Gráfico Interactivo de Evolución Mes a Mes */}

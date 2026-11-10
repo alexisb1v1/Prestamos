@@ -330,7 +330,7 @@ export default function PorCobradorPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '24px' }}>
 
               {/* Profile Card (4 cols) */}
-              <div style={{ gridColumn: 'span 4', background: '#ffffff', borderRadius: '24px', padding: '32px', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}>
+              <div style={{ gridColumn: 'span 4', background: '#fcfdff', border: '1.5px solid #a5b4fc', borderRadius: '24px', padding: '32px', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}>
                 <div style={{ position: 'absolute', right: '-40px', top: '-40px', width: '150px', height: '150px', background: '#e0e0ff', opacity: 0.5, borderRadius: '50%', filter: 'blur(40px)', zIndex: 0 }}></div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 1 }}>
@@ -369,7 +369,7 @@ export default function PorCobradorPage() {
               <div style={{ gridColumn: 'span 8', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
 
                 {/* Total Cobrado */}
-                <div style={{ background: 'white', borderRadius: '24px', padding: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ background: '#fcfdff', border: '1.5px solid #a5b4fc', borderRadius: '24px', padding: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Cobrado</span>
                     <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'color-mix(in srgb, var(--color-primary, #4147eb) 12%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -395,7 +395,7 @@ export default function PorCobradorPage() {
                 </div>
 
                 {/* Gastos de Ruta */}
-                <div style={{ background: 'white', borderRadius: '24px', padding: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ background: '#fcfdff', border: '1.5px solid #a5b4fc', borderRadius: '24px', padding: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gastos en Ruta</span>
                     <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#f8f9fa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -417,7 +417,7 @@ export default function PorCobradorPage() {
                 </div>
 
                 {/* Neto Liquidable */}
-                <div style={{ background: 'linear-gradient(135deg, var(--color-primary, #4147eb), var(--color-primary-hover, #353bd6))', borderRadius: '24px', padding: '24px', boxShadow: '0 10px 25px color-mix(in srgb, var(--color-primary, #4147eb) 30%, transparent)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', color: 'white', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ background: 'linear-gradient(135deg, var(--color-primary, #4147eb), var(--color-primary-hover, #353bd6))', border: '1.5px solid rgba(255, 255, 255, 0.35)', borderRadius: '24px', padding: '24px', boxShadow: '0 10px 25px color-mix(in srgb, var(--color-primary, #4147eb) 30%, transparent)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', color: 'white', position: 'relative', overflow: 'hidden' }}>
                   <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', width: '100px', height: '100px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%', filter: 'blur(20px)', zIndex: 0 }}></div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 }}>
@@ -441,7 +441,7 @@ export default function PorCobradorPage() {
 
           <div className={styles.mobileDashboardLayout}>
             {/* Profile Card (Sin duplicar el nombre del selector superior) */}
-            <div style={{ background: 'white', borderRadius: '24px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ background: '#fcfdff', border: '1.5px solid #a5b4fc', borderRadius: '24px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                   <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'linear-gradient(135deg, var(--color-primary, #4147eb), var(--color-primary-hover, #353bd6))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '18px', fontWeight: 800, position: 'relative' }}>
@@ -480,7 +480,7 @@ export default function PorCobradorPage() {
             </div>
 
             {/* Cierre de Liquidación */}
-            <div style={{ background: 'linear-gradient(135deg, var(--color-primary-hover, #353bd6), var(--color-primary, #4147eb))', borderRadius: '24px', padding: '24px', color: 'white', display: 'flex', flexDirection: 'column', gap: '16px', boxShadow: '0 12px 30px color-mix(in srgb, var(--color-primary, #4147eb) 30%, transparent)' }}>
+            <div style={{ background: 'linear-gradient(135deg, var(--color-primary-hover, #353bd6), var(--color-primary, #4147eb))', border: '1.5px solid rgba(255, 255, 255, 0.35)', borderRadius: '24px', padding: '24px', color: 'white', display: 'flex', flexDirection: 'column', gap: '16px', boxShadow: '0 12px 30px color-mix(in srgb, var(--color-primary, #4147eb) 30%, transparent)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.05em' }}>CIERRE DE LIQUIDACIÓN</span>
                 <span style={{ background: 'rgba(255,255,255,0.2)', padding: '4px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -502,7 +502,7 @@ export default function PorCobradorPage() {
             </div>
 
             {/* Total Cobrado Card */}
-            <div style={{ background: 'white', borderRadius: '24px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ background: '#fcfdff', border: '1.5px solid #a5b4fc', borderRadius: '24px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div style={{ background: '#d1fae5', color: '#059669', padding: '8px', borderRadius: '10px' }}><Banknote size={18} /></div>
@@ -529,7 +529,7 @@ export default function PorCobradorPage() {
             </div>
 
             {/* Gastos de Ruta */}
-            <div style={{ background: 'white', borderRadius: '24px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ background: '#fcfdff', border: '1.5px solid #a5b4fc', borderRadius: '24px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div style={{ background: '#fee2e2', color: '#e11d48', padding: '8px', borderRadius: '10px' }}><Receipt size={18} /></div>

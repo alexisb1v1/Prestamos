@@ -11,6 +11,7 @@ export class CompanyMapper {
       status: dto.status,
       createdAt: dto.createdAt,
       keyToken: dto.keyToken,
+      initialCapital: dto.initialCapital !== undefined ? dto.initialCapital : null,
       settings: dto.settings,
       isDemo: dto.isDemo ?? false,
     };

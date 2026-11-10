@@ -16,6 +16,10 @@ import {
   AlertCircle,
   ChevronRight,
   ChevronLeft,
+  Landmark,
+  PlusCircle,
+  TrendingUp,
+  History,
 } from "lucide-react";
 import ChangePasswordModal from "@/app/components/ChangePasswordModal";
 import { CompanyRepositoryImpl } from "@/app/features/companies/repositories/company.repository.impl";
@@ -35,14 +39,21 @@ const PRESET_COLORS = [
 ];
 
 export default function ConfiguracionPage() {
-  const { user } = usePermissions();
-  const [activeTab, setActiveTab] = useState<"branding" | "loans" | "security">("branding");
+  const { user, isAdmin } = usePermissions();
+  const [activeTab, setActiveTab] = useState<"branding" | "loans" | "capital" | "security">("branding");
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Estados para inyección / ajuste de capital
+  const [isInjectModalOpen, setIsInjectModalOpen] = useState(false);
+  const [injectAmount, setInjectAmount] = useState<string>("");
+  const [injectNote, setInjectNote] = useState<string>("");
+  const [injectSaving, setInjectSaving] = useState(false);
+  const [injectError, setInjectError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const tabsRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -462,6 +473,33 @@ export default function ConfiguracionPage() {
             <Sliders size={18} />
             <span>Políticas de Préstamos</span>
           </button>
+
+          {/* TAB DE CAPITAL E INVERSIÓN (Solo ADMIN u OWNER) */}
+          {(isAdmin || user?.profile === "OWNER") && (
+            <button
+              id="tab-capital"
+              onClick={() => setActiveTab("capital")}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: isMobile ? "0.65rem 0.95rem" : "0.75rem 1.25rem",
+                fontWeight: 600,
+                fontSize: isMobile ? "0.875rem" : "0.95rem",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                borderBottom: activeTab === "capital" ? "2px solid var(--color-primary)" : "2px solid transparent",
+                color: activeTab === "capital" ? "var(--color-primary)" : "var(--text-secondary)",
+                transition: "all 0.2s ease",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+              }}
+            >
+              <Landmark size={18} />
+              <span>Capital e Inversión</span>
+            </button>
+          )}
 
           <button
             id="tab-security"
@@ -1040,6 +1078,130 @@ export default function ConfiguracionPage() {
             </div>
           )}
 
+          {/* TAB: CAPITAL E INVERSIÓN (HISTORIAL Y AJUSTE) */}
+          {activeTab === "capital" && (
+            <div style={{ display: "grid", gap: "1.75rem" }}>
+              {/* Tarjeta de Resumen Actual */}
+              <section className="card" style={{ padding: isMobile ? "1.25rem" : "1.75rem", borderRadius: "1rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem", marginBottom: "1.25rem" }}>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.25rem" }}>
+                      <Landmark size={22} color="var(--color-primary)" />
+                      <h2 style={{ fontSize: "1.25rem", fontWeight: 700 }}>Capital de Trabajo Declarado</h2>
+                    </div>
+                    <p style={{ color: "var(--text-secondary)", fontSize: "0.875rem", margin: 0 }}>
+                      Fondo monetario total aportado para el fondeo de préstamos y operaciones.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setInjectAmount(String(company?.settings?.financial?.current_capital ?? company?.initialCapital ?? ""));
+                      setInjectNote("");
+                      setInjectError(null);
+                      setIsInjectModalOpen(true);
+                    }}
+                    className="btn btn-primary"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.65rem 1.25rem",
+                      fontWeight: 600,
+                      borderRadius: "0.75rem",
+                      width: isMobile ? "100%" : "auto",
+                    }}
+                  >
+                    <PlusCircle size={18} />
+                    <span>Inyectar / Modificar Capital</span>
+                  </button>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: "1rem" }}>
+                  <div style={{ padding: "1.25rem", backgroundColor: "var(--bg-app, #f8f9fa)", borderRadius: "0.75rem", border: "1px solid var(--border-color, #e2e8f0)" }}>
+                    <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontWeight: 600, textTransform: "uppercase" }}>Capital Inicial de Apertura</span>
+                    <div style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "0.25rem" }}>
+                      S/ {Number(company?.initialCapital || 0).toLocaleString("es-PE", { minimumFractionDigits: 2 })}
+                    </div>
+                  </div>
+
+                  <div style={{ padding: "1.25rem", backgroundColor: "color-mix(in srgb, var(--color-primary, #4147eb) 8%, transparent)", borderRadius: "0.75rem", border: "1px solid color-mix(in srgb, var(--color-primary, #4147eb) 25%, transparent)" }}>
+                    <span style={{ fontSize: "0.8rem", color: "var(--color-primary)", fontWeight: 700, textTransform: "uppercase" }}>Capital Total Aportado Activo</span>
+                    <div style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--color-primary)", marginTop: "0.25rem" }}>
+                      S/ {Number(company?.settings?.financial?.current_capital ?? company?.initialCapital ?? 0).toLocaleString("es-PE", { minimumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Historial de Inyecciones de Capital */}
+              <section className="card" style={{ padding: isMobile ? "1.25rem" : "1.75rem", borderRadius: "1rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "1rem" }}>
+                  <History size={20} color="var(--color-primary)" />
+                  <h3 style={{ fontSize: "1.1rem", fontWeight: 700 }}>Historial Cronológico de Inversiones</h3>
+                </div>
+
+                {(!company?.settings?.financial?.capital_history || company.settings.financial.capital_history.length === 0) ? (
+                  <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)", fontSize: "0.9rem" }}>
+                    No se han registrado inyecciones de capital aún.
+                  </div>
+                ) : (
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+                      <thead>
+                        <tr style={{ borderBottom: "1.5px solid var(--border-color, #e2e8f0)", textAlign: "left", color: "var(--text-secondary)" }}>
+                          <th style={{ padding: "0.75rem 0.5rem" }}>Fecha / Hora</th>
+                          <th style={{ padding: "0.75rem 0.5rem" }}>Tipo</th>
+                          <th style={{ padding: "0.75rem 0.5rem", textAlign: "right" }}>Capital Anterior</th>
+                          <th style={{ padding: "0.75rem 0.5rem", textAlign: "right" }}>Variación</th>
+                          <th style={{ padding: "0.75rem 0.5rem", textAlign: "right" }}>Nuevo Capital</th>
+                          <th style={{ padding: "0.75rem 0.5rem" }}>Registrado por</th>
+                          <th style={{ padding: "0.75rem 0.5rem" }}>Nota / Motivo</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[...(company.settings.financial.capital_history)].reverse().map((item: any) => (
+                          <tr key={item.id} style={{ borderBottom: "1px solid var(--border-color, #e2e8f0)" }}>
+                            <td style={{ padding: "0.75rem 0.5rem", whiteSpace: "nowrap" }}>
+                              {new Date(item.date).toLocaleDateString("es-PE", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                            </td>
+                            <td style={{ padding: "0.75rem 0.5rem" }}>
+                              <span style={{
+                                padding: "0.25rem 0.6rem",
+                                borderRadius: "9999px",
+                                fontSize: "0.75rem",
+                                fontWeight: 700,
+                                backgroundColor: item.type === "INITIAL_CAPITAL" ? "#e0e7ff" : "#dcfce7",
+                                color: item.type === "INITIAL_CAPITAL" ? "#3730a3" : "#166534",
+                              }}>
+                                {item.type === "INITIAL_CAPITAL" ? "Apertura Inicial" : "Inyección"}
+                              </span>
+                            </td>
+                            <td style={{ padding: "0.75rem 0.5rem", textAlign: "right", color: "var(--text-secondary)" }}>
+                              S/ {Number(item.previous_capital || 0).toFixed(2)}
+                            </td>
+                            <td style={{ padding: "0.75rem 0.5rem", textAlign: "right", fontWeight: 700, color: item.amount_injected >= 0 ? "#16a34a" : "#dc2626" }}>
+                              {item.amount_injected >= 0 ? `+S/ ${Number(item.amount_injected).toFixed(2)}` : `-S/ ${Math.abs(item.amount_injected).toFixed(2)}`}
+                            </td>
+                            <td style={{ padding: "0.75rem 0.5rem", textAlign: "right", fontWeight: 800 }}>
+                              S/ {Number(item.new_capital || 0).toFixed(2)}
+                            </td>
+                            <td style={{ padding: "0.75rem 0.5rem", color: "var(--text-secondary)" }}>
+                              {item.registered_by}
+                            </td>
+                            <td style={{ padding: "0.75rem 0.5rem", color: "var(--text-secondary)", fontStyle: "italic" }}>
+                              {item.note || "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            </div>
+          )}
+
           {/* TAB 3: SEGURIDAD DE LA CUENTA */}
           {activeTab === "security" && (
             <div style={{ display: "grid", gap: "1.75rem" }}>
@@ -1082,6 +1244,191 @@ export default function ConfiguracionPage() {
         isOpen={isChangePasswordOpen}
         onClose={() => setIsChangePasswordOpen(false)}
       />
+
+      {/* Modal / Drawer para Inyectar o Modificar Capital */}
+      {isInjectModalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            backgroundColor: "rgba(15, 23, 42, 0.6)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "stretch",
+            justifyContent: isMobile ? "center" : "flex-end",
+          }}
+        >
+          <div
+            style={{
+              width: isMobile ? "100vw" : "440px",
+              maxWidth: isMobile ? "100vw" : "100%",
+              height: "100vh",
+              maxHeight: "100vh",
+              backgroundColor: "#ffffff",
+              padding: isMobile ? "24px 20px" : "36px 28px",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              boxShadow: "-10px 0 35px rgba(0, 0, 0, 0.15)",
+              boxSizing: "border-box",
+              overflowY: "auto",
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div>
+                  <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--color-primary)", textTransform: "uppercase" }}>
+                    Gestión Patrimonial
+                  </div>
+                  <h3 style={{ fontSize: "1.25rem", fontWeight: 800, color: "#0f172a", margin: "4px 0 0" }}>
+                    Inyectar o Modificar Capital
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsInjectModalOpen(false)}
+                  style={{
+                    background: "#f1f5f9",
+                    border: "none",
+                    borderRadius: "8px",
+                    padding: "6px 10px",
+                    cursor: "pointer",
+                    fontWeight: 700,
+                    color: "#64748b",
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <p style={{ fontSize: "0.875rem", color: "#64748b", margin: 0, lineHeight: 1.5 }}>
+                Declara el <strong>nuevo capital total activo</strong> de tu empresa. El sistema calculará la variación monetaria y la guardará de forma permanente en el historial de inversiones.
+              </p>
+
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#1e293b", marginBottom: "6px" }}>
+                  Nuevo Capital Total de Trabajo (S/) *
+                </label>
+                <div style={{ position: "relative" }}>
+                  <span style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", fontSize: "16px", fontWeight: 700, color: "#64748b" }}>
+                    S/
+                  </span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="1"
+                    value={injectAmount}
+                    onChange={(e) => setInjectAmount(e.target.value)}
+                    placeholder="Ej. 3000.00"
+                    style={{
+                      width: "100%",
+                      padding: "12px 14px 12px 42px",
+                      fontSize: "17px",
+                      fontWeight: 700,
+                      borderRadius: "10px",
+                      border: "1.5px solid #cbd5e1",
+                      backgroundColor: "#f8fafc",
+                      outline: "none",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#1e293b", marginBottom: "6px" }}>
+                  Motivo u Observación
+                </label>
+                <input
+                  type="text"
+                  value={injectNote}
+                  onChange={(e) => setInjectNote(e.target.value)}
+                  placeholder="Ej. Aporte para nuevos clientes / Reinversión"
+                  style={{
+                    width: "100%",
+                    padding: "10px 14px",
+                    fontSize: "13px",
+                    borderRadius: "10px",
+                    border: "1px solid #cbd5e1",
+                    backgroundColor: "#f8fafc",
+                    outline: "none",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+
+              {injectError && (
+                <div style={{ backgroundColor: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca", padding: "10px", borderRadius: "8px", fontSize: "12px" }}>
+                  {injectError}
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+              <button
+                type="button"
+                onClick={() => setIsInjectModalOpen(false)}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  backgroundColor: "#f1f5f9",
+                  border: "none",
+                  borderRadius: "10px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  color: "#475569",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={injectSaving}
+                onClick={async () => {
+                  setInjectError(null);
+                  const num = parseFloat(injectAmount);
+                  if (isNaN(num) || num <= 0) {
+                    setInjectError("Ingresa un monto válido mayor a cero.");
+                    return;
+                  }
+                  try {
+                    setInjectSaving(true);
+                    const res = await companyRepo.updateCapital(num, injectNote.trim() || undefined);
+                    if (res.isOk()) {
+                      setIsInjectModalOpen(false);
+                      setFeedback({ type: "success", text: "Capital e historial de inversión actualizados correctamente." });
+                      // Recargar datos de empresa
+                      const updated = await companyRepo.getMyCompany();
+                      if (updated.isOk()) setCompany(updated.value);
+                    } else {
+                      setInjectError("Error al registrar la inyección de capital.");
+                    }
+                  } catch (e) {
+                    setInjectError("Error de conexión al servidor.");
+                  } finally {
+                    setInjectSaving(false);
+                  }
+                }}
+                className="btn btn-primary"
+                style={{
+                  flex: 2,
+                  padding: "12px",
+                  borderRadius: "10px",
+                  fontWeight: 700,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                  cursor: injectSaving ? "not-allowed" : "pointer",
+                }}
+              >
+                {injectSaving ? "Guardando..." : "Guardar Inversión"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

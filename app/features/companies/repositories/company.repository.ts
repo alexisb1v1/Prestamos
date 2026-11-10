@@ -57,4 +57,12 @@ export interface CompanyRepository {
     settings: any,
     companyId?: string,
   ): ResultAsync<{ message: string; settings: any }, DomainError>;
+
+  /**
+   * Registra el capital inicial o inyecta nuevo capital a la empresa.
+   */
+  updateCapital(
+    amount: number,
+    note?: string,
+  ): ResultAsync<{ message: string; initialCapital: number; currentCapital: number; history: any[] }, DomainError>;
 }
